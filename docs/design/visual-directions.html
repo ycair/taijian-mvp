@@ -1,0 +1,242 @@
+<style>
+  .vs-wrap { max-width: 1180px; margin: 0 auto; }
+  .vs-head { margin-bottom: 18px; }
+  .vs-head h2 { margin: 0 0 6px; font-size: 28px; letter-spacing: -0.02em; }
+  .vs-head p { margin: 0; opacity: .72; font-size: 15px; line-height: 1.6; }
+  .style-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: start; }
+  @media (max-width: 980px) { .style-grid { grid-template-columns: 1fr; } }
+  .style-card { padding: 14px !important; border-radius: 22px !important; cursor: pointer; transition: transform .18s ease, box-shadow .18s ease; }
+  .style-card:hover { transform: translateY(-3px); }
+  .style-card.selected { box-shadow: 0 0 0 3px #2F5D50, 0 18px 40px rgba(0,0,0,.16) !important; }
+  .style-meta { padding: 14px 6px 4px; }
+  .style-meta h3 { margin: 0 0 4px; font-size: 17px; }
+  .style-meta .tag { display: inline-block; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; opacity: .58; margin-bottom: 6px; }
+  .style-meta p { margin: 0; font-size: 13px; line-height: 1.55; opacity: .7; }
+
+  /* shared phone shell */
+  .phone { position: relative; width: 100%; max-width: 330px; margin: 0 auto; aspect-ratio: 330 / 690; border-radius: 38px; padding: 9px; background: #101413; box-shadow: 0 18px 50px rgba(0,0,0,.22); }
+  .phone .screen { position: relative; height: 100%; border-radius: 30px; overflow: hidden; }
+  .phone .notch { position: absolute; z-index: 5; top: 17px; left: 50%; transform: translateX(-50%); width: 74px; height: 18px; border-radius: 10px; background: #101413; }
+  .phone .status { display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-weight: 700; letter-spacing: .04em; padding: 0 4px 12px; opacity: .75; }
+  .phone .homebar { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); width: 92px; height: 4px; border-radius: 3px; background: currentColor; opacity: .18; }
+
+  /* A — field journal */
+  .a-screen { background: #F4EFE3; color: #1E2B24; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; padding: 22px 18px 16px; height: 100%; display: flex; flex-direction: column; }
+  .a-kicker { font-size: 9px; letter-spacing: .22em; color: #8A8475; text-transform: uppercase; }
+  .a-title { font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; font-size: 25px; line-height: 1.15; margin: 5px 0 2px; font-weight: 600; }
+  .a-sub { font-size: 11px; color: #6F756B; margin-bottom: 12px; }
+  .a-rule { height: 1px; background: #D8CEBB; margin: 2px 0 12px; }
+  .a-label { font-size: 9px; letter-spacing: .2em; color: #8A8475; text-transform: uppercase; margin-bottom: 8px; }
+  .a-task { display: flex; gap: 9px; align-items: flex-start; padding: 9px 0; border-bottom: 1px dashed #DED5C4; }
+  .a-box { width: 16px; height: 16px; border: 1.4px solid #2F5D50; border-radius: 4px; flex: 0 0 auto; margin-top: 1px; }
+  .a-task-name { font-size: 12.5px; font-weight: 650; line-height: 1.2; }
+  .a-task-meta { font-size: 10px; color: #8A8475; margin-top: 2px; }
+  .a-task.done .a-box { background: #2F5D50; box-shadow: inset 0 0 0 3px #F4EFE3; }
+  .a-task.done .a-task-name { text-decoration: line-through; opacity: .55; }
+  .a-specimen { margin-top: auto; background: #FBF7EE; border: 1px solid #D8CEBB; border-radius: 14px; padding: 11px; box-shadow: 3px 3px 0 #E6DDCB; }
+  .a-specimen-top { display: flex; justify-content: space-between; font-size: 8px; letter-spacing: .18em; color: #9B9382; text-transform: uppercase; }
+  .a-animal { display: flex; gap: 10px; align-items: center; margin-top: 7px; }
+  .a-avatar { width: 46px; height: 46px; border-radius: 50%; background: #D9B26A; position: relative; overflow: hidden; border: 2px solid #2F5D50; flex: 0 0 auto; }
+  .a-avatar:before, .a-avatar:after { content: ""; position: absolute; border-radius: 50%; background: #7A5230; opacity: .55; }
+  .a-avatar:before { width: 9px; height: 9px; left: 9px; top: 12px; box-shadow: 18px -2px 0 #7A5230, 4px 16px 0 #7A5230, 24px 17px 0 #7A5230; }
+  .a-avatar:after { width: 22px; height: 8px; left: 12px; bottom: 6px; background: #F3E3C3; opacity: .8; }
+  .a-name { font-family: "Iowan Old Style", Georgia, serif; font-size: 17px; line-height: 1.1; }
+  .a-species { font-size: 10px; color: #6F756B; margin-top: 2px; }
+  .a-last { font-size: 10px; color: #C26A4A; margin-top: 4px; }
+  .a-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 11px; padding-top: 9px; border-top: 1px solid #D8CEBB; font-size: 9px; letter-spacing: .08em; color: #8A8475; }
+  .a-nav b { color: #2F5D50; }
+
+  /* B — warm hand-drawn */
+  .b-screen { background: #FFF8EE; color: #3B2F2A; font-family: "Avenir Next", "Nunito", -apple-system, sans-serif; padding: 22px 18px 16px; height: 100%; display: flex; flex-direction: column; position: relative; }
+  .b-blob { position: absolute; width: 190px; height: 190px; border-radius: 50%; background: #F4D9B0; opacity: .55; right: -70px; top: -50px; }
+  .b-blob2 { position: absolute; width: 120px; height: 120px; border-radius: 46% 54% 60% 40%; background: #DCE8D2; opacity: .5; left: -50px; bottom: 120px; }
+  .b-header { position: relative; z-index: 1; }
+  .b-hello { font-size: 10px; letter-spacing: .12em; color: #9B8778; text-transform: uppercase; }
+  .b-title { font-size: 23px; line-height: 1.25; font-weight: 750; letter-spacing: -0.02em; margin: 5px 0 3px; }
+  .b-title em { font-style: normal; color: #7C9A76; }
+  .b-sub { font-size: 11px; color: #9B8778; }
+  .b-card { position: relative; z-index: 1; background: #fff; border-radius: 22px; padding: 13px; margin-top: 14px; box-shadow: 0 10px 26px rgba(120,96,70,.1); }
+  .b-card-head { display: flex; justify-content: space-between; align-items: center; }
+  .b-card-head b { font-size: 12px; }
+  .b-pill { font-size: 9px; background: #F4D9B0; color: #7A5A3A; padding: 4px 8px; border-radius: 999px; font-weight: 700; }
+  .b-task { display: flex; align-items: center; gap: 9px; padding: 8px 2px; border-bottom: 1px dashed #EADCCB; }
+  .b-task:last-child { border-bottom: 0; }
+  .b-dot { width: 22px; height: 22px; border-radius: 50%; background: #EEF4E8; color: #7C9A76; display: grid; place-items: center; font-size: 10px; font-weight: 800; flex: 0 0 auto; }
+  .b-task.done .b-dot { background: #7C9A76; color: #fff; }
+  .b-tname { font-size: 12px; font-weight: 650; }
+  .b-tmeta { font-size: 9.5px; color: #A69484; margin-top: 1px; }
+  .b-animals { display: flex; gap: 8px; margin-top: 12px; position: relative; z-index: 1; }
+  .b-chip { flex: 1; background: #fff; border-radius: 16px; padding: 9px 7px; text-align: center; box-shadow: 0 6px 18px rgba(120,96,70,.08); }
+  .b-face { width: 34px; height: 34px; border-radius: 50%; margin: 0 auto 5px; background: #D9B26A; border: 2px solid #fff; box-shadow: 0 0 0 1px #EADCCB; }
+  .b-face.green { background: #A9C39A; }
+  .b-chip b { display: block; font-size: 10px; }
+  .b-chip span { display: block; font-size: 8.5px; color: #A69484; margin-top: 1px; }
+  .b-nav { position: relative; z-index: 1; margin-top: auto; background: #fff; border-radius: 18px; display: flex; justify-content: space-around; padding: 9px 6px; box-shadow: 0 8px 24px rgba(120,96,70,.12); font-size: 9px; color: #A69484; }
+  .b-nav b { color: #7C9A76; }
+
+  /* C — modern dashboard */
+  .c-screen { background: #F1F5F4; color: #13201E; font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif; padding: 22px 16px 16px; height: 100%; display: flex; flex-direction: column; }
+  .c-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .c-kicker { font-size: 9px; letter-spacing: .14em; color: #6D8481; text-transform: uppercase; }
+  .c-title { font-size: 22px; font-weight: 760; letter-spacing: -0.03em; margin-top: 3px; }
+  .c-avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #0E7C6B, #64B6A8); }
+  .c-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .c-metric { background: #fff; border: 1px solid #DCE6E4; border-radius: 13px; padding: 10px; }
+  .c-metric .k { font-size: 8.5px; color: #6D8481; letter-spacing: .04em; }
+  .c-metric .v { font-size: 19px; font-weight: 760; margin-top: 3px; letter-spacing: -0.03em; }
+  .c-metric .v small { font-size: 9px; font-weight: 600; color: #6D8481; }
+  .c-metric .spark { display: flex; align-items: flex-end; gap: 2px; height: 14px; margin-top: 5px; }
+  .c-metric .spark i { flex: 1; background: #BFE0D8; border-radius: 2px 2px 0 0; }
+  .c-ring { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid #DCE6E4; border-radius: 13px; padding: 10px; margin-top: 8px; }
+  .c-ring .dial { width: 42px; height: 42px; border-radius: 50%; background: conic-gradient(#0E7C6B 0 40%, #E3ECEA 40% 100%); display: grid; place-items: center; flex: 0 0 auto; }
+  .c-ring .dial:after { content: "2/5"; width: 32px; height: 32px; border-radius: 50%; background: #fff; display: grid; place-items: center; font-size: 9px; font-weight: 800; color: #0E7C6B; }
+  .c-ring b { font-size: 11px; display: block; }
+  .c-ring span { font-size: 9px; color: #6D8481; }
+  .c-tasks { margin-top: 10px; background: #fff; border: 1px solid #DCE6E4; border-radius: 13px; padding: 4px 10px; }
+  .c-task { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid #EDF2F1; }
+  .c-task:last-child { border-bottom: 0; }
+  .c-check { width: 15px; height: 15px; border-radius: 5px; border: 1.4px solid #B9CCC8; flex: 0 0 auto; }
+  .c-task.done .c-check { background: #0E7C6B; border-color: #0E7C6B; box-shadow: inset 0 0 0 3px #fff; }
+  .c-tname { font-size: 10.5px; font-weight: 650; }
+  .c-tmeta { margin-left: auto; font-size: 8.5px; color: #6D8481; }
+  .c-nav { margin-top: auto; display: flex; justify-content: space-around; padding-top: 9px; border-top: 1px solid #DCE6E4; font-size: 8.5px; color: #8AA09C; }
+  .c-nav b { color: #0E7C6B; }
+</style>
+
+<div class="vs-wrap">
+  <div class="vs-head">
+    <div class="label">Visual direction · 3 options</div>
+    <h2>哪一個視覺方向適合這個產品？</h2>
+    <p>三個方向都是原創設計，不沿用「爬爬久居」的像素風、角色、名稱或文案。先選方向；名字與色彩之後可以再調整。點一下卡片即可選取。</p>
+  </div>
+
+  <div class="options style-grid">
+    <div class="option style-card" data-choice="a" onclick="toggleSelect(this)">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="screen a-screen">
+          <div class="status"><span>9:41</span><span>●●●  ⌁</span></div>
+          <div class="a-kicker">Friday · 23 October</div>
+          <div class="a-title">早安，YCAIR</div>
+          <div class="a-sub">今天有 3 件事需要照顧。</div>
+          <div class="a-rule"></div>
+          <div class="a-label">Today's care</div>
+          <div class="a-task">
+            <div class="a-box"></div>
+            <div><div class="a-task-name">餵食 · 阿肥</div><div class="a-task-meta">08:30 · 已逾時 2 小時</div></div>
+          </div>
+          <div class="a-task">
+            <div class="a-box"></div>
+            <div><div class="a-task-name">換水 · 小綠</div><div class="a-task-meta">12:00 · 今天</div></div>
+          </div>
+          <div class="a-task done">
+            <div class="a-box"></div>
+            <div><div class="a-task-name">量體重 · 阿肥</div><div class="a-task-meta">已完成 · 68 g</div></div>
+          </div>
+          <div class="a-specimen">
+            <div class="a-specimen-top"><span>Specimen No. 014</span><span>Leopard gecko</span></div>
+            <div class="a-animal">
+              <div class="a-avatar"></div>
+              <div>
+                <div class="a-name">阿肥</div>
+                <div class="a-species">豹紋守宮 · 3 歲 2 個月</div>
+                <div class="a-last">上次餵食 · 2 天前</div>
+              </div>
+            </div>
+          </div>
+          <div class="a-nav"><span>今日</span><span>居民</span><span>紀錄</span><span>設定</span></div>
+        </div>
+      </div>
+      <div class="style-meta">
+        <div class="tag">Direction A</div>
+        <h3>鱗居 · 自然史田野筆記</h3>
+        <p>暖紙張、森林綠、陶土色；襯線標題與標本卡。沉穩、有收藏感，適合付費與長期使用。</p>
+      </div>
+    </div>
+
+    <div class="option style-card" data-choice="b" onclick="toggleSelect(this)">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="screen b-screen">
+          <div class="b-blob"></div>
+          <div class="b-blob2"></div>
+          <div class="status"><span>9:41</span><span>●●●  ⌁</span></div>
+          <div class="b-header">
+            <div class="b-hello">Good morning</div>
+            <div class="b-title">今天也要好好<br>照顧 <em>牠們</em>。</div>
+            <div class="b-sub">3 件照護 · 1 件已完成</div>
+          </div>
+          <div class="b-card">
+            <div class="b-card-head"><b>今日清單</b><span class="b-pill">3 件事</span></div>
+            <div class="b-task">
+              <div class="b-dot">1</div>
+              <div><div class="b-tname">餵食阿肥</div><div class="b-tmeta">08:30 · 已逾時</div></div>
+            </div>
+            <div class="b-task">
+              <div class="b-dot">2</div>
+              <div><div class="b-tname">幫小綠換水</div><div class="b-tmeta">12:00 · 今天</div></div>
+            </div>
+            <div class="b-task done">
+              <div class="b-dot">✓</div>
+              <div><div class="b-tname">量阿肥體重</div><div class="b-tmeta">已完成 · 68 g</div></div>
+            </div>
+          </div>
+          <div class="b-animals">
+            <div class="b-chip"><div class="b-face"></div><b>阿肥</b><span>豹紋守宮</span></div>
+            <div class="b-chip"><div class="b-face green"></div><b>小綠</b><span>綠角蛙</span></div>
+            <div class="b-chip"><div class="b-face" style="background:#B9A0C9"></div><b>芝麻</b><span>玉米蛇</span></div>
+          </div>
+          <div class="b-nav"><span>今日</span><span>居民</span><span>紀錄</span><span>設定</span></div>
+        </div>
+      </div>
+      <div class="style-meta">
+        <div class="tag">Direction B</div>
+        <h3>苔間 · 溫暖手繪</h3>
+        <p>奶油底、鼠尾草綠、蜜桃色；圓潤卡片與手繪感。親切、好上手，適合家庭共享與親子使用。</p>
+      </div>
+    </div>
+
+    <div class="option style-card" data-choice="c" onclick="toggleSelect(this)">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="screen c-screen">
+          <div class="status"><span>9:41</span><span>●●●  ⌁</span></div>
+          <div class="c-top">
+            <div>
+              <div class="c-kicker">Today · 23 Oct</div>
+              <div class="c-title">照護儀表板</div>
+            </div>
+            <div class="c-avatar"></div>
+          </div>
+          <div class="c-grid">
+            <div class="c-metric">
+              <div class="k">體重 · 阿肥</div>
+              <div class="v">68<small> g</small></div>
+              <div class="spark"><i style="height:35%"></i><i style="height:55%"></i><i style="height:45%"></i><i style="height:70%"></i><i style="height:86%"></i></div>
+            </div>
+            <div class="c-metric">
+              <div class="k">上次餵食</div>
+              <div class="v">2<small> 天前</small></div>
+              <div class="spark"><i style="height:90%;background:#F0C9B4"></i><i style="height:55%;background:#F0C9B4"></i><i style="height:40%;background:#F0C9B4"></i><i style="height:25%;background:#F0C9B4"></i><i style="height:18%;background:#F0C9B4"></i></div>
+            </div>
+          </div>
+          <div class="c-ring">
+            <div class="dial"></div>
+            <div><b>今日任務 2 / 5</b><span>還有 3 件 · 1 件逾時</span></div>
+          </div>
+          <div class="c-tasks">
+            <div class="c-task"><div class="c-check"></div><div class="c-tname">餵食 · 阿肥</div><div class="c-tmeta">逾時</div></div>
+            <div class="c-task"><div class="c-check"></div><div class="c-tname">換水 · 小綠</div><div class="c-tmeta">12:00</div></div>
+            <div class="c-task done"><div class="c-check"></div><div class="c-tname">量體重 · 阿肥</div><div class="c-tmeta">68 g</div></div>
+          </div>
+          <div class="c-nav"><span>今日</span><span>居民</span><span>紀錄</span><span>設定</span></div>
+        </div>
+      </div>
+      <div class="style-meta">
+        <div class="tag">Direction C</div>
+        <h3>森棲 · 資料儀表板</h3>
+        <p>白底、深青綠、資料密集；進度環與趨勢圖。專業、效率，適合多隻動物與繁殖玩家。</p>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,14 @@
+node_modules/
+.pnpm-store/
+dist/
+build/
+coverage/
+.firebase/
+.superpowers/
+
+.env
+.env.*
+!.env.example
+
+.DS_Store
+*.log
