@@ -100,42 +100,47 @@ firebase functions:log --only reminderScheduler
 Failures are logged as `reminder processing failed` or `LINE push failed` with
 `reminderId` and the error message only (no LINE ids, titles, or tokens).
 
-## `cleanupPending` tail inspection
+## `cleanupPending` tail (handled by `purgeDeleted`)
 
-`animal.delete` cascades at most 200 records and 50 reminders per animal. A
-larger history leaves the tail with `deletedAt: null` and sets
-`animals.cleanupPending == true`. The scheduler already retires (disables)
-reminders whose animal is no longer live, so this tail cannot notify; it is a
-storage/read-hygiene item. The purge job itself is Task 15 scope.
+`animal.delete` cascades at most 200 records and 50 reminders in its
+transaction. A larger history leaves the tail with `deletedAt: null` and sets
+`animals.cleanupPending == true`. The reminder scheduler already retires
+(disables) reminders whose animal is no longer live, so the tail cannot notify.
 
-Find flagged animals. Filter on the single equality `cleanupPending == true`
-(no composite index), then check `deletedAt` and the child counts:
+The tail is now finished by `purgeDeleted`
+(`services/functions/src/maintenance/purge.ts`), which runs daily at 03:30
+Asia/Taipei:
 
-```
-animals where cleanupPending == true
-```
+1. Flagged, soft-deleted animals get their remaining records and reminders
+   stamped with `deletedAt` + `deletedWithAnimal` in batches. `cleanupPending`
+   is cleared only once a re-check reports no live child left. A tail too large
+   for one run keeps its flag and the animal is retried the next day.
+2. Soft-deleted records, reminders, task completions, and animals older than 30
+   days are hard-deleted. An animal whose tail still has live children is kept
+   so the tail is never orphaned.
+3. Soft-deleted households older than 30 days are deleted together with their
+   records, reminders, task completions, animals, invites, audit logs, and
+   members. A household that still has a member document is skipped (an
+   interrupted account deletion can leave one behind).
 
-Inspect the tail per animal (both are single-field equality filters; drop
-`deletedAt` in memory):
+Inspect flagged animals with the equality filter `cleanupPending == true`; the
+composite index `(cleanupPending, deletedAt)` is declared in
+`firestore.indexes.json`. Inspect a tail's live children per collection:
 
 ```js
 const animalId = '...';
 for (const name of ['records', 'reminders']) {
-  const snap = await db.collection(name).where('animalId', '==', animalId).get();
-  const live = snap.docs.filter((doc) => doc.get('deletedAt') == null);
-  console.log(
-    name,
-    'remaining:',
-    live.length,
-    live.map((doc) => doc.id),
-  );
+  const snap = await db
+    .collection(name)
+    .where('animalId', '==', animalId)
+    .where('deletedAt', '==', null)
+    .get();
+  console.log(name, 'remaining:', snap.size);
 }
 ```
 
-Clear `cleanupPending` only after both collections report zero live children. A
-bounded batch purge (soft-delete `deletedAt` + `deletedWithAnimal`, then clear
-the flag once the tail is empty) is the expected Task 15 shape; do not run an
-unbounded loop inside the 5-minute scheduler.
+Do not run an unbounded loop inside either scheduled function: both are bounded
+per tick and resume on the next run.
 
 ## Known v1 limits
 
