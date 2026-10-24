@@ -194,14 +194,32 @@ Vite `DEV` 建置生效。`pnpm test:e2e` 的 global setup 會先確認 emulator
 當下），因此跨午夜或同一天重跑都不會誤判。驗收清單見
 [`docs/acceptance/phase-1.md`](docs/acceptance/phase-1.md)。
 
-### LIFF onboarding, reminders, and retries
+### LIFF onboarding, households, settings, and retries
 
 - **建立家庭**：沒有家庭時，Today／居民頁的空狀態與 `/household/new` 都提供
   「建立家庭」表單（名稱＋IANA 時區）。成功後會選取新家庭、重讀
   `users/{uid}.householdIds`，再導向 Today，因此不會先閃出「還沒有家庭」。
+- **切換家庭**：`HouseholdProvider` 以 `users/{uid}.defaultHouseholdId` 決定預設家庭
+  （無效或已退出時退回 `householdIds[0]`）。設定頁列出所有家庭，切換時透過
+  `user.updateProfile` 寫回預設值；伺服器會先確認呼叫者仍是該家庭成員。
+- **成員管理**：設定頁讀取 `households/{id}/members`，顯示名稱與角色。屋主可移除
+  成員（`member.remove`）與變更角色（`member.updateRole`）；每位成員都能自行離開
+  （`member.leave`）。移除、變更角色、離開與撤銷邀請都需要確認。
+- **邀請管理**：屋主可產生邀請，並在設定頁看到該家庭的有效邀請（建立日、到期日、
+  狀態）與撤銷按鈕（`member.revokeInvite`）。`invites` 的讀取規則只開放給該家庭
+  屋主，寫入仍一律由伺服器處理。
+- **個人資料**：設定頁可修改顯示名稱與個人時區（`user.updateProfile`）；空白名稱或
+  無效 IANA 時區會以中文錯誤提示，不會送出。
+- **居民編輯與生命週期**：居民詳情頁可編輯名字、物種、品系、性別、生日與備註
+  （`animal.update` + `baseRevision`）。屋主另有封存（`animal.archive`）與刪除
+  （`animal.delete`）操作，兩者都帶 `baseRevision` 並需確認；刪除會連帶隱藏紀錄與
+  提醒。
+- **衝突處理**：居民編輯、提醒更新與提醒刪除收到 `CONFLICT` 時會顯示
+  `currentRevision`／`lastChangedFields`。「查看最新」載入伺服器版本；「保留我的」
+  在確認後以最新 revision 重送。封存／刪除居民收到衝突時會提示重新整理後再試。
 - **提醒管理**：居民詳情頁可新增、編輯、刪除提醒（每日／每週／每 N 天、單一時刻、
-  時區、啟用開關）。更新與刪除都帶 `baseRevision`；`CONFLICT` 會顯示
-  `currentRevision`／`lastChangedFields`，可選擇載入最新版本或保留自己的變更後重送。
+  時區、啟用開關）。更新與刪除都帶 `baseRevision`；衝突時同樣可載入最新或保留自己
+  的變更後重送。
 - **重試不重複**：表單每次「意圖」只產生一組 `commandId` 與（紀錄用的）
   `recordId`、`occurredAt`。請求逾時後重按儲存會沿用同一組 id，伺服器以
   `commands/{commandId}` 重播原結果；成功後才重置。修改表單內容會視為新的意圖。
