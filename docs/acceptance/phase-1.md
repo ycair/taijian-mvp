@@ -30,11 +30,16 @@ pnpm build
 ```bash
 pnpm exec playwright install chromium   # 第一次執行前
 pnpm emulators                          # 終端 1：Auth / Firestore / Functions
-pnpm seed                               # 終端 2：寫入 hh_demo 種子資料
-pnpm mock:line                          # 終端 3：mock LINE（:4010）
+pnpm seed                               # 終端 2：寫入 hh_demo 種子資料（可選，E2E 會自動重跑）
+pnpm mock:line                          # 終端 3：mock LINE（127.0.0.1:4010）
 pnpm test:e2e                           # 終端 4：Playwright 會自行啟動 Vite
 ```
 
+- `pnpm test:e2e` 的 global setup 會先確認 Firestore（8080）、Auth（9099）、
+  Functions（5001）與 mock LINE（4010）都可連線；未啟動時以明確訊息失敗，不會誤跑。
+- global setup 會自動執行 `pnpm seed`：清掉 `hh_demo` 既有的 `taskCompletions`，並把
+  `reminder_demo.nextDueAt` 重設為當下，因此同一天重跑或跨午夜執行都不會沿用舊狀態。
+- E2E 先斷言「已完成 by」數量為 0，點擊後才斷言變為 1，證明完成紀錄是本次執行寫入的。
 - `apps/liff/.env.local` 與 `services/functions/.env` 是**本機專用**檔案，已被
   `.gitignore` 忽略，不可提交。
 - `VITE_USE_MOCK_LINE=true` 只在 Vite `DEV` 建置生效；正式 bundle 不會走 mock 分支。
@@ -64,28 +69,23 @@ E2E 目前是本機驗收，尚未納入 CI。
 
 ## 上線前仍待完成（launch prerequisites）
 
-Phase 0–1 的程式碼已完成，但以下是**正式上線前必須補上**的項目，目前尚未實作或尚未部署：
+Phase 0–1 的程式碼已完成，但以下項目**尚未實作或尚未部署**。每一項都有具名負責人與
+明確決策，完成後才能勾選；任一項未關閉即不得對外上線。決策欄即為驗收條件，不接受以
+「之後再排」取代。
 
-- [ ] **`cleanupPending` 尾端清理**：動物／紀錄刪除的 cascade 有上限，超過上限的分頁會
-      標記 `cleanupPending: true`；尚缺清除 job，以及讀取路徑對 `cleanupPending` 的 join
-      處理，避免已刪除資料在尾端仍被讀到。
-- [ ] **`deleteAccount` 強化**：目前未要求重新驗證（re-auth）、沒有 rate limit，也沒有
-      管理端失敗重試；上線前需補齊，避免 stolen token 或重試風暴造成半刪除狀態。
-- [ ] **App Check 強制執行**：`ENFORCE_APP_CHECK` 仍是 opt-in；上線環境需開啟並確認
-      LIFF／Bot 都有合法 App Check token。
-- [ ] **TTL 政策部署**：`commands`、`rateLimits`、`loginRateLimits`、`notificationLog` 的
-      `expiresAt` 已寫入，但尚未在各環境啟用 Firestore TTL（見
-      [`docs/operations/ttl.md`](../operations/ttl.md)）。
-- [ ] **`ownerUid` backfill**：舊資料若缺 `households.ownerUid`，需一次性 backfill，
-      否則 owner 轉移與刪除帳號的判斷會退化。
-- [ ] **真實 LINE channel 設定**：建立正式 Login／Messaging API channel、LIFF app、
-      rich menu 圖檔上傳，並設定 webhook 與 endpoint URL。
-- [ ] **Rules 部署**：`firestore.rules` 與 `firestore.indexes.json` 尚未部署到
-      staging／production；需以 `firebase deploy --only firestore` 發佈並驗證。
+| # | 項目 | 現況 | 負責人（Owner） | 決策（Decision） |
+|---|---|---|---|---|
+| 1 | `cleanupPending` 尾端清理 | 動物／紀錄刪除的 cascade 有上限，超過上限的分頁會標記 `cleanupPending: true`；尚缺清除 job 與讀取路徑的 join | YCAIR | 在 public launch 前完成 purge job 與讀取端 join，並以測試家庭驗證已刪資料的尾端不再被讀到。 |
+| 2 | `deleteAccount` 強化 | 目前未要求重新驗證（re-auth）、沒有 rate limit、也沒有管理端失敗重試 | YCAIR | public launch 前補齊 re-auth、rate limit 與 admin 失敗重試；以整合測試覆蓋半刪除與重試情境。 |
+| 3 | App Check 強制執行 | `ENFORCE_APP_CHECK` 仍是 opt-in | YCAIR | 先在 staging 開啟並確認 LIFF／Bot 皆帶合法 token，再於 production 強制執行；未通過不得上線。 |
+| 4 | TTL 政策部署 | `expiresAt` 已寫入，但尚未在各環境啟用 Firestore TTL（見 [`docs/operations/ttl.md`](../operations/ttl.md)） | YCAIR | 依 runbook 對 `commands`、`rateLimits`、`loginRateLimits`、`notificationLog` 在 demo／staging／production 逐環境啟用並截圖留存。 |
+| 5 | `ownerUid` backfill | 舊資料若缺 `households.ownerUid`，owner 轉移與刪除帳號的判斷會退化 | YCAIR | public launch 前執行一次性 backfill，並驗證每個家庭都有指向現存 owner 的 `ownerUid`。 |
+| 6 | 真實 LINE channel 設定 | 尚未建立正式 Login／Messaging API channel、LIFF app 與 rich menu | YCAIR | 建立正式 provider、上傳 rich menu 圖檔、設定 webhook 與 endpoint URL，並完成一次真實雙帳號登入。 |
+| 7 | Rules 部署 | `firestore.rules` 與 `firestore.indexes.json` 尚未部署到 staging／production | YCAIR | 以 `firebase deploy --only firestore` 發佈並跑一次 rules 冒煙測試；部署紀錄需連到 release 票。 |
 
 ## 出場條件
 
-- [ ] 無 P0／P1 缺陷。
-- [ ] 所有自動化檢查為綠燈。
-- [ ] 以兩個真實帳號完成手動 LINE 流程。
-- [ ] 上述上線前置條件全部關閉，或有明確的階段二排程與風險接受紀錄。
+- [ ] 無 P0／P1 缺陷（負責人：YCAIR；上線前逐項 review 並簽核）。
+- [ ] 所有自動化檢查為綠燈（附上 CI run 連結）。
+- [ ] 以兩個真實帳號完成手動 LINE 流程（負責人：YCAIR；留存截圖或錄影）。
+- [ ] 上表第 1–7 項全部勾選並由 YCAIR 簽核；任一項未關閉即不得上線。

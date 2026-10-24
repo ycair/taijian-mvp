@@ -7,16 +7,25 @@
  *   POST /oauth2/v2.1/verify  (ID token verification, form encoded)
  *   ANY  /v2/bot/message/*    (push / reply, accepted and ignored)
  *
- * Tokens map to the seeded users: `test-token-A` → UtestA,
- * `test-token-B` → UtestB; anything else falls back to UtestA. The response
- * mirrors the fields LINE returns so `verifyLineIdToken` can validate
+ * Only the seeded tokens are accepted: `test-token-A` → UtestA and
+ * `test-token-B` → UtestB. Anything else gets the same 401 LINE returns for an
+ * invalid token, so the suite cannot accidentally pass on a typo'd token. The
+ * response mirrors the fields LINE returns, so `verifyLineIdToken` validates
  * `aud`, `iss`, `exp`, and `sub` exactly as it would against production.
+ *
+ * Bound to 127.0.0.1: this server must never be reachable from the network.
  */
 import { createServer } from 'node:http';
 
+const host = process.env.MOCK_LINE_HOST ?? '127.0.0.1';
 const port = Number(process.env.MOCK_LINE_PORT ?? 4010);
 /** Must match `LINE_LOGIN_CHANNEL_ID` in `services/functions/.env`. */
 const channelId = process.env.MOCK_LINE_CHANNEL_ID ?? 'test-login-channel';
+
+const profiles: Record<string, { name: string }> = {
+  'test-token-A': { name: 'Test A' },
+  'test-token-B': { name: 'Test B' },
+};
 
 createServer(async (request, response) => {
   const chunks: Buffer[] = [];
@@ -26,6 +35,16 @@ createServer(async (request, response) => {
   if (request.url?.startsWith('/oauth2/v2.1/verify')) {
     const params = new URLSearchParams(body);
     const idToken = params.get('id_token');
+    const profile = idToken === null ? undefined : profiles[idToken];
+    if (!profile) {
+      response.statusCode = 401;
+      response.setHeader('content-type', 'application/json');
+      response.end(
+        JSON.stringify({ error: 'invalid_request', error_description: 'invalid id_token' }),
+      );
+      return;
+    }
+
     const sub = idToken === 'test-token-B' ? 'UtestB' : 'UtestA';
     response.setHeader('content-type', 'application/json');
     response.end(
@@ -33,7 +52,7 @@ createServer(async (request, response) => {
         aud: channelId,
         iss: 'https://access.line.me',
         sub,
-        name: sub === 'UtestB' ? 'Test B' : 'Test A',
+        name: profile.name,
         picture: '',
         exp: Math.floor(Date.now() / 1000) + 3600,
       }),
@@ -49,4 +68,4 @@ createServer(async (request, response) => {
 
   response.statusCode = 404;
   response.end('not found');
-}).listen(port, () => console.log(`mock LINE server on http://localhost:${port}`));
+}).listen(port, host, () => console.log(`mock LINE server on http://${host}:${port}`));

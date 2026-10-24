@@ -13,11 +13,37 @@ import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, getFirestore, Timestamp } from 'firebase-admin/firestore';
 
+/** Emulator hostnames allowed to receive a seed write. */
+function isLocalHost(host: string): boolean {
+  const name = host.replace(/:\d+$/, '').toLowerCase();
+  return name === 'localhost' || name === '127.0.0.1' || name === '::1' || name === '[::1]';
+}
+
 process.env.FIRESTORE_EMULATOR_HOST ??= 'localhost:8080';
 process.env.FIREBASE_AUTH_EMULATOR_HOST ??= 'localhost:9099';
 process.env.GCLOUD_PROJECT ??= 'demo-taijian';
 
-const app = initializeApp({ projectId: 'demo-taijian' });
+// Safety rail: this script deletes and writes documents. Refuse to run unless
+// both SDKs are pointed at a local emulator and the project is a demo project,
+// so a stray `GCLOUD_PROJECT` in the shell can never touch production.
+const firestoreHost = process.env.FIRESTORE_EMULATOR_HOST;
+const authHost = process.env.FIREBASE_AUTH_EMULATOR_HOST;
+const projectId = process.env.GCLOUD_PROJECT;
+if (firestoreHost === undefined || authHost === undefined || projectId === undefined) {
+  throw new Error(
+    'FIRESTORE_EMULATOR_HOST, FIREBASE_AUTH_EMULATOR_HOST, and GCLOUD_PROJECT must be set',
+  );
+}
+if (!isLocalHost(firestoreHost) || !isLocalHost(authHost)) {
+  throw new Error(
+    `refusing to seed non-local hosts (FIRESTORE_EMULATOR_HOST=${firestoreHost}, FIREBASE_AUTH_EMULATOR_HOST=${authHost})`,
+  );
+}
+if (!projectId.startsWith('demo-')) {
+  throw new Error(`refusing to seed project "${projectId}": project id must start with "demo-"`);
+}
+
+const app = initializeApp({ projectId });
 const db = getFirestore(app);
 const auth = getAuth(app);
 
@@ -44,6 +70,18 @@ async function ensureUser(uid: string, displayName: string) {
 }
 
 async function main() {
+  // The E2E asserts the completion count goes 0 → 1, so a rerun on the same
+  // day must not inherit yesterday's/this morning's completion document.
+  const completions = await db
+    .collection('taskCompletions')
+    .where('householdId', '==', 'hh_demo')
+    .get();
+  if (!completions.empty) {
+    const batch = db.batch();
+    for (const completion of completions.docs) batch.delete(completion.ref);
+    await batch.commit();
+  }
+
   await db.doc('households/hh_demo').set({
     name: '苔間測試家庭',
     ownerUid: 'line_UtestA',
