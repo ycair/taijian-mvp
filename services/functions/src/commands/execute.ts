@@ -140,11 +140,21 @@ export async function handleCommandRequest(
       return failure(commandId, 'UNAUTHENTICATED', 'Account deleted', serverTime);
     }
 
-    const lineProfile = await preflightLineProfile(
-      parsed.data.type,
-      parsed.data.payload,
-      deps.verifyLineProfile ?? verifiedLineProfile,
-    );
+    let lineProfile: LineProfile | undefined;
+    try {
+      lineProfile = await preflightLineProfile(
+        parsed.data.type,
+        parsed.data.payload,
+        deps.verifyLineProfile ?? verifiedLineProfile,
+      );
+    } catch (error) {
+      // A rejected token is invalid input too; charge before surfacing it so
+      // `line.link` cannot be used to hammer LINE's verification endpoint for
+      // free (the command runner is never reached on this path).
+      const limited = await chargeOrRateLimit(authUid, commandId, charge, serverTime);
+      if (limited) return limited;
+      throw error;
+    }
 
     const run = deps.runCommand ?? runCommand;
     return await run({

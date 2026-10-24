@@ -24,7 +24,12 @@
 A crash can leave the profile/membership/household in place after the Auth user
 was removed (or the reverse). Finish it with the admin callable:
 
-1. Grant the operator a custom claim: `admin: true`.
+1. Grant the operator a custom claim, then have them refresh their token:
+
+   ```js
+   await getAuth().setCustomUserClaims(operatorUid, { admin: true });
+   ```
+
 2. Call `adminRetryDeleteAccount` with `{ "uid": "<uid>" }`. It is restricted to
    tokens with that claim and bypasses the hourly limit.
 3. The routine is idempotent: memberships resolve from

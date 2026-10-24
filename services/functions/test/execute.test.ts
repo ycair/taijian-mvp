@@ -144,6 +144,27 @@ describe('handleCommandRequest', () => {
     expect(run).toHaveBeenCalledWith(expect.objectContaining({ lineProfile: profile }));
   });
 
+  it('charges the bucket when line.link token verification fails', async () => {
+    const charge = noopCharge();
+
+    const result = await handleCommandRequest(
+      'u1',
+      { ...VALID_COMMAND, type: 'line.link', payload: { idToken: 'bad-token' } },
+      {
+        readProfile: async () => undefined,
+        runCommand: runner(),
+        chargeInvalidCommand: charge,
+        verifyLineProfile: async () => {
+          throw new AppError('UNAUTHENTICATED', 'LINE token verification failed');
+        },
+      },
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe('UNAUTHENTICATED');
+    expect(charge).toHaveBeenCalledWith('u1');
+  });
+
   it('does not verify a token for commands other than line.link', async () => {
     const verify = vi.fn(async () => ({ sub: 'U123' }));
 

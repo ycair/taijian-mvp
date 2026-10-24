@@ -221,10 +221,7 @@ async function purgeAnimals(cutoff: Timestamp, summary: PurgeSummary): Promise<v
 }
 
 /** Deletes every document of a top-level collection that belongs to a household. */
-async function purgeHouseholdChildren(
-  collection: string,
-  householdId: string,
-): Promise<boolean> {
+async function purgeHouseholdChildren(collection: string, householdId: string): Promise<boolean> {
   for (let batch = 0; batch < HOUSEHOLD_BATCHES; batch += 1) {
     const snap = await db
       .collection(collection)
@@ -244,12 +241,12 @@ async function purgeHouseholdChildren(
 }
 
 /** Deletes a subcollection whose documents have no `householdId` field. */
-async function purgeSubcollection(
-  householdId: string,
-  subcollection: string,
-): Promise<boolean> {
+async function purgeSubcollection(householdId: string, subcollection: string): Promise<boolean> {
   for (let batch = 0; batch < HOUSEHOLD_BATCHES; batch += 1) {
-    const snap = await db.collection(`households/${householdId}/${subcollection}`).limit(BATCH_WRITE_LIMIT).get();
+    const snap = await db
+      .collection(`households/${householdId}/${subcollection}`)
+      .limit(BATCH_WRITE_LIMIT)
+      .get();
     if (snap.empty) return true;
     await deleteRefs(snap.docs.map((doc) => doc.ref));
     if (snap.size < BATCH_WRITE_LIMIT) return true;
@@ -330,6 +327,8 @@ export const purgeDeleted = onSchedule(
     timeoutSeconds: 540,
   },
   async () => {
-    await runPurgeDeleted();
+    const summary = await runPurgeDeleted();
+    // Counts only (no ids or user data) so the run is auditable from logs.
+    console.log('purgeDeleted completed', summary);
   },
 );

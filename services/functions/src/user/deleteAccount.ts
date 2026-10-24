@@ -331,7 +331,10 @@ const AdminRetryInput = z.object({ uid: z.string().min(1).max(ID_MAX_LENGTH) });
  * never duplicates audit entries or moves the original timestamps.
  */
 export const adminRetryDeleteAccount = onCall(
-  { region: 'asia-east1', enforceAppCheck: config.ENFORCE_APP_CHECK },
+  // App Check is intentionally off: the authorization here is the `admin`
+  // custom claim, and an operator script cannot mint an App Check token during
+  // an incident. No other caller passes the claim check.
+  { region: 'asia-east1', enforceAppCheck: false },
   async (request) => {
     try {
       const token = request.auth?.token as { admin?: unknown } | undefined;
