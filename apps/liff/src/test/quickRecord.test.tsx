@@ -43,8 +43,10 @@ describe('QuickRecordSheet', () => {
           value: 68,
           unit: 'g',
           note: '飯後',
+          recordId: expect.any(String),
+          occurredAt: expect.any(String),
         }),
-        { householdId: 'h1' },
+        { householdId: 'h1', commandId: expect.any(String) },
       );
     });
   });
@@ -83,6 +85,48 @@ describe('QuickRecordSheet', () => {
     expect(second).not.toHaveProperty('value');
     expect(second).not.toHaveProperty('unit');
     expect(second).not.toHaveProperty('note');
+  });
+
+  it('retries a timed-out save with the same record and command ids', async () => {
+    const commits = new Map<string, Record<string, unknown>>();
+    const timeout = Object.assign(new Error('deadline exceeded'), {
+      code: 'functions/deadline-exceeded',
+    });
+    let responded = false;
+    mockedCall.mockImplementation(async (_type, payload, options) => {
+      const commandId = options?.commandId ?? '';
+      // The first request committed on the server but the response was lost.
+      if (!commits.has(commandId)) commits.set(commandId, payload as Record<string, unknown>);
+      if (!responded) {
+        responded = true;
+        throw timeout;
+      }
+      return {
+        ok: true,
+        commandId,
+        data: { recordId: (payload as { recordId: string }).recordId },
+        serverTime: new Date().toISOString(),
+      };
+    });
+
+    render(<QuickRecordSheet householdId="h1" animalId="a1" onDone={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText('備註'), { target: { value: '吃了兩隻蟋蟀' } });
+    fireEvent.click(screen.getByRole('button', { name: '儲存' }));
+
+    await screen.findByText('網路不穩，請稍後再試。');
+    fireEvent.click(screen.getByRole('button', { name: '儲存' }));
+
+    await waitFor(() => expect(mockedCall).toHaveBeenCalledTimes(2));
+    const first = payloadOf(0);
+    const second = payloadOf(1);
+    expect(second.recordId).toBe(first.recordId);
+    expect(second.occurredAt).toBe(first.occurredAt);
+    const firstOptions = mockedCall.mock.calls[0]?.[2];
+    const secondOptions = mockedCall.mock.calls[1]?.[2];
+    expect(secondOptions?.commandId).toBe(firstOptions?.commandId);
+    // One command id means the server only ever committed one record.
+    expect(commits.size).toBe(1);
+    expect(commits.has(String(firstOptions?.commandId))).toBe(true);
   });
 
   it('renders Chinese copy instead of the raw server message', async () => {

@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { callCommand } from '../lib/api';
+import { recordAttempt, type RecordAttempt } from '../lib/attempt';
 import { callErrorMessage, commandErrorMessage } from '../lib/errorMessages';
 import { PrimaryButton } from './PrimaryButton';
 
@@ -28,6 +29,9 @@ export function QuickRecordSheet({
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // One intent owns one command id, one record id, and one `occurredAt`. A
+  // timeout after the server commit can then be retried without a duplicate.
+  const attemptRef = useRef<RecordAttempt | null>(null);
 
   async function submit() {
     setError(null);
@@ -37,29 +41,37 @@ export function QuickRecordSheet({
       return;
     }
     setBusy(true);
-    const payload: Record<string, unknown> = {
-      animalId,
-      type,
-      occurredAt: new Date().toISOString(),
-    };
+    const base: Record<string, unknown> = { animalId, type };
     // The numeric field only exists for weight, so a value typed before
     // switching type must not leak into another record. Grams are the only
     // unit this sheet knows: send `'g'` for weight and omit `unit` entirely
     // (never `undefined`) for every other type.
     if (type === 'weight' && parsed !== null) {
-      payload.value = parsed;
-      payload.unit = 'g';
+      base.value = parsed;
+      base.unit = 'g';
     }
-    if (note.trim()) payload.note = note.trim();
+    if (note.trim()) base.note = note.trim();
+
+    const attempt = recordAttempt(attemptRef.current, JSON.stringify(base));
+    attemptRef.current = attempt;
+    const payload = {
+      ...base,
+      recordId: attempt.recordId,
+      occurredAt: attempt.occurredAt,
+    };
 
     try {
-      const result = await callCommand('record.create', payload, { householdId });
+      const result = await callCommand('record.create', payload, {
+        householdId,
+        commandId: attempt.commandId,
+      });
       if (!result.ok) {
         setError(commandErrorMessage(result.code, '無法儲存紀錄，請稍後再試。'));
         return;
       }
       // Clear the form before handing control back, so a sheet that stays
       // mounted (or is reopened) can never resubmit the previous values.
+      attemptRef.current = null;
       setValue('');
       setNote('');
       onDone();

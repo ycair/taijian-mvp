@@ -7,10 +7,12 @@ const execute = httpsCallable<CommandEnvelope, CommandResult>(functions, 'execut
 export async function callCommand<T = unknown>(
   type: string,
   payload: unknown,
-  options: { householdId?: string; baseRevision?: number } = {},
+  options: { householdId?: string; baseRevision?: number; commandId?: string } = {},
 ): Promise<CommandResult<T>> {
   const envelope: CommandEnvelope = {
-    commandId: newCommandId(),
+    // A caller that may retry must supply the id from its first attempt; the
+    // server replays that command instead of creating a second document.
+    commandId: options.commandId ?? newCommandId(),
     type,
     ...(options.householdId ? { householdId: options.householdId } : {}),
     ...(options.baseRevision !== undefined ? { baseRevision: options.baseRevision } : {}),
