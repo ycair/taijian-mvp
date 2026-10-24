@@ -10,7 +10,7 @@ import { db } from '../lib/firestore';
 import { toFailure } from '../lib/result';
 import { verifiedLineProfile, type LineProfile } from '../line/verify';
 import { commandHandlers } from './registry';
-import { chargeInvalidCommand, runCommand } from './runCommand';
+import { assertCommandBudget, chargeInvalidCommand, runCommand } from './runCommand';
 
 /** Only the fields the entrypoint needs; the profile has many more. */
 export type UserProfile = { deletedAt?: unknown };
@@ -27,6 +27,8 @@ export type CommandRequestDeps = {
   chargeInvalidCommand?: (uid: string) => Promise<void>;
   /** Test seam for the LINE token exchange done before the transaction. */
   verifyLineProfile?: LineVerifier;
+  /** Test seam for the pre-verify budget check. */
+  assertCommandBudget?: (uid: string) => Promise<void>;
 };
 
 /** Only the server sets `bot`: it is how bot traffic is attributed and audited. */
@@ -141,6 +143,11 @@ export async function handleCommandRequest(
     }
 
     let lineProfile: LineProfile | undefined;
+    // Budget first: an exhausted caller must not reach LINE's verify endpoint at
+    // all. The normal charge happens in `runCommand` once admitted.
+    if (parsed.data.type === 'line.link') {
+      await (deps.assertCommandBudget ?? assertCommandBudget)(authUid);
+    }
     try {
       lineProfile = await preflightLineProfile(
         parsed.data.type,

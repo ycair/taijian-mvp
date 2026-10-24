@@ -8,7 +8,7 @@ import {
 import { db } from '../lib/firestore';
 import { getReplay, peekReplay, saveCommand } from '../lib/idempotency';
 import { requestHash } from '../lib/ids';
-import { consumeRateLimits, type RateLimitRule } from '../lib/rateLimit';
+import { assertRateLimitAvailable, consumeRateLimits, type RateLimitRule } from '../lib/rateLimit';
 import type { LineProfile } from '../line/verify';
 import type { HandlerMap, Source } from './types';
 
@@ -67,6 +67,16 @@ async function chargeRateLimits(uid: string, type: string): Promise<void> {
  */
 export async function chargeInvalidCommand(uid: string): Promise<void> {
   await chargeRateLimits(uid, 'invalid');
+}
+
+/**
+ * Read-only budget check for entrypoints that do outbound work before the
+ * command transaction. `line.link` uses it to refuse an exhausted caller
+ * without spending a LINE verification call per invocation. The charge itself
+ * still happens in `runCommand`, so an admitted command is charged once.
+ */
+export async function assertCommandBudget(uid: string): Promise<void> {
+  await assertRateLimitAvailable(uid, rateLimitRules('line.link'));
 }
 
 export async function runCommand(input: RunCommandInput): Promise<CommandResult> {

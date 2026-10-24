@@ -137,7 +137,12 @@ describe('handleCommandRequest', () => {
         type: 'line.link',
         payload: { idToken: 'id-token' },
       },
-      { readProfile: async () => undefined, runCommand: run, verifyLineProfile: verify },
+      {
+        readProfile: async () => undefined,
+        runCommand: run,
+        assertCommandBudget: async () => {},
+        verifyLineProfile: verify,
+      },
     );
 
     expect(verify).toHaveBeenCalledWith('id-token', expect.any(String));
@@ -154,6 +159,7 @@ describe('handleCommandRequest', () => {
         readProfile: async () => undefined,
         runCommand: runner(),
         chargeInvalidCommand: charge,
+        assertCommandBudget: async () => {},
         verifyLineProfile: async () => {
           throw new AppError('UNAUTHENTICATED', 'LINE token verification failed');
         },
@@ -165,16 +171,69 @@ describe('handleCommandRequest', () => {
     expect(charge).toHaveBeenCalledWith('u1');
   });
 
+  it('checks the command budget before verifying a line.link token', async () => {
+    const order: string[] = [];
+    const budget = vi.fn(async () => {
+      order.push('budget');
+    });
+    const verify = vi.fn(async () => {
+      order.push('verify');
+      return { sub: 'U123' };
+    });
+
+    await handleCommandRequest(
+      'u1',
+      { ...VALID_COMMAND, type: 'line.link', payload: { idToken: 'id-token' } },
+      {
+        readProfile: async () => undefined,
+        runCommand: runner(),
+        assertCommandBudget: budget,
+        verifyLineProfile: verify,
+      },
+    );
+
+    expect(order).toEqual(['budget', 'verify']);
+    expect(budget).toHaveBeenCalledWith('u1');
+  });
+
+  it('refuses an exhausted line.link budget before any outbound verify', async () => {
+    const verify = vi.fn(async () => ({ sub: 'U123' }));
+    const charge = noopCharge();
+
+    const result = await handleCommandRequest(
+      'u1',
+      { ...VALID_COMMAND, type: 'line.link', payload: { idToken: 'id-token' } },
+      {
+        readProfile: async () => undefined,
+        runCommand: runner(),
+        chargeInvalidCommand: charge,
+        assertCommandBudget: async () => {
+          throw new AppError('RATE_LIMITED', 'too many requests');
+        },
+        verifyLineProfile: verify,
+      },
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe('RATE_LIMITED');
+    expect(verify).not.toHaveBeenCalled();
+    // The budget itself refused the call; no second charge is attempted.
+    expect(charge).not.toHaveBeenCalled();
+  });
+
   it('does not verify a token for commands other than line.link', async () => {
     const verify = vi.fn(async () => ({ sub: 'U123' }));
+    const budget = vi.fn(async () => {});
 
     await handleCommandRequest('u1', VALID_COMMAND, {
       readProfile: async () => undefined,
       runCommand: runner(),
       verifyLineProfile: verify,
+      assertCommandBudget: budget,
     });
 
     expect(verify).not.toHaveBeenCalled();
+    expect(budget).not.toHaveBeenCalled();
   });
 
   it('maps a runner failure to a CommandResult envelope', async () => {

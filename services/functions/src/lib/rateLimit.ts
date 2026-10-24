@@ -107,6 +107,34 @@ export async function consumeRateLimits(uid: string, rules: RateLimitRule[]): Pr
 }
 
 /**
+ * Read-only budget check for work that must not start when the caller's bucket
+ * is already exhausted (for example an outbound LINE token exchange). The real
+ * charge still happens when the command is admitted, so a successful request is
+ * charged exactly once.
+ */
+export async function assertRateLimitAvailable(
+  uid: string,
+  rules: RateLimitRule[],
+  nowMs: number = Date.now(),
+): Promise<void> {
+  for (const rule of rules) {
+    const windowMs = rule.windowSeconds * 1000;
+    const windowStart = nowMs - (nowMs % windowMs);
+    const snap = await db.collection('rateLimits').doc(rateLimitDocId(uid, rule.action)).get();
+    if (!snap.exists) continue;
+    const data = snap.data() as
+      { windowStart?: number; counts?: Record<string, number> } | undefined;
+    // A stale window belongs to a previous period and never blocks. The stored
+    // `windowStart` is a millisecond number (see `reserveRateLimits`).
+    if (data?.windowStart !== windowStart) continue;
+    const current = data?.counts?.[rule.action] ?? 0;
+    if (current >= rule.limit) {
+      throw new AppError('RATE_LIMITED', `too many requests for ${rule.action}`);
+    }
+  }
+}
+
+/**
  * Convenience wrapper that reserves and immediately writes a single bucket.
  * Prefer `reserveRateLimits` inside transactions that still need to read
  * afterwards: Firestore rejects reads that follow a write.
