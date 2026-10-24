@@ -5,52 +5,17 @@ import { useAuth } from '../lib/auth';
 import { useHousehold } from '../lib/household';
 import { buildTodayTasks, taskCompletionWindow, type TodayTask } from '../lib/today';
 import { callCommand } from '../lib/api';
+import { callErrorMessage, commandErrorMessage } from '../lib/errorMessages';
 import { TaskRow } from '../components/TaskRow';
 import { AppShell } from '../components/AppShell';
 import { EmptyState } from '../components/EmptyState';
 
 const DEFAULT_TIMEZONE = 'Asia/Taipei';
 const READ_ERROR = '讀取資料失敗，請檢查網路後重新整理。';
+const TASK_FALLBACK = '無法完成任務，請稍後再試。';
 
 type ReadSource = 'reminders' | 'completions' | 'animals';
 
-/** Domain command failures → short Traditional Chinese copy. */
-function commandErrorMessage(code: string): string {
-  switch (code) {
-    case 'FORBIDDEN':
-      return '沒有權限完成這項任務，請確認家庭角色。';
-    case 'NOT_FOUND':
-      return '找不到這項任務，請重新整理。';
-    case 'CONFLICT':
-      return '資料已更新，請重新整理後再試。';
-    case 'RATE_LIMITED':
-      return '操作太頻繁，請稍後再試。';
-    case 'UNAUTHENTICATED':
-      return '登入已過期，請重新開啟頁面。';
-    default:
-      return '無法完成任務，請稍後再試。';
-  }
-}
-
-/** Callable (transport) failures → short Traditional Chinese copy. */
-function callErrorMessage(error: unknown): string {
-  const code =
-    typeof (error as { code?: unknown } | null)?.code === 'string'
-      ? ((error as { code: string }).code as string)
-      : '';
-  switch (code) {
-    case 'functions/unauthenticated':
-      return '登入已過期，請重新開啟頁面。';
-    case 'functions/permission-denied':
-      return '沒有權限完成這項任務，請確認家庭角色。';
-    case 'functions/not-found':
-      return '找不到這項任務，請重新整理。';
-    case 'functions/unavailable':
-      return '網路不穩，請稍後再試。';
-    default:
-      return '無法完成任務，請稍後再試。';
-  }
-}
 
 export function TodayPage() {
   const { loading: authLoading } = useAuth();
@@ -154,9 +119,9 @@ export function TodayPage() {
         { reminderId: task.reminderId, dueDate: task.dueDate },
         { householdId: household.id },
       );
-      if (!result.ok) setActionError(commandErrorMessage(result.code));
+      if (!result.ok) setActionError(commandErrorMessage(result.code, TASK_FALLBACK));
     } catch (error) {
-      setActionError(callErrorMessage(error));
+      setActionError(callErrorMessage(error, TASK_FALLBACK));
     } finally {
       setCompleting(null);
     }

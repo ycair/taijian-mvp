@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { callCommand } from '../lib/api';
+import { callErrorMessage, commandErrorMessage } from '../lib/errorMessages';
 import { PrimaryButton } from './PrimaryButton';
 
 const TYPES = [
@@ -54,12 +55,16 @@ export function QuickRecordSheet({
     try {
       const result = await callCommand('record.create', payload, { householdId });
       if (!result.ok) {
-        setError(result.message);
+        setError(commandErrorMessage(result.code, '無法儲存紀錄，請稍後再試。'));
         return;
       }
+      // Clear the form before handing control back, so a sheet that stays
+      // mounted (or is reopened) can never resubmit the previous values.
+      setValue('');
+      setNote('');
       onDone();
-    } catch {
-      setError('無法儲存紀錄，請檢查網路後再試。');
+    } catch (error) {
+      setError(callErrorMessage(error, '無法儲存紀錄，請檢查網路後再試。'));
     } finally {
       setBusy(false);
     }

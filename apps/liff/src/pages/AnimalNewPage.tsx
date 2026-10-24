@@ -5,6 +5,7 @@ import { AppShell } from '../components/AppShell';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { useHousehold } from '../lib/household';
 import { callCommand } from '../lib/api';
+import { callErrorMessage, commandErrorMessage } from '../lib/errorMessages';
 
 export function AnimalNewPage() {
   const { household } = useHousehold();
@@ -32,13 +33,13 @@ export function AnimalNewPage() {
         { householdId: household.id },
       );
       if (!result.ok) {
-        setError(result.message);
+        setError(commandErrorMessage(result.code, '無法建立居民，請稍後再試。'));
         return;
       }
       const { animalId } = result.data as { animalId: string };
       navigate(`/animals/${animalId}`);
-    } catch {
-      setError('無法建立居民，請檢查網路後再試。');
+    } catch (error_) {
+      setError(callErrorMessage(error_, '無法建立居民，請檢查網路後再試。'));
     } finally {
       setBusy(false);
     }

@@ -26,9 +26,11 @@ type RecordRow = {
 };
 
 export function RecordsPage() {
-  const { household } = useHousehold();
+  const { household, loading: householdLoading } = useHousehold();
   const [animals, setAnimals] = useState<AnimalRow[]>([]);
   const [records, setRecords] = useState<RecordRow[]>([]);
+  const [animalsLoaded, setAnimalsLoaded] = useState(false);
+  const [recordsLoaded, setRecordsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const householdId = household?.id ?? null;
@@ -39,9 +41,14 @@ export function RecordsPage() {
       query(collection(db, 'animals'), where('householdId', '==', householdId)),
       (snap) => {
         setAnimals(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as AnimalRow));
+        setAnimalsLoaded(true);
         setError(null);
       },
-      () => setError('讀取居民失敗，請檢查網路後重新整理。'),
+      () => {
+        // Stop the spinner on failure too: the error copy is the message.
+        setAnimalsLoaded(true);
+        setError('讀取居民失敗，請檢查網路後重新整理。');
+      },
     );
   }, [householdId]);
 
@@ -55,8 +62,12 @@ export function RecordsPage() {
       ),
       (snap) => {
         setRecords(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as RecordRow));
+        setRecordsLoaded(true);
       },
-      () => setError('讀取紀錄失敗，請檢查網路後重新整理。'),
+      () => {
+        setRecordsLoaded(true);
+        setError('讀取紀錄失敗，請檢查網路後重新整理。');
+      },
     );
   }, [householdId]);
 
@@ -90,7 +101,17 @@ export function RecordsPage() {
         </p>
       )}
       {!household ? (
-        <EmptyState title="還沒有家庭" body="先在設定裡建立一個家庭，或接受家人的邀請。" />
+        householdLoading ? (
+          <p className="muted" role="status">
+            載入中…
+          </p>
+        ) : (
+          <EmptyState title="還沒有家庭" body="先在設定裡建立一個家庭，或接受家人的邀請。" />
+        )
+      ) : !animalsLoaded || !recordsLoaded ? (
+        <p className="muted" role="status">
+          載入中…
+        </p>
       ) : (
         <div className="card" style={{ marginTop: 16 }}>
           {visible.length === 0 && <p className="muted">還沒有紀錄。</p>}

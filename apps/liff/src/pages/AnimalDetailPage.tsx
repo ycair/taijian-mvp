@@ -13,6 +13,7 @@ type Animal = {
   id: string;
   name: string;
   species: string;
+  speciesLabel?: string;
   householdId?: string;
   avatarColor?: string;
   status?: string;
@@ -37,6 +38,9 @@ export function AnimalDetailPage() {
   const [loaded, setLoaded] = useState(false);
   const [records, setRecords] = useState<RecordRow[]>([]);
   const [error, setError] = useState<string | null>(null);
+  // The quick sheet is mounted only on demand: leaving it open after a save
+  // invites an accidental second tap that writes a duplicate record.
+  const [showSheet, setShowSheet] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -125,23 +129,10 @@ export function AnimalDetailPage() {
           <div className="kicker">Resident</div>
           <AnimalChip
             name={animal.name}
-            species={animal.species}
+            species={animal.speciesLabel ?? animal.species}
             color={animal.avatarColor ?? '#7C9A76'}
           />
         </div>
-        <Link
-          to={`/record/new?animalId=${encodeURIComponent(id)}`}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            minHeight: 44,
-            textDecoration: 'none',
-            color: 'var(--primary-strong)',
-            fontWeight: 800,
-          }}
-        >
-          記一筆
-        </Link>
       </header>
       {error && (
         <p role="alert" style={{ color: 'var(--overdue)' }}>
@@ -150,10 +141,35 @@ export function AnimalDetailPage() {
       )}
       <section className="card" style={{ marginTop: 16 }}>
         <h2 style={{ fontSize: 16, marginTop: 0 }}>快速紀錄</h2>
-        {householdId ? (
-          <QuickRecordSheet householdId={householdId} animalId={id} onDone={() => undefined} />
-        ) : (
+        {!householdId ? (
           <p className="muted">載入家庭資料中…</p>
+        ) : showSheet ? (
+          <QuickRecordSheet
+            householdId={householdId}
+            animalId={id}
+            onDone={() => setShowSheet(false)}
+          />
+        ) : (
+          <>
+            <p className="muted" style={{ marginTop: 0 }}>
+              餵食、換水、體重，一鍵記下來。
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowSheet(true)}
+              style={{
+                minHeight: 44,
+                width: '100%',
+                borderRadius: 12,
+                border: 0,
+                background: 'var(--primary)',
+                color: '#fff',
+                fontWeight: 800,
+              }}
+            >
+              ＋ 新增紀錄
+            </button>
+          </>
         )}
       </section>
       <section className="card" style={{ marginTop: 12 }}>

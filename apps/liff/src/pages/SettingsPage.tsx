@@ -1,20 +1,53 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { httpsCallable } from 'firebase/functions';
-import { auth, functions } from '../lib/firebase';
+import { auth, db, functions } from '../lib/firebase';
 import { useAuth } from '../lib/auth';
 import { useHousehold } from '../lib/household';
 import { callCommand } from '../lib/api';
+import { callErrorMessage, commandErrorMessage } from '../lib/errorMessages';
 import { shareInvite } from '../lib/liff';
 import { AppShell } from '../components/AppShell';
 import { PrimaryButton } from '../components/PrimaryButton';
 
+type Role = 'owner' | 'caretaker';
+
 export function SettingsPage() {
   const { user } = useAuth();
   const { household } = useHousehold();
+  const [role, setRole] = useState<Role | null>(null);
+  const [roleLoaded, setRoleLoaded] = useState(false);
   const [inviteUrl, setInviteUrl] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  const householdId = household?.id ?? null;
+  const uid = user?.uid ?? null;
+
+  // `member.invite` is owner-only on the server; mirror that in the UI so a
+  // caretaker never taps a button that is guaranteed to fail.
+  useEffect(() => {
+    if (!householdId || !uid) {
+      setRole(null);
+      setRoleLoaded(false);
+      return;
+    }
+    return onSnapshot(
+      doc(db, 'households', householdId, 'members', uid),
+      (snap) => {
+        const next = snap.exists() ? (snap.data().role as Role | undefined) : undefined;
+        setRole(next ?? null);
+        setRoleLoaded(true);
+      },
+      () => {
+        // Unknown role fails closed: hide the invite UI and rely on the
+        // server-side FORBIDDEN mapping for anything else.
+        setRole(null);
+        setRoleLoaded(true);
+      },
+    );
+  }, [householdId, uid]);
 
   async function createInvite() {
     if (!household || busy) return;
@@ -27,15 +60,15 @@ export function SettingsPage() {
         { householdId: household.id },
       );
       if (!result.ok) {
-        setError(result.message);
+        setError(commandErrorMessage(result.code, '無法產生邀請連結，請稍後再試。'));
         return;
       }
       const { token } = result.data as { token: string };
       setInviteUrl(
         `https://liff.line.me/${import.meta.env.VITE_LIFF_ID}/invite?token=${encodeURIComponent(token)}`,
       );
-    } catch {
-      setError('無法產生邀請連結，請檢查網路後再試。');
+    } catch (error_) {
+      setError(callErrorMessage(error_, '無法產生邀請連結，請檢查網路後再試。'));
     } finally {
       setBusy(false);
     }
@@ -55,10 +88,12 @@ export function SettingsPage() {
     try {
       await httpsCallable(functions, 'deleteAccount')({});
       await signOut(auth);
-    } catch {
-      setError('無法刪除帳號，請稍後再試。');
+    } catch (error_) {
+      setError(callErrorMessage(error_, '無法刪除帳號，請稍後再試。'));
     }
   }
+
+  const isOwner = role === 'owner';
 
   return (
     <AppShell>
@@ -67,7 +102,15 @@ export function SettingsPage() {
       <section className="card" style={{ marginTop: 16 }}>
         <h2 style={{ fontSize: 16, marginTop: 0 }}>家庭</h2>
         <p className="muted">{household?.name ?? '尚未加入家庭'}</p>
-        {household && (
+        {household && !roleLoaded && (
+          <p className="muted" role="status">
+            讀取家庭角色…
+          </p>
+        )}
+        {household && roleLoaded && !isOwner && (
+          <p className="muted">只有屋主可以產生邀請連結。</p>
+        )}
+        {household && isOwner && (
           <>
             <PrimaryButton type="button" onClick={createInvite} disabled={busy}>
               {busy ? '產生中…' : '產生邀請連結'}
@@ -78,7 +121,13 @@ export function SettingsPage() {
                 <button
                   type="button"
                   onClick={share}
-                  style={{ minHeight: 44, borderRadius: 12, border: '1px solid var(--line)', background: '#fff', padding: '0 16px' }}
+                  style={{
+                    minHeight: 44,
+                    borderRadius: 12,
+                    border: '1px solid var(--line)',
+                    background: '#fff',
+                    padding: '0 16px',
+                  }}
                 >
                   分享邀請
                 </button>
@@ -100,7 +149,12 @@ export function SettingsPage() {
         <button
           type="button"
           onClick={() => signOut(auth)}
-          style={{ minHeight: 44, borderRadius: 12, border: '1px solid var(--line)', background: '#fff' }}
+          style={{
+            minHeight: 44,
+            borderRadius: 12,
+            border: '1px solid var(--line)',
+            background: '#fff',
+          }}
         >
           登出
         </button>

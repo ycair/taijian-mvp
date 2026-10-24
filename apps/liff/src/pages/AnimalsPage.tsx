@@ -11,6 +11,7 @@ type AnimalRow = {
   id: string;
   name: string;
   species: string;
+  speciesLabel?: string;
   avatarColor?: string;
   status?: string;
   deletedAt?: unknown;
@@ -84,7 +85,7 @@ export function AnimalsPage() {
               <div className="card">
                 <AnimalChip
                   name={animal.name}
-                  species={animal.species}
+                  species={animal.speciesLabel ?? animal.species}
                   color={animal.avatarColor ?? '#7C9A76'}
                 />
               </div>

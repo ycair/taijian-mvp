@@ -45,8 +45,8 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
         );
         setProfileLoaded(true);
       },
-      (snapError) => {
-        setError(`讀取家庭資料失敗：${snapError.message}`);
+      () => {
+        setError('讀取家庭資料失敗，請檢查網路後重新整理。');
         setProfileLoaded(true);
       },
     );
@@ -73,8 +73,8 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
         );
         setResolvedId(id);
       },
-      (snapError) => {
-        setError(`讀取家庭資料失敗：${snapError.message}`);
+      () => {
+        setError('讀取家庭資料失敗，請檢查網路後重新整理。');
         setResolvedId(id);
       },
     );
