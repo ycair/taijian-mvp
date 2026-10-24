@@ -47,6 +47,11 @@ export async function completeTask(ctx: HandlerContext): Promise<CommandResult> 
   if (existing.exists) {
     // A repeated completion changes nothing, so it writes no audit entry.
     const data = existing.data() as CompletionDoc;
+    // A completion carrying another household must never be reported as our
+    // success (a forged or colliding document would otherwise leak its actor).
+    if (data.householdId !== householdId) {
+      throw new AppError('NOT_FOUND', 'completion not found');
+    }
     return success(ctx, {
       completionId: id,
       alreadyCompleted: true,

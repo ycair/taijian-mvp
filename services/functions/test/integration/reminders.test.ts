@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Timestamp } from 'firebase-admin/firestore';
 import { config } from '../../src/config';
 import { loginWithLine } from '../../src/auth/line';
@@ -159,6 +159,11 @@ beforeEach(async () => {
   clearAuthUserCache();
   await seedUser(OWNER);
   await seedUser(CARETAKER);
+});
+
+afterEach(() => {
+  // The LINE verifier stubs `fetch`; never let it leak into the next test file.
+  vi.unstubAllGlobals();
 });
 
 describe('reminder commands', () => {
@@ -456,6 +461,53 @@ describe('task completions', () => {
     expect(completeAudits).toHaveLength(1);
   });
 
+  it('converges when two members complete the same occurrence concurrently', async () => {
+    const { householdId, animalId } = await setupAnimal();
+    await addCaretaker(householdId);
+    const reminderId = await createReminder(householdId, animalId);
+    const id = completionId(reminderId, DUE);
+
+    // Different command ids, different members, same occurrence: both commands
+    // enter a transaction that reads "no completion" and race to create it.
+    const [ownerResult, caretakerResult] = await Promise.all([
+      send(OWNER, 'task.complete', { reminderId, dueDate: DUE }, { householdId }),
+      send(CARETAKER, 'task.complete', { reminderId, dueDate: DUE }, { householdId }),
+    ]);
+    const owner = success(ownerResult, 'owner task.complete');
+    const caretaker = success(caretakerResult, 'caretaker task.complete');
+
+    const stored = await completionDoc(id);
+    expect([OWNER, CARETAKER]).toContain(stored?.completedBy);
+
+    const responses = [owner.data, caretaker.data] as Array<{
+      completionId: string;
+      completedBy: string;
+      alreadyCompleted?: boolean;
+    }>;
+    for (const data of responses) {
+      expect(data).toMatchObject({ completionId: id, completedBy: stored?.completedBy });
+    }
+
+    // The transaction that committed the write has no `alreadyCompleted` flag;
+    // the retried transaction observes it. Exactly one of each.
+    const writers = responses.filter((data) => !data.alreadyCompleted);
+    expect(writers).toHaveLength(1);
+    expect(writers[0]?.completedBy).toBe(stored?.completedBy);
+    expect(responses.filter((data) => data.alreadyCompleted)).toHaveLength(1);
+
+    const snap = await adminDb
+      .collection('taskCompletions')
+      .where('reminderId', '==', reminderId)
+      .get();
+    expect(snap.docs).toHaveLength(1);
+
+    // Only the winning write is audited.
+    const completeAudits = (await auditActions(householdId)).filter(
+      (action) => action === 'task.complete',
+    );
+    expect(completeAudits).toHaveLength(1);
+  });
+
   it('treats another due date of the same reminder as a separate completion', async () => {
     const { householdId, animalId } = await setupAnimal();
     const reminderId = await createReminder(householdId, animalId);
@@ -554,6 +606,29 @@ describe('task completions', () => {
       ),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     expect(await completionDoc(id)).toBeDefined();
+
+    // A forged completion that claims another household must not be returned
+    // as this household's success, even when the reminder itself belongs here.
+    const forgedDue = '2026-10-27';
+    const forgedId = completionId(reminderId, forgedDue);
+    await adminDb.collection('taskCompletions').doc(forgedId).set({
+      householdId: second.householdId,
+      reminderId,
+      dueDate: forgedDue,
+      completedBy: CARETAKER,
+    });
+    await expect(
+      send(
+        OWNER,
+        'task.complete',
+        { reminderId, dueDate: forgedDue },
+        { householdId: first.householdId },
+      ),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    expect(await completionDoc(forgedId)).toMatchObject({
+      householdId: second.householdId,
+      completedBy: CARETAKER,
+    });
   });
 
   it('records bot-sourced completions as bot actors', async () => {
@@ -652,11 +727,23 @@ describe('deleteAccount', () => {
       code: 'UNAUTHENTICATED',
     });
 
-    // A retried call is a no-op instead of an error.
+    const originalProfileDeletedAt = (user?.deletedAt as Timestamp).toMillis();
+    const originalMappingDeletedAt = (mapping?.deletedAt as Timestamp).toMillis();
+
+    // A retried call is a no-op instead of an error, and it must not move the
+    // original deletion timestamps or append a second account audit entry.
     await expect(deleteAccountData(OWNER)).resolves.toMatchObject({
       deleted: true,
       alreadyDeleted: true,
     });
+    const retriedUser = (await adminDb.collection('users').doc(OWNER).get()).data();
+    expect((retriedUser?.deletedAt as Timestamp).toMillis()).toBe(originalProfileDeletedAt);
+    const retriedMapping = (await adminDb.collection('lineUsers').doc('Uowner').get()).data();
+    expect((retriedMapping?.deletedAt as Timestamp).toMillis()).toBe(originalMappingDeletedAt);
+    const accountAudits = await adminDb.collection(`users/${OWNER}/auditLogs`).get();
+    expect(accountAudits.docs.filter((doc) => doc.data().action === 'account.delete')).toHaveLength(
+      1,
+    );
   });
 
   it('handles a sole-owner household and a caretaker membership in one call', async () => {

@@ -2,6 +2,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { FieldValue } from 'firebase-admin/firestore';
 import { onCall } from 'firebase-functions/v2/https';
 import { AppError, newCommandId } from '@taijian/domain';
+import { config } from '../config';
 import { writeAccountAudit } from '../lib/audit';
 import { toHttpsError } from '../lib/errors';
 import { db } from '../lib/firestore';
@@ -239,11 +240,14 @@ export async function deleteAccountData(uid: string): Promise<DeleteAccountResul
   return { deleted: true, alreadyDeleted, deletedHouseholds, leftHouseholds };
 }
 
-export const deleteAccount = onCall({ region: 'asia-east1' }, async (request) => {
-  try {
-    if (!request.auth) throw new AppError('UNAUTHENTICATED', 'sign in required');
-    return await deleteAccountData(request.auth.uid);
-  } catch (error) {
-    throw toHttpsError(error);
-  }
-});
+export const deleteAccount = onCall(
+  { region: 'asia-east1', enforceAppCheck: config.ENFORCE_APP_CHECK },
+  async (request) => {
+    try {
+      if (!request.auth) throw new AppError('UNAUTHENTICATED', 'sign in required');
+      return await deleteAccountData(request.auth.uid);
+    } catch (error) {
+      throw toHttpsError(error);
+    }
+  },
+);
