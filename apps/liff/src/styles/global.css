@@ -1,0 +1,21 @@
+@import './tokens.css';
+
+* { box-sizing: border-box; }
+html, body, #root { min-height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+a { color: inherit; }
+.shell { max-width: 520px; margin: 0 auto; min-height: 100dvh; padding: 20px 18px 92px; }
+.shell-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.kicker { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.h1 { font-family: var(--font-display); font-size: 26px; line-height: 1.2; margin: 4px 0; }
+.muted { color: var(--muted); font-size: 13px; }
+.card { background: var(--card); border-radius: var(--radius-lg); padding: var(--space-4); box-shadow: var(--shadow-card); }
+.stack { display: grid; gap: var(--space-3); }

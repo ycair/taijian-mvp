@@ -4,6 +4,7 @@ dist/
 build/
 coverage/
 .firebase/
+.deploy/
 .superpowers/
 
 .env
@@ -12,3 +13,7 @@ coverage/
 
 .DS_Store
 *.log
+
+*.tsbuildinfo
+playwright-report/
+test-results/

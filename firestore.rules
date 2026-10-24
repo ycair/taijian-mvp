@@ -1,0 +1,115 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Membership is defined by the existence of the member document: removing a
+    // member deletes `households/{id}/members/{uid}`, which revokes access on the
+    // next request. There is no separate active flag to check. The household
+    // itself must still be live: a soft-deleted household can retain member
+    // documents (an interrupted account deletion), and those must not read it.
+    function householdLive(householdId) {
+      let household = get(/databases/$(database)/documents/households/$(householdId));
+      return household != null && household.data.deletedAt == null;
+    }
+
+    function isMember(householdId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/households/$(householdId)/members/$(request.auth.uid))
+        && householdLive(householdId);
+    }
+
+    // Owner-only reads (currently the invite list). The member document is the
+    // authority, so a demotion takes effect on the next request without any
+    // counter or cached role to keep in sync.
+    function isOwner(householdId) {
+      let member = get(/databases/$(database)/documents/households/$(householdId)/members/$(request.auth.uid));
+      return signedIn()
+        && member != null
+        && member.data.role == 'owner'
+        && householdLive(householdId);
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+
+      match /auditLogs/{logId} {
+        allow read: if signedIn() && request.auth.uid == uid;
+        allow write: if false;
+      }
+    }
+
+    match /households/{householdId} {
+      allow read: if isMember(householdId);
+      allow write: if false;
+
+      match /members/{uid} {
+        allow read: if signedIn() && (request.auth.uid == uid || isMember(householdId));
+        allow write: if false;
+      }
+
+      match /auditLogs/{logId} {
+        allow read: if isMember(householdId);
+        allow write: if false;
+      }
+    }
+
+    match /animals/{animalId} {
+      allow read: if isMember(resource.data.householdId);
+      allow write: if false;
+    }
+
+    match /records/{recordId} {
+      allow read: if isMember(resource.data.householdId);
+      allow write: if false;
+    }
+
+    match /reminders/{reminderId} {
+      allow read: if isMember(resource.data.householdId);
+      allow write: if false;
+    }
+
+    match /taskCompletions/{completionId} {
+      allow read: if isMember(resource.data.householdId);
+      allow write: if false;
+    }
+
+    match /lineUsers/{lineUserId} {
+      allow read, write: if false;
+    }
+
+    match /invites/{inviteId} {
+      // Owners can list their own household's invites in Settings. Writes stay
+      // server-only: minting and revoking go through commands.
+      allow read: if isOwner(resource.data.householdId);
+      allow write: if false;
+    }
+
+    match /commands/{commandId} {
+      allow read, write: if false;
+    }
+
+    match /rateLimits/{uid} {
+      allow read, write: if false;
+    }
+
+    match /loginRateLimits/{key} {
+      allow read, write: if false;
+    }
+
+    match /notificationLog/{logId} {
+      allow read, write: if false;
+    }
+
+    match /lineEvents/{webhookEventId} {
+      allow read, write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

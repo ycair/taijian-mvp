@@ -3,7 +3,7 @@
 > LINE-first, conflict-safe care log for reptiles and exotic pets.  
 > 把每一次照顧，留在同一個家。
 
-**Status:** v1 design spec in review — implementation not started.  
+**Status:** v1 design spec approved — Phase 0 (foundation) in progress.  
 **Working name:** 苔間（商標／網域尚未檢索）  
 **Target:** iOS first; LINE LIFF + LINE Bot as the primary test surface.
 
@@ -109,7 +109,7 @@ docs/
   superpowers/specs/    v1 設計規格
 ```
 
-目前 repo 只有設計文件；Phase 0 會建立 monorepo、Emulator 設定與 CI。
+目前 repo 只有設計文件；Phase 0 建立 monorepo、Emulator 設定與 CI。
 
 ## Documentation
 
@@ -121,6 +121,16 @@ docs/
 
 ## Development
 
+Prerequisites: Node 22.x (`pnpm` downloads and pins it via `.npmrc`) and pnpm 10.
+
+```bash
+pnpm install     # install workspace dependencies
+pnpm lint        # ESLint across the monorepo
+pnpm typecheck   # tsc across every workspace package
+pnpm test        # Vitest across every workspace package
+pnpm build       # build every workspace package
+```
+
 Phase 0 會加入：
 
 - Node 22 + pnpm workspaces
@@ -130,6 +140,111 @@ Phase 0 會加入：
 - GitHub Actions：lint → typecheck → test → build
 
 Phase 2 會加入 Flutter 3.x（Riverpod、go_router、Firebase、Drift）與 iOS build。
+
+## Local development (Phase 0–1)
+
+```bash
+pnpm install
+pnpm emulators          # Auth / Firestore / Functions（會把 .env 複製進 .deploy/functions）
+pnpm seed               # 種子家庭 hh_demo、阿肥、今日餵食提醒（可選，E2E 會自動重跑）
+pnpm mock:line          # mock LINE（127.0.0.1:4010），供本機登入與 push
+pnpm --filter @taijian/liff dev
+pnpm test:e2e           # Playwright 驗收（自動 seed 並啟動 Vite）
+```
+
+第一次跑 E2E 前先安裝瀏覽器：`pnpm exec playwright install chromium`。
+
+`apps/liff/.env.local` 與 `services/functions/.env` 是本機專用設定（已被 git 忽略）：
+
+```text
+# apps/liff/.env.local
+VITE_FIREBASE_API_KEY=demo
+VITE_FIREBASE_AUTH_DOMAIN=demo-taijian.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=demo-taijian
+VITE_FIREBASE_APP_ID=1:demo:web:demo
+VITE_LIFF_ID=test-liff
+VITE_USE_EMULATORS=true
+VITE_USE_MOCK_LINE=true
+VITE_RECAPTCHA_ENTERPRISE_KEY=
+VITE_APP_CHECK_DEBUG_TOKEN=
+```
+
+```text
+# services/functions/.env
+APP_ENV=dev
+LINE_LOGIN_CHANNEL_ID=test-login-channel
+LINE_MESSAGING_CHANNEL_ID=test-messaging-channel
+LINE_MESSAGING_CHANNEL_SECRET=test-messaging-secret
+LINE_CHANNEL_ACCESS_TOKEN=test-access-token
+LINE_VERIFY_URL=http://127.0.0.1:4010/oauth2/v2.1/verify
+LINE_API_BASE=http://127.0.0.1:4010
+APP_BASE_URL=http://localhost:5173
+LIFF_ID=test-liff
+```
+
+Functions emulator 的來源是 `.deploy/functions`（與部署相同），因此
+`pnpm emulators` 會先跑 `pnpm emulators:prep`，把 `services/functions/.env`、
+`.env.local`、`.env.demo-taijian` 複製進產物，`LINE_VERIFY_URL` 才指得到 mock LINE。
+`pnpm deploy:functions` 不會複製任何 env 檔，部署產物不含機密。
+
+本機 E2E 以 `http://localhost:5173/?mockLineIdToken=test-token-A` 登入
+`line_UtestA`（`test-token-B` 對應 `line_UtestB`；其他 token 一律 401）。mock 登入只在
+Vite `DEV` 建置生效。`pnpm test:e2e` 的 global setup 會先確認 emulator 與 mock LINE
+都在執行，再自動重跑 `pnpm seed`（清掉舊的 `taskCompletions` 並把 `nextDueAt` 設為
+當下），因此跨午夜或同一天重跑都不會誤判。驗收清單見
+[`docs/acceptance/phase-1.md`](docs/acceptance/phase-1.md)。
+
+### LIFF onboarding, households, settings, and retries
+
+- **建立家庭**：沒有家庭時，Today／居民頁的空狀態與 `/household/new` 都提供
+  「建立家庭」表單（名稱＋IANA 時區）。成功後會選取新家庭、重讀
+  `users/{uid}.householdIds`，再導向 Today，因此不會先閃出「還沒有家庭」。
+- **切換家庭**：`HouseholdProvider` 以 `users/{uid}.defaultHouseholdId` 決定預設家庭
+  （無效或已退出時退回 `householdIds[0]`）。設定頁列出所有家庭，切換時透過
+  `user.updateProfile` 寫回預設值；伺服器會先確認呼叫者仍是該家庭成員。
+- **成員管理**：設定頁讀取 `households/{id}/members`，顯示名稱與角色。屋主可移除
+  成員（`member.remove`）與變更角色（`member.updateRole`）；每位成員都能自行離開
+  （`member.leave`）。移除、變更角色、離開與撤銷邀請都需要確認。
+- **邀請管理**：屋主可產生邀請，並在設定頁看到該家庭的有效邀請（建立日、到期日、
+  狀態）與撤銷按鈕（`member.revokeInvite`）。`invites` 的讀取規則只開放給該家庭
+  屋主，寫入仍一律由伺服器處理。
+- **個人資料**：設定頁可修改顯示名稱與個人時區（`user.updateProfile`）；空白名稱或
+  無效 IANA 時區會以中文錯誤提示，不會送出。
+- **居民編輯與生命週期**：居民詳情頁可編輯名字、物種、品系、性別、生日與備註
+  （`animal.update` + `baseRevision`）。屋主另有封存（`animal.archive`）與刪除
+  （`animal.delete`）操作，兩者都帶 `baseRevision` 並需確認；刪除會連帶隱藏紀錄與
+  提醒。
+- **衝突處理**：居民編輯、提醒更新與提醒刪除收到 `CONFLICT` 時會顯示
+  `currentRevision`／`lastChangedFields`。「查看最新」載入伺服器版本；「保留我的」
+  在確認後以最新 revision 重送。封存／刪除居民收到衝突時會提示重新整理後再試。
+- **提醒管理**：居民詳情頁可新增、編輯、刪除提醒（每日／每週／每 N 天、單一時刻、
+  時區、啟用開關）。更新與刪除都帶 `baseRevision`；衝突時同樣可載入最新或保留自己
+  的變更後重送。
+- **重試不重複**：表單每次「意圖」只產生一組 `commandId` 與（紀錄用的）
+  `recordId`、`occurredAt`。請求逾時後重按儲存會沿用同一組 id，伺服器以
+  `commands/{commandId}` 重播原結果；成功後才重置。修改表單內容會視為新的意圖。
+- **完成者名稱**：Today 使用 `task.complete` 寫入的 `completedByName` 快照；舊資料
+  沒有名稱時顯示「已刪除成員」，不會露出原始 UID。
+- **登入切換**：已有 Firebase session 時仍會用目前的 LINE ID token 交換並比對 UID；
+  UID 不同會先登出再登入新帳號，`HouseholdProvider` 也會以 UID 重新掛載。登出後
+  Gate 顯示「請重新登入 LINE」。
+
+### App Check
+
+App Check 由建置環境變數控制：
+
+```text
+VITE_RECAPTCHA_ENTERPRISE_KEY=<reCAPTCHA Enterprise site key>
+VITE_APP_CHECK_DEBUG_TOKEN=<dev-only debug token>
+```
+
+- **本機／E2E**：`VITE_RECAPTCHA_ENTERPRISE_KEY` 留空即可完全跳過 App Check
+  初始化，emulator 不需要 debug token。
+- **Dev 除錯**：設定 key 後，若同時設定 `VITE_APP_CHECK_DEBUG_TOKEN`（僅限 Vite
+  `DEV` 建置），會以該 debug token 初始化。
+- **Production**：必須設定 `VITE_RECAPTCHA_ENTERPRISE_KEY`；啟用後 LIFF 會自動
+  取得並更新 App Check token。伺服器端的 `ENFORCE_APP_CHECK` 仍由部署環境控制，
+  兩者需一起開啟。
 
 ## Security
 

@@ -1,0 +1,52 @@
+{
+  "size": { "width": 2500, "height": 1686 },
+  "selected": true,
+  "name": "苔間主選單",
+  "chatBarText": "苔間",
+  "areas": [
+    {
+      "bounds": { "x": 0, "y": 0, "width": 833, "height": 843 },
+      "action": {
+        "type": "uri",
+        "label": "今日任務",
+        "uri": "https://liff.line.me/REPLACE_LIFF_ID/"
+      }
+    },
+    {
+      "bounds": { "x": 833, "y": 0, "width": 834, "height": 843 },
+      "action": {
+        "type": "uri",
+        "label": "我的居民",
+        "uri": "https://liff.line.me/REPLACE_LIFF_ID/animals"
+      }
+    },
+    {
+      "bounds": { "x": 1667, "y": 0, "width": 833, "height": 843 },
+      "action": {
+        "type": "uri",
+        "label": "快速紀錄",
+        "uri": "https://liff.line.me/REPLACE_LIFF_ID/record/new"
+      }
+    },
+    {
+      "bounds": { "x": 0, "y": 843, "width": 833, "height": 843 },
+      "action": {
+        "type": "uri",
+        "label": "邀請家人",
+        "uri": "https://liff.line.me/REPLACE_LIFF_ID/settings"
+      }
+    },
+    {
+      "bounds": { "x": 833, "y": 843, "width": 834, "height": 843 },
+      "action": {
+        "type": "uri",
+        "label": "通知設定",
+        "uri": "https://liff.line.me/REPLACE_LIFF_ID/settings"
+      }
+    },
+    {
+      "bounds": { "x": 1667, "y": 843, "width": 833, "height": 843 },
+      "action": { "type": "message", "label": "使用說明", "text": "說明" }
+    }
+  ]
+}
