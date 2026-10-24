@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
 import { QuickRecordSheet } from '../components/QuickRecordSheet';
 import { useHousehold } from '../lib/household';
@@ -19,13 +19,17 @@ export function RecordPage() {
     );
   }
 
-  if (!household || !animalId) {
+  if (!household) {
     return (
       <AppShell>
-        <p className="muted">請先選擇居民。</p>
+        <p className="muted">請先加入家庭，才能記錄照護。</p>
       </AppShell>
     );
   }
+
+  // A shared/bookmarked link without `animalId` used to stop here. Send the
+  // user to the resident list so they can pick one instead of hitting a dead end.
+  if (!animalId) return <Navigate to="/animals" replace />;
 
   return (
     <AppShell>
