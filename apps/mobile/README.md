@@ -58,6 +58,21 @@ flutter run --dart-define=USE_MOCK=false \
 and App Check. A missing plist or missing configuration shows a readable bootstrap
 error instead of a white screen.
 
+### Sign-out and local data
+
+Signing out from Settings:
+
+1. deletes that account's plaintext outbox rows (`purgeForUid`),
+2. signs out Firebase Auth,
+3. terminates Firestore and calls `clearPersistence()` so the next account cannot
+   read the previous account's on-disk cache.
+
+iOS limitation: `clearPersistence()` requires no active Firestore client, so the
+app terminates it first. If another Firebase component reopens Firestore during
+sign-out, the clear can fail; sign-out still proceeds, the cache remains until the
+next successful clear/OS cleanup, and server rules keep reads membership-scoped.
+Unsaved offline changes are intentionally discarded on sign-out for privacy.
+
 ### App Check
 
 App Check is enabled by default in real mode with App Attest → DeviceCheck
@@ -74,14 +89,20 @@ bringing up a new project.
 
 ### Push (FCM)
 
-`FirebaseBootstrap` requests notification permission, logs the APNs token when
-available, and registers with FCM. A real device + APNs key + Push Notifications
-capability are required for delivery. Mock mode and the simulator never require
-APNs.
+`FirebaseBootstrap` requests notification permission, registers with FCM, and
+reports only whether APNs is available. Token values are kept in memory for a
+future device-registration command and are **never written to logs**, together
+with UIDs and emails.
 
-Token registration to the backend is intentionally log-only in this phase: Phase 1
-does not yet define a `device.register` command, and Firestore client writes are
-denied. Add a command before enabling server-side push.
+A real device + APNs auth key + the **Push Notifications** capability are required
+for delivery. The committed `Runner.entitlements` intentionally omits
+`aps-environment` so unsigned simulator/device builds keep working; add the
+capability in Xcode when setting up signing. Mock mode and the simulator never
+require APNs.
+
+Token registration to the backend is intentionally not implemented in this phase:
+Phase 1 does not define a `device.register` command, and Firestore client writes
+are denied. Add a command before enabling server-side push.
 
 ### LINE linking
 
@@ -125,7 +146,14 @@ lib/
   - retry reuses the **same** `commandId`;
   - `CONFLICT` keeps the row and shows the banner;
   - 「查看最新」 drops the row and lets the stream render fresh data;
-  - 「保留我的」 resubmits the local payload with the conflict revision.
+  - 「保留我的」 resubmits the local payload with the conflict revision;
+  - failed rows can be retried (attempts reset) or discarded after confirmation;
+  - a flush that is already running drains rows enqueued during its pass;
+  - a 30-second timer and app-resume hook retry after connectivity returns;
+  - a pending `task.complete` renders as「已完成 · 同步中…」 until it lands.
+- Online-only commands (`household.create`, `member.invite`) keep one
+  `commandId` per logical attempt, so a lost response can be retried without
+  creating a second household/invite.
 
 ## Commands
 
@@ -138,11 +166,22 @@ flutter build ios --simulator --no-codesign
 ### Tests
 
 - `test/features/today_engine_test.dart` — timezone, overdue/upcoming/completed
-  ordering, archived animals, weekly/interval schedules, completion date keys.
+  ordering, archived animals, weekly/interval schedules, completion date keys,
+  `createdAt`/re-enable floors.
 - `test/data/outbox_test.dart` — commandId idempotency, conflict retention,
-  `keepMine` rebase, discard, retry after transport failure.
-- `test/widget/smoke_test.dart` — Today and Animals render seeded data; completing
-  a task mutates the mock store and drains the outbox.
+  `keepMine` rebase, single-flight drain, retry attempts reset/discard, empty UID,
+  and sign-out purge.
+- `test/data/command_attempt_test.dart` — logical command-id reuse and
+  timeout-after-commit retry without duplicate households.
+- `test/data/mock_command_test.dart` — record id duplicate semantics, strict
+  record types, owner-only animal lifecycle.
+- `test/contract/command_contract_test.dart` — queued payloads checked against
+  the Phase 1 command schemas (ids, enums, dates, schedules, timezones).
+- `test/features/reminder_schedule_edit_test.dart` — interval start-date anchor.
+- `test/features/pending_completion_keys_test.dart` — optimistic completion keys.
+- `test/widget/auth_gate_test.dart` — sign-in → shell → sign-out and stable router.
+- `test/widget/smoke_test.dart` + `offline_completion_test.dart` — Today, Animals,
+  animal admin actions, and the pending-completion overlay.
 
 ## Secrets
 
@@ -161,4 +200,6 @@ Committed placeholders: `ios/Runner/GoogleService-Info.plist.example` and
 - FCM token registration is log-only until a backend command exists.
 - Account deletion is a Phase 3 item (App Store submission needs it).
 - `drift_flutter` stores the outbox in application documents; a cleared app
-  removes unsent offline commands.
+  removes unsent offline commands. Explicit sign-out purges the account's rows.
+- APNs entitlement/capability and push registration are not configured yet (see
+  Push above).

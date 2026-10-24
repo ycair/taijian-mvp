@@ -37,6 +37,9 @@ void main() {
     List<int> weekdays = const [],
     String animalId = 'afa',
     bool enabled = true,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    List<String> lastChangedFields = const [],
   }) {
     return Reminder(
       id: id,
@@ -54,6 +57,9 @@ void main() {
       timezone: timezone,
       enabled: enabled,
       revision: 0,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      lastChangedFields: lastChangedFields,
     );
   }
 
@@ -85,6 +91,82 @@ void main() {
     // 08:30 Asia/Taipei is 00:30 UTC.
     expect(tasks[0].dueAt, DateTime.utc(2026, 10, 25, 0, 30));
     expect(tasks[0].clockLabel, '08:30');
+  });
+
+
+  test('an occurrence before the reminder was created is not overdue', () {
+    final tasks = TodayEngine.build(
+      reminders: [
+        reminder(
+          id: '早上',
+          time: '08:30',
+          kind: 'daily',
+          // 11:00 Taipei, after the 08:30 slot.
+          createdAt: DateTime.utc(2026, 10, 25, 3),
+        ),
+        reminder(
+          id: '晚上',
+          time: '20:30',
+          kind: 'daily',
+          createdAt: DateTime.utc(2026, 10, 25, 3),
+        ),
+      ],
+      animals: const [animal],
+      completions: const [],
+      now: now,
+      householdTimezone: timezone,
+    );
+
+    expect(tasks.map((task) => task.title), ['晚上']);
+    expect(tasks.single.overdue, isFalse);
+  });
+
+  test('re-enabling a reminder uses the re-enable time as the floor', () {
+    final tasks = TodayEngine.build(
+      reminders: [
+        reminder(
+          id: '早上',
+          time: '08:30',
+          kind: 'daily',
+          createdAt: DateTime.utc(2026, 10, 1),
+          updatedAt: DateTime.utc(2026, 10, 25, 4), // 12:00 Taipei
+          lastChangedFields: const ['enabled', 'nextDueAt'],
+        ),
+        reminder(
+          id: '晚上',
+          time: '20:30',
+          kind: 'daily',
+          createdAt: DateTime.utc(2026, 10, 1),
+          updatedAt: DateTime.utc(2026, 10, 25, 4),
+          lastChangedFields: const ['enabled', 'nextDueAt'],
+        ),
+      ],
+      animals: const [animal],
+      completions: const [],
+      now: now,
+      householdTimezone: timezone,
+    );
+
+    expect(tasks.map((task) => task.title), ['晚上']);
+  });
+
+  test('a reminder created on a previous day still shows today', () {
+    final tasks = TodayEngine.build(
+      reminders: [
+        reminder(
+          id: '早餐',
+          time: '08:30',
+          kind: 'daily',
+          createdAt: DateTime.utc(2026, 10, 20),
+        ),
+      ],
+      animals: const [animal],
+      completions: const [],
+      now: now,
+      householdTimezone: timezone,
+    );
+    expect(tasks, hasLength(1));
+    expect(tasks.single.overdue, isTrue);
   });
 
   test('a task due later today is not overdue', () {

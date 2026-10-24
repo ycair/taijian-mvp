@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/models/command_result.dart';
@@ -150,6 +152,103 @@ void main() {
     expect(store.animals['animal_afa']!.name, before.name);
   });
 
+
+  test('enqueue during a flush is drained before the flush returns', () async {
+    final gated = _GatedApi(store: store, uid: () => MockSeed.ownerUid);
+    final queued = Outbox(db: database, api: gated, uid: () => MockSeed.ownerUid);
+    final occurredAt = DateTime.now().toUtc().toIso8601String();
+
+    await queued.enqueue(
+      'record.create',
+      {
+        'recordId': '018f4f7e-0000-7000-8000-000000000010',
+        'animalId': 'animal_afa',
+        'type': 'feeding',
+        'occurredAt': occurredAt,
+      },
+      householdId: MockSeed.householdId,
+    );
+
+    final firstFlush = queued.flush();
+    await gated.started.future;
+    await queued.enqueue(
+      'record.create',
+      {
+        'recordId': '018f4f7e-0000-7000-8000-000000000011',
+        'animalId': 'animal_lulu',
+        'type': 'water',
+        'occurredAt': occurredAt,
+      },
+      householdId: MockSeed.householdId,
+    );
+    gated.release.complete();
+
+    final result = await firstFlush;
+    expect(result.sent, 2);
+    expect(await queued.pendingEntries(), isEmpty);
+    expect(
+      store.records.where(
+        (record) =>
+            record.id == '018f4f7e-0000-7000-8000-000000000010' ||
+            record.id == '018f4f7e-0000-7000-8000-000000000011',
+      ),
+      hasLength(2),
+    );
+  });
+
+  test('manual retry resets attempts and failed rows can be discarded', () async {
+    await outbox.enqueue(
+      'record.create',
+      {
+        'recordId': '018f4f7e-0000-7000-8000-000000000012',
+        'animalId': 'animal_afa',
+        'type': 'mystery-type',
+        'occurredAt': DateTime.now().toUtc().toIso8601String(),
+      },
+      householdId: MockSeed.householdId,
+    );
+    final flushed = await outbox.flush();
+    expect(flushed.failed, 1);
+
+    var rows = await database.select(database.outboxEntries).get();
+    expect(rows, hasLength(1));
+    expect(rows.single.status, OutboxStatus.failed);
+    expect(rows.single.attempts, 1);
+
+    await outbox.retryFailed(rows.single.commandId);
+    rows = await database.select(database.outboxEntries).get();
+    expect(rows.single.status, OutboxStatus.pending);
+    expect(rows.single.attempts, 0);
+
+    await outbox.discard(rows.single.commandId);
+    expect(await database.select(database.outboxEntries).get(), isEmpty);
+  });
+
+  test('sign-out purge removes all rows for one account only', () async {
+    await outbox.enqueue(
+      'record.create',
+      {
+        'recordId': '018f4f7e-0000-7000-8000-000000000013',
+        'animalId': 'animal_afa',
+        'type': 'feeding',
+        'occurredAt': DateTime.now().toUtc().toIso8601String(),
+      },
+      householdId: MockSeed.householdId,
+    );
+    final removed = await outbox.purgeForUid(MockSeed.ownerUid);
+    expect(removed, 1);
+    expect(await database.select(database.outboxEntries).get(), isEmpty);
+  });
+
+  test('an empty UID cannot enqueue', () async {
+    final anonymous = Outbox(db: database, api: api, uid: () => '');
+    await expectLater(
+      anonymous.enqueue('task.complete', {'reminderId': 'r', 'dueDate': '2026-10-25'}),
+      throwsA(isA<StateError>()),
+    );
+    expect(await database.select(database.outboxEntries).get(), isEmpty);
+  });
+
   test('a transport failure stays pending for the same commandId', () async {
     final failing = _FlakyApi(store: store, uid: () => MockSeed.ownerUid);
     final flakyOutbox = Outbox(db: database, api: failing, uid: () => MockSeed.ownerUid);
@@ -194,6 +293,37 @@ class _FlakyApi extends MockCommandApi {
     if (failNext) {
       failNext = false;
       throw const CommandApiException('offline');
+    }
+    return super.executeCommand(
+      type,
+      payload,
+      commandId: commandId,
+      householdId: householdId,
+      baseRevision: baseRevision,
+    );
+  }
+}
+
+
+class _GatedApi extends MockCommandApi {
+  _GatedApi({required super.store, required super.uid}) : super(latency: Duration.zero);
+
+  final Completer<void> started = Completer<void>();
+  final Completer<void> release = Completer<void>();
+  bool _blockedOnce = false;
+
+  @override
+  Future<CommandResult> executeCommand(
+    String type,
+    Map<String, dynamic> payload, {
+    required String commandId,
+    String? householdId,
+    int? baseRevision,
+  }) async {
+    if (!_blockedOnce) {
+      _blockedOnce = true;
+      started.complete();
+      await release.future;
     }
     return super.executeCommand(
       type,
