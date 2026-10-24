@@ -8,7 +8,12 @@ import type { Source } from '../../src/commands/types';
 import { clearAuthUserCache } from '../../src/lib/authUser';
 import { completionId } from '../../src/lib/ids';
 import { clearLineVerifyCache } from '../../src/line/verify';
-import { deleteAccount, deleteAccountData } from '../../src/user/deleteAccount';
+import {
+  adminRetryDeleteAccount,
+  deleteAccount,
+  deleteAccountData,
+  type DeleteAccountResult,
+} from '../../src/user/deleteAccount';
 import type { CommandResult, CommandSuccess } from '@taijian/domain';
 import { adminAuth, adminDb, clearAuth, clearFirestore, envelope, seedUser } from './helpers';
 
@@ -429,7 +434,11 @@ describe('task completions', () => {
       'owner task.complete',
     );
     const id = completionId(reminderId, DUE);
-    expect(first.data).toMatchObject({ completionId: id, completedBy: OWNER });
+    expect(first.data).toMatchObject({
+      completionId: id,
+      completedBy: OWNER,
+      completedByName: OWNER,
+    });
     expect((first.data as { completedAt: string }).completedAt).toEqual(expect.any(String));
     expect(await completionDoc(id)).toMatchObject({
       householdId,
@@ -437,6 +446,7 @@ describe('task completions', () => {
       reminderId,
       dueDate: DUE,
       completedBy: OWNER,
+      completedByName: OWNER,
       source: 'test',
     });
 
@@ -448,6 +458,7 @@ describe('task completions', () => {
       completionId: id,
       alreadyCompleted: true,
       completedBy: OWNER,
+      completedByName: OWNER,
     });
     // The retry reports the original completion time, not "now".
     expect((second.data as { completedAt: string }).completedAt).toBe(
@@ -459,6 +470,27 @@ describe('task completions', () => {
       (action) => action === 'task.complete',
     );
     expect(completeAudits).toHaveLength(1);
+  });
+
+  it('stores the member display name at completion time', async () => {
+    const { householdId, animalId } = await setupAnimal();
+    await addCaretaker(householdId);
+    const reminderId = await createReminder(householdId, animalId);
+    // A rename updates the profile, not the membership snapshot; the completion
+    // records whichever name the membership carried when it was written.
+    await adminDb
+      .doc(`households/${householdId}/members/${CARETAKER}`)
+      .set({ displayName: '阿明' }, { merge: true });
+
+    const completed = success(
+      await send(CARETAKER, 'task.complete', { reminderId, dueDate: DUE }, { householdId }),
+      'caretaker task.complete',
+    );
+
+    expect(completed.data).toMatchObject({ completedBy: CARETAKER, completedByName: '阿明' });
+    expect(await completionDoc(completionId(reminderId, DUE))).toMatchObject({
+      completedByName: '阿明',
+    });
   });
 
   it('converges when two members complete the same occurrence concurrently', async () => {
@@ -720,6 +752,14 @@ describe('deleteAccount', () => {
 
     const accountAudit = await adminDb.collection(`users/${OWNER}/auditLogs`).get();
     expect(accountAudit.docs.map((doc) => doc.data().action)).toContain('account.delete');
+
+    // The household timeline records why it disappeared, not only the account.
+    const householdAudit = await auditEntries(householdId);
+    expect(householdAudit.map((entry) => entry.action)).toContain('household.delete');
+    expect(householdAudit.find((entry) => entry.action === 'household.delete')).toMatchObject({
+      source: 'account.delete',
+      actorType: 'user',
+    });
     await expect(adminAuth.getUser(OWNER)).rejects.toMatchObject({ code: 'auth/user-not-found' });
 
     stubLineVerify('Uowner');
@@ -744,6 +784,78 @@ describe('deleteAccount', () => {
     expect(accountAudits.docs.filter((doc) => doc.data().action === 'account.delete')).toHaveLength(
       1,
     );
+  });
+
+  it('limits the user-facing deletion to one attempt per hour', async () => {
+    const { householdId } = await setupAnimal();
+    await addCaretaker(householdId);
+
+    // The refusal still spends the budget: the first attempt is charged before
+    // the ownership pre-flight can reject it.
+    await expect(deleteAccountData(OWNER)).rejects.toMatchObject({ code: 'FORBIDDEN' });
+
+    success(
+      await send(OWNER, 'member.remove', { uid: CARETAKER }, { householdId }),
+      'member.remove',
+    );
+
+    await expect(deleteAccountData(OWNER)).rejects.toMatchObject({ code: 'RATE_LIMITED' });
+    // Nothing was changed by the refused attempt.
+    await expect(adminAuth.getUser(OWNER)).resolves.toMatchObject({ uid: OWNER });
+    expect(
+      (await adminDb.collection('households').doc(householdId).get()).data()?.deletedAt,
+    ).toBeNull();
+  });
+
+  it('completes a half-deleted account through the admin retry path', async () => {
+    const { householdId } = await setupAnimal();
+    await adminDb.collection('lineUsers').doc('Uowner').set({ uid: OWNER, status: 'active' });
+
+    // Simulate a crash after the Auth user was removed but before the profile and
+    // household were tombstoned.
+    await adminAuth.deleteUser(OWNER);
+    expect((await adminDb.collection('users').doc(OWNER).get()).data()?.deletedAt).toBeUndefined();
+
+    const retry = adminRetryDeleteAccount as unknown as {
+      run: (request: unknown) => Promise<DeleteAccountResult>;
+    };
+    const result = await retry.run({
+      auth: { uid: 'admin_ops', token: { admin: true } },
+      data: { uid: OWNER },
+    });
+
+    expect(result).toMatchObject({ deleted: true, alreadyDeleted: false });
+    expect(result.deletedHouseholds).toEqual([householdId]);
+    const household = (await adminDb.collection('households').doc(householdId).get()).data();
+    expect(household?.deletedAt).not.toBeNull();
+    expect((await adminDb.collection('users').doc(OWNER).get()).data()?.deletedAt).not.toBeNull();
+    expect((await adminDb.collection('lineUsers').doc('Uowner').get()).data()).toMatchObject({
+      status: 'deleted',
+    });
+
+    // Idempotent: a second retry reports success without a duplicate audit row.
+    const again = await retry.run({
+      auth: { uid: 'admin_ops', token: { admin: true } },
+      data: { uid: OWNER },
+    });
+    expect(again).toMatchObject({ deleted: true, alreadyDeleted: true });
+    const audits = await adminDb
+      .collection(`users/${OWNER}/auditLogs`)
+      .where('action', '==', 'account.delete')
+      .get();
+    expect(audits.size).toBe(1);
+  });
+
+  it('refuses the admin retry path without the admin claim', async () => {
+    const retry = adminRetryDeleteAccount as unknown as {
+      run: (request: unknown) => Promise<unknown>;
+    };
+    await expect(
+      retry.run({ auth: { uid: 'u_plain', token: { admin: false } }, data: { uid: OWNER } }),
+    ).rejects.toMatchObject({ code: 'permission-denied' });
+    await expect(
+      retry.run({ auth: { uid: 'u_plain', token: {} }, data: { uid: OWNER } }),
+    ).rejects.toMatchObject({ code: 'permission-denied' });
   });
 
   it('handles a sole-owner household and a caretaker membership in one call', async () => {

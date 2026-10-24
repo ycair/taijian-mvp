@@ -12,6 +12,7 @@ type CompletionDoc = {
   dueDate: string;
   completedAt?: unknown;
   completedBy?: string;
+  completedByName?: string | null;
 };
 
 /** Stored completions carry a Firestore timestamp; responses use ISO strings. */
@@ -56,6 +57,8 @@ export async function completeTask(ctx: HandlerContext): Promise<CommandResult> 
       completionId: id,
       alreadyCompleted: true,
       completedBy: data.completedBy ?? null,
+      // Older completions predate the snapshot; they still report the actor.
+      completedByName: data.completedByName ?? null,
       completedAt: isoOf(data.completedAt),
     });
   }
@@ -68,6 +71,9 @@ export async function completeTask(ctx: HandlerContext): Promise<CommandResult> 
     // `ctx.now` (not serverTimestamp) so a retry returns the exact stored time.
     completedAt: ctx.now,
     completedBy: ctx.uid,
+    // A display-name snapshot keeps "who did it" readable after a rename or a
+    // membership removal without a join (and without leaking the profile).
+    completedByName: member.displayName,
     source: ctx.source,
   });
   writeAudit(ctx.tx, {
@@ -85,6 +91,7 @@ export async function completeTask(ctx: HandlerContext): Promise<CommandResult> 
   return success(ctx, {
     completionId: id,
     completedBy: ctx.uid,
+    completedByName: member.displayName,
     completedAt: ctx.now.toISOString(),
   });
 }

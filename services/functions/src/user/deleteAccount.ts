@@ -1,12 +1,23 @@
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue } from 'firebase-admin/firestore';
 import { onCall } from 'firebase-functions/v2/https';
-import { AppError, newCommandId } from '@taijian/domain';
+import { z } from 'zod';
+import { AppError, ID_MAX_LENGTH, newCommandId } from '@taijian/domain';
 import { config } from '../config';
-import { writeAccountAudit } from '../lib/audit';
+import { writeAccountAudit, writeAudit } from '../lib/audit';
 import { toHttpsError } from '../lib/errors';
 import { db } from '../lib/firestore';
+import { consumeRateLimits } from '../lib/rateLimit';
 import { detachHouseholdFromUser } from '../commands/helpers';
+
+/** Destructive actions require a fresh sign-in, not a long-lived ID token. */
+export const RECENT_AUTH_MAX_AGE_SECONDS = 5 * 60;
+/** Clock skew allowance for `auth_time` (seconds since epoch). */
+const AUTH_TIME_SKEW_SECONDS = 60;
+
+/** One account-deletion attempt per hour; an admin retry bypasses this. */
+export const DELETE_ACCOUNT_LIMIT = 1;
+export const DELETE_ACCOUNT_WINDOW_SECONDS = 3600;
 
 export type DeleteAccountResult = {
   deleted: true;
@@ -27,6 +38,43 @@ type UserData = {
   householdIds?: string[];
   deletedAt?: unknown;
 };
+
+export type DeleteAccountOptions = {
+  /**
+   * The user-facing callable is rate limited. The admin retry path is not: an
+   * operator finishing a half-deleted account must be able to do so immediately
+   * and repeatedly.
+   */
+  enforceRateLimit?: boolean;
+};
+
+/**
+ * A stolen or replayed ID token is not enough to delete an account: the caller
+ * must have signed in within the last five minutes.
+ */
+export function assertRecentAuth(
+  token: { auth_time?: unknown } | undefined,
+  nowMs: number = Date.now(),
+): void {
+  const authTime = token?.auth_time;
+  if (typeof authTime !== 'number' || !Number.isFinite(authTime)) {
+    throw new AppError('UNAUTHENTICATED', 'sign in again before deleting your account');
+  }
+  const ageSeconds = nowMs / 1000 - authTime;
+  if (ageSeconds > RECENT_AUTH_MAX_AGE_SECONDS || ageSeconds < -AUTH_TIME_SKEW_SECONDS) {
+    throw new AppError('UNAUTHENTICATED', 'sign in again before deleting your account');
+  }
+}
+
+async function chargeAccountDeletion(uid: string): Promise<void> {
+  await consumeRateLimits(uid, [
+    {
+      action: 'account.delete',
+      limit: DELETE_ACCOUNT_LIMIT,
+      windowSeconds: DELETE_ACCOUNT_WINDOW_SECONDS,
+    },
+  ]);
+}
 
 function householdRef(householdId: string): FirebaseFirestore.DocumentReference {
   return db.collection('households').doc(householdId);
@@ -128,6 +176,19 @@ async function deleteMembership(uid: string, householdId: string): Promise<Membe
         },
         { merge: true },
       );
+      // The household timeline must show why it disappeared; the account audit
+      // entry alone is not visible to a future household reader.
+      writeAudit(tx, {
+        householdId,
+        actorUid: uid,
+        actorType: 'user',
+        action: 'household.delete',
+        targetType: 'household',
+        targetId: householdId,
+        after: { deleted: true, reason: 'account.delete' },
+        commandId: newCommandId(),
+        source: 'account.delete',
+      });
       return 'deleted' as const;
     }
 
@@ -159,10 +220,18 @@ async function deleteMembership(uid: string, householdId: string): Promise<Membe
  * next `lineLogin` is refused instead of re-creating the account under the same
  * UID. Refresh tokens are revoked before the Auth user is deleted.
  */
-export async function deleteAccountData(uid: string): Promise<DeleteAccountResult> {
+export async function deleteAccountData(
+  uid: string,
+  options: DeleteAccountOptions = {},
+): Promise<DeleteAccountResult> {
   const userRef = db.collection('users').doc(uid);
   const initial = (await userRef.get()).data() as UserData | undefined;
   const wasDeleted = initial?.deletedAt != null;
+  // A retry after the tombstone is already written is a no-op, not a new
+  // deletion: it must stay callable without spending a fresh hourly budget.
+  if (!wasDeleted && options.enforceRateLimit !== false) {
+    await chargeAccountDeletion(uid);
+  }
   const householdIds = wasDeleted ? [] : (initial?.householdIds ?? []);
 
   // Refuse before changing anything when an owned household still has members.
@@ -245,7 +314,35 @@ export const deleteAccount = onCall(
   async (request) => {
     try {
       if (!request.auth) throw new AppError('UNAUTHENTICATED', 'sign in required');
+      assertRecentAuth(request.auth.token);
       return await deleteAccountData(request.auth.uid);
+    } catch (error) {
+      throw toHttpsError(error);
+    }
+  },
+);
+
+const AdminRetryInput = z.object({ uid: z.string().min(1).max(ID_MAX_LENGTH) });
+
+/**
+ * Operator escape hatch for a half-deleted account (Firestore tombstoned but the
+ * Auth user still exists, or a membership left behind). Restricted to tokens
+ * carrying the `admin` custom claim; the same routine is idempotent, so a retry
+ * never duplicates audit entries or moves the original timestamps.
+ */
+export const adminRetryDeleteAccount = onCall(
+  { region: 'asia-east1', enforceAppCheck: config.ENFORCE_APP_CHECK },
+  async (request) => {
+    try {
+      const token = request.auth?.token as { admin?: unknown } | undefined;
+      if (!request.auth || token?.admin !== true) {
+        throw new AppError('FORBIDDEN', 'admin only');
+      }
+      const parsed = AdminRetryInput.safeParse(request.data);
+      if (!parsed.success) {
+        throw new AppError('VALIDATION_ERROR', 'invalid payload', { issues: parsed.error.issues });
+      }
+      return await deleteAccountData(parsed.data.uid, { enforceRateLimit: false });
     } catch (error) {
       throw toHttpsError(error);
     }

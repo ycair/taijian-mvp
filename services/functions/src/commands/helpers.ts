@@ -36,14 +36,18 @@ export function requireHouseholdId(ctx: HandlerContext): string {
   return ctx.envelope.householdId;
 }
 
+export type MemberContext = { role: Role; displayName: string | null };
+
 export async function requireMember(
   tx: Tx,
   householdId: string,
   uid: string,
-): Promise<{ role: Role }> {
+): Promise<MemberContext> {
   const snap = await tx.get(db.doc(`households/${householdId}/members/${uid}`));
   if (!snap.exists) throw new AppError('FORBIDDEN', 'not a household member');
-  return { role: snap.data()?.role as Role };
+  const data = snap.data() as { role?: Role; displayName?: string } | undefined;
+  const displayName = data?.displayName?.trim();
+  return { role: data?.role as Role, displayName: displayName ? displayName : null };
 }
 
 export function assertCan(role: Role, action: Action): void {
