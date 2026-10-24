@@ -6,6 +6,7 @@ import { config } from '../../config';
 import { getAuthUserCached, invalidateAuthUser } from '../../lib/authUser';
 import { db } from '../../lib/firestore';
 import { verifiedLineProfile } from '../../line/verify';
+import { ensureUserDoc } from '../helpers';
 import type { HandlerContext } from '../types';
 
 /** Providers that can keep the account usable after LINE is unlinked. */
@@ -51,6 +52,10 @@ export async function linkLine(ctx: HandlerContext): Promise<CommandResult> {
   if (existing?.status !== 'unlinked' && existing?.uid && existing.uid !== ctx.uid) {
     throw new AppError('LINE_ALREADY_LINKED', 'this LINE account is linked to another user');
   }
+
+  // `lineUsers/{sub}.uid` is canonical, so the mapped profile must exist before
+  // the mapping goes live; otherwise the next lineLogin rejects the user.
+  await ensureUserDoc(ctx.tx, ctx.uid);
 
   ctx.tx.set(
     ref,

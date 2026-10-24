@@ -201,6 +201,31 @@ describe('loginWithLine identity model', () => {
 });
 
 describe('linkLine with the unified identity model', () => {
+  it('creates the profile document when the caller has none', async () => {
+    await adminAuth.createUser({ uid: 'google-abc' });
+    stubLineVerify('UtestA');
+
+    const handlers: HandlerMap = { 'line.link': linkLine };
+    const result = await runCommand({
+      uid: 'google-abc',
+      envelope: envelope('line.link', { idToken: 'token-new-user' }),
+      source: 'test',
+      handlers,
+    });
+
+    expect(result.ok).toBe(true);
+    // Without a users/{uid} document the next lineLogin would refuse the user,
+    // because `lineUsers/{sub}.uid` is the canonical identity.
+    expect(await userDoc('google-abc')).toMatchObject({
+      displayName: 'google-abc',
+      householdIds: [],
+      locale: 'zh-TW',
+      timezone: 'Asia/Taipei',
+      schemaVersion: 1,
+    });
+    expect(await mappingDoc('UtestA')).toMatchObject({ uid: 'google-abc', status: 'active' });
+  });
+
   it('re-activates an unlinked mapping and keeps its linkedAt', async () => {
     const linkedAt = Timestamp.fromMillis(Date.now() - 60_000);
     await adminDb.collection('lineUsers').doc('UtestA').set({

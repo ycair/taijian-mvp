@@ -15,6 +15,7 @@ const { linkLine, unlinkLine } = await import('../src/commands/handlers/line');
 
 const UID = 'line_U123';
 const mappingRef = { path: 'lineUsers/U123' };
+const userRef = { path: `users/${UID}` };
 
 function stubLineVerify(sub = 'U123'): void {
   vi.stubGlobal(
@@ -65,10 +66,10 @@ function makeCtx(tx: TxMock, payload: unknown = { idToken: 'id-token' }): Handle
 beforeEach(() => {
   mocks.getUser.mockReset();
   mocks.db.collection.mockReset();
-  mocks.db.collection.mockReturnValue({
-    doc: vi.fn(() => mappingRef),
+  mocks.db.collection.mockImplementation((name: string) => ({
+    doc: vi.fn(() => (name === 'users' ? userRef : mappingRef)),
     where: vi.fn(() => ({ kind: 'query' })),
-  });
+  }));
   clearAuthUserCache();
 });
 
@@ -113,8 +114,16 @@ describe('linkLine', () => {
       expect.objectContaining({ uid: UID, status: 'active' }),
       { merge: true },
     );
-    const written = tx.set.mock.calls[0]?.[1] as Record<string, unknown>;
+    const written = tx.set.mock.calls.find((call) => call[0] === mappingRef)?.[1] as Record<
+      string,
+      unknown
+    >;
     expect(written).toHaveProperty('linkedAt');
+    // The canonical UID must have a profile before the mapping is published.
+    expect(tx.set).toHaveBeenCalledWith(
+      userRef,
+      expect.objectContaining({ householdIds: [], schemaVersion: 1 }),
+    );
     expect(result).toMatchObject({ ok: true, data: { linked: true } });
   });
 
@@ -134,7 +143,10 @@ describe('linkLine', () => {
       expect.objectContaining({ uid: UID, status: 'active' }),
       { merge: true },
     );
-    const written = tx.set.mock.calls[0]?.[1] as Record<string, unknown>;
+    const written = tx.set.mock.calls.find((call) => call[0] === mappingRef)?.[1] as Record<
+      string,
+      unknown
+    >;
     expect(written).not.toHaveProperty('linkedAt');
     // Merge + FieldValue.delete() removes the audit timestamp on re-link.
     expect(written.unlinkedAt).toBeDefined();

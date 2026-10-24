@@ -39,15 +39,30 @@ export async function clearAuth(): Promise<void> {
   }
 }
 
+export async function seedUser(uid: string, householdIds: string[] = []): Promise<void> {
+  await adminAuth.createUser({ uid }).catch((error: { code?: string }) => {
+    if (error.code !== 'auth/uid-already-exists') throw error;
+  });
+  await adminDb.collection('users').doc(uid).set({
+    displayName: uid,
+    avatarUrl: '',
+    householdIds,
+    locale: 'zh-TW',
+    timezone: 'Asia/Taipei',
+    schemaVersion: 1,
+  });
+}
+
 export function envelope(
   type: string,
   payload: unknown,
-  options: { commandId?: string; householdId?: string } = {},
+  options: { commandId?: string; householdId?: string; baseRevision?: number } = {},
 ): CommandEnvelope {
   return {
     commandId: options.commandId ?? newCommandId(),
     type,
     ...(options.householdId ? { householdId: options.householdId } : {}),
+    ...(options.baseRevision !== undefined ? { baseRevision: options.baseRevision } : {}),
     payload,
     client: { platform: 'test', appVersion: '1.0.0' },
   };
