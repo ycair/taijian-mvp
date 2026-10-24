@@ -145,7 +145,7 @@ Phase 2 會加入 Flutter 3.x（Riverpod、go_router、Firebase、Drift）與 iO
 
 ```bash
 pnpm install
-pnpm emulators          # Auth / Firestore / Functions
+pnpm emulators          # Auth / Firestore / Functions（會把 .env 複製進 .deploy/functions）
 pnpm seed               # 種子家庭 hh_demo、阿肥、今日餵食提醒（可選，E2E 會自動重跑）
 pnpm mock:line          # mock LINE（127.0.0.1:4010），供本機登入與 push
 pnpm --filter @taijian/liff dev
@@ -179,6 +179,11 @@ LINE_API_BASE=http://127.0.0.1:4010
 APP_BASE_URL=http://localhost:5173
 LIFF_ID=test-liff
 ```
+
+Functions emulator 的來源是 `.deploy/functions`（與部署相同），因此
+`pnpm emulators` 會先跑 `pnpm emulators:prep`，把 `services/functions/.env`、
+`.env.local`、`.env.demo-taijian` 複製進產物，`LINE_VERIFY_URL` 才指得到 mock LINE。
+`pnpm deploy:functions` 不會複製任何 env 檔，部署產物不含機密。
 
 本機 E2E 以 `http://localhost:5173/?mockLineIdToken=test-token-A` 登入
 `line_UtestA`（`test-token-B` 對應 `line_UtestB`；其他 token 一律 401）。mock 登入只在

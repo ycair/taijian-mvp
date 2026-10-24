@@ -32,10 +32,35 @@ commands after `pnpm build`.
 - `dist/index.js` (the `main` entry) is missing or does not parse;
 - a bare `require()` in `dist/index.js` cannot be resolved from the artifact.
 
-## Local emulators
+## Local emulators and env files
 
-`pnpm emulators` runs `pnpm deploy:functions` first and then starts the
-Functions emulator from the artifact, so the emulator runs exactly what deploys.
+The Functions emulator also loads functions from `.deploy/functions`, so it
+needs the local env files there. `pnpm emulators` runs the emulator-prep mode
+first:
+
+```bash
+pnpm emulators:prep        # node scripts/prepare-functions-deploy.mjs --emulator
+pnpm emulators:prep:check  # asserts local env files were copied
+pnpm emulators             # prep + firebase emulators:start
+```
+
+Emulator-prep copies `services/functions/.env`, `.env.local`, and
+`.env.<project>` (default project from `.firebaserc`, or `--project`) into the
+artifact **after** it is assembled. All three are gitignored and local-only.
+
+Deploy-prep never copies env files, and strips any that the packer included:
+
+```bash
+pnpm deploy:functions
+node scripts/check-emulator-env.mjs --mode=deploy   # asserts the artifact has none
+pnpm deploy:functions:check
+```
+
+`--mode=emulator` (the default for `emulators:prep:check`) fails when a local
+env file exists but is missing from the artifact, or when its content differs;
+`--mode=deploy` fails when any `.env*` file is present. Both modes pass
+trivially when the local files do not exist (CI).
+
 The Firestore/Auth-only suites never load the artifact.
 
 ## Rollback

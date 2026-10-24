@@ -16,9 +16,11 @@
     "build": "pnpm -r build",
     "deploy:functions": "node scripts/prepare-functions-deploy.mjs",
     "deploy:functions:check": "node scripts/check-functions-deploy.mjs",
+    "emulators:prep": "node scripts/prepare-functions-deploy.mjs --emulator --project demo-taijian",
+    "emulators:prep:check": "node scripts/check-emulator-env.mjs --mode=emulator --project demo-taijian",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "emulators": "pnpm deploy:functions && firebase emulators:start --only auth,firestore,functions --project demo-taijian",
+    "emulators": "pnpm emulators:prep && firebase emulators:start --only auth,firestore,functions --project demo-taijian",
     "emulators:check": "firebase emulators:exec --only firestore --project demo-taijian \"node scripts/check-emulators.mjs\""
   },
   "devDependencies": {
