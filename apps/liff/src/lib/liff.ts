@@ -3,6 +3,12 @@ import liff from '@line/liff';
 export type LiffInitResult = { redirecting: boolean };
 
 export async function initLiff(): Promise<LiffInitResult> {
+  // Local E2E: skip LIFF entirely and let `getLineIdToken` hand the backend a
+  // deterministic mock token. Gated on DEV so a production bundle can never
+  // reach this branch even if the flag leaks into the build environment.
+  if (import.meta.env.VITE_USE_MOCK_LINE === 'true' && import.meta.env.DEV) {
+    return { redirecting: false };
+  }
   const liffId = import.meta.env.VITE_LIFF_ID;
   if (!liffId) throw new Error('VITE_LIFF_ID is missing');
   await liff.init({ liffId });

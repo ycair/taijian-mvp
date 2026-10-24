@@ -141,6 +141,49 @@ Phase 0 會加入：
 
 Phase 2 會加入 Flutter 3.x（Riverpod、go_router、Firebase、Drift）與 iOS build。
 
+## Local development (Phase 0–1)
+
+```bash
+pnpm install
+pnpm emulators          # Auth / Firestore / Functions
+pnpm seed               # 種子家庭 hh_demo、阿肥、今日餵食提醒
+pnpm mock:line          # mock LINE（:4010），供本機登入與 push
+pnpm --filter @taijian/liff dev
+pnpm test:e2e           # Playwright 驗收（會自行啟動 Vite）
+```
+
+第一次跑 E2E 前先安裝瀏覽器：`pnpm exec playwright install chromium`。
+
+`apps/liff/.env.local` 與 `services/functions/.env` 是本機專用設定（已被 git 忽略）：
+
+```text
+# apps/liff/.env.local
+VITE_FIREBASE_API_KEY=demo
+VITE_FIREBASE_AUTH_DOMAIN=demo-taijian.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=demo-taijian
+VITE_FIREBASE_APP_ID=1:demo:web:demo
+VITE_LIFF_ID=test-liff
+VITE_USE_EMULATORS=true
+VITE_USE_MOCK_LINE=true
+```
+
+```text
+# services/functions/.env
+APP_ENV=dev
+LINE_LOGIN_CHANNEL_ID=test-login-channel
+LINE_MESSAGING_CHANNEL_ID=test-messaging-channel
+LINE_MESSAGING_CHANNEL_SECRET=test-messaging-secret
+LINE_CHANNEL_ACCESS_TOKEN=test-access-token
+LINE_VERIFY_URL=http://localhost:4010/oauth2/v2.1/verify
+LINE_API_BASE=http://localhost:4010
+APP_BASE_URL=http://localhost:5173
+LIFF_ID=test-liff
+```
+
+本機 E2E 以 `http://localhost:5173/?mockLineIdToken=test-token-A` 登入
+`line_UtestA`（`test-token-B` 對應 `line_UtestB`）。mock 登入只在 Vite `DEV`
+建置生效。驗收清單見 [`docs/acceptance/phase-1.md`](docs/acceptance/phase-1.md)。
+
 ## Security
 
 - **Do not commit** LINE channel secrets, access tokens, Firebase service account keys, or `.env` files.
