@@ -3,6 +3,12 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { RecordPage } from '../pages/RecordPage';
 
+vi.mock('../lib/firebase', () => ({
+  auth: {},
+  db: {},
+  functions: {},
+}));
+
 vi.mock('../lib/household', () => ({
   useHousehold: () => ({
     household: { id: 'h1', name: '苔間', timezone: 'Asia/Taipei' },
