@@ -31,4 +31,120 @@ describe('command schemas', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('rejects a malformed commandId', () => {
+    const result = CommandEnvelopeSchema.safeParse({
+      commandId: 'not-a-uuid',
+      type: 'animal.create',
+      payload: {},
+      client: { platform: 'liff', appVersion: '1.0.0' },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts a UUIDv7 commandId', () => {
+    const commandId = newCommandId();
+    expect(commandId[14]).toBe('7');
+    const result = CommandEnvelopeSchema.safeParse({
+      commandId,
+      type: 'animal.create',
+      payload: {},
+      client: { platform: 'liff', appVersion: '1.0.0' },
+    });
+    expect(result.success).toBe(true);
+  });
+});
+
+describe('animal update payload', () => {
+  it('drops status so lifecycle changes only flow through animal.archive', () => {
+    const parsed = commandSchemas['animal.update'].parse({ animalId: 'a1', status: 'archived' });
+    expect(Object.hasOwn(parsed, 'status')).toBe(false);
+  });
+});
+
+describe('invite payload', () => {
+  it('rejects a missing invite token', () => {
+    expect(commandSchemas['member.accept'].safeParse({}).success).toBe(false);
+  });
+
+  it('rejects a short invite token', () => {
+    expect(commandSchemas['member.accept'].safeParse({ token: 'too-short' }).success).toBe(false);
+  });
+});
+
+describe('timezone validation', () => {
+  it('rejects an invalid IANA timezone', () => {
+    const result = commandSchemas['household.create'].safeParse({
+      name: '苔間',
+      timezone: 'Mars/Phobos',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts a valid IANA timezone', () => {
+    const result = commandSchemas['household.create'].safeParse({
+      name: '苔間',
+      timezone: 'Asia/Taipei',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects an invalid timezone in reminder and profile payloads', () => {
+    const reminder = commandSchemas['reminder.create'].safeParse({
+      animalId: 'a1',
+      title: '餵食',
+      type: 'feeding',
+      schedule: { kind: 'daily', times: ['08:30'] },
+      timezone: 'Mars/Phobos',
+    });
+    expect(reminder.success).toBe(false);
+    expect(commandSchemas['user.updateProfile'].safeParse({ timezone: 'Mars/Phobos' }).success).toBe(
+      false,
+    );
+  });
+});
+
+describe('reminder schedule times', () => {
+  const reminderWithTimes = (times: string[]) => ({
+    animalId: 'a1',
+    title: '餵食',
+    type: 'feeding',
+    schedule: { kind: 'daily' as const, times },
+    timezone: 'Asia/Taipei',
+  });
+
+  it('rejects impossible clock times', () => {
+    expect(commandSchemas['reminder.create'].safeParse(reminderWithTimes(['99:99'])).success).toBe(
+      false,
+    );
+    expect(commandSchemas['reminder.create'].safeParse(reminderWithTimes(['24:00'])).success).toBe(
+      false,
+    );
+  });
+
+  it('accepts a valid clock time', () => {
+    expect(commandSchemas['reminder.create'].safeParse(reminderWithTimes(['08:30'])).success).toBe(
+      true,
+    );
+  });
+});
+
+describe('record occurredAt bounds', () => {
+  const recordAt = (occurredAt: string) => ({ animalId: 'a1', type: 'feeding', occurredAt });
+
+  it('rejects a record from two years ago', () => {
+    const twoYearsAgo = new Date(Date.now() - 2 * 365 * 24 * 60 * 60 * 1000).toISOString();
+    expect(commandSchemas['record.create'].safeParse(recordAt(twoYearsAgo)).success).toBe(false);
+  });
+
+  it('rejects a record an hour in the future', () => {
+    const inOneHour = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    expect(commandSchemas['record.create'].safeParse(recordAt(inOneHour)).success).toBe(false);
+  });
+
+  it('accepts a current timestamp', () => {
+    expect(
+      commandSchemas['record.create'].safeParse(recordAt(new Date().toISOString())).success,
+    ).toBe(true);
+  });
 });

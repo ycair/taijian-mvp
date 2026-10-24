@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { CreateAnimalPayload, UpdateAnimalPayload } from './schemas/animal';
-import { CreateHouseholdPayload, UpdateHouseholdPayload } from './schemas/household';
+import {
+  CreateHouseholdPayload,
+  TimezoneSchema,
+  UpdateHouseholdPayload,
+} from './schemas/household';
 import { AcceptInvitePayload, CreateInvitePayload } from './schemas/invite';
 import { CreateRecordPayload, UpdateRecordPayload } from './schemas/record';
 import { CreateReminderPayload, UpdateReminderPayload } from './schemas/reminder';
@@ -9,7 +13,7 @@ export const UpdateProfilePayload = z.object({
   displayName: z.string().trim().min(1).max(40).optional(),
   avatarUrl: z.string().url().max(500).optional(),
   locale: z.string().max(10).optional(),
-  timezone: z.string().max(60).optional(),
+  timezone: TimezoneSchema.optional(),
 });
 
 export const CompleteTaskPayload = z.object({

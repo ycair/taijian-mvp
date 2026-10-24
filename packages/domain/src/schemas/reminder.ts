@@ -1,6 +1,7 @@
 import { z } from 'zod';
+import { TimezoneSchema } from './household';
 
-const TimeSchema = z.string().regex(/^\d{2}:\d{2}$/);
+const TimeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 
 export const ScheduleSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('daily'), times: z.array(TimeSchema).min(1).max(4) }),
@@ -22,7 +23,7 @@ export const CreateReminderPayload = z.object({
   title: z.string().trim().min(1).max(60),
   type: z.string().min(1).max(30),
   schedule: ScheduleSchema,
-  timezone: z.string().min(1).max(60),
+  timezone: TimezoneSchema,
   enabled: z.boolean().default(true),
 });
 

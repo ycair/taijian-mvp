@@ -18,4 +18,19 @@ describe('permissions', () => {
     expect(can('owner', 'member.invite')).toBe(true);
     expect(can('caretaker', 'member.invite')).toBe(false);
   });
+
+  it('does not let caretakers archive animals', () => {
+    expect(can('caretaker', 'animal.archive')).toBe(false);
+    expect(can('owner', 'animal.archive')).toBe(true);
+  });
+
+  it('does not let caretakers remove members', () => {
+    expect(can('caretaker', 'member.remove')).toBe(false);
+    expect(can('owner', 'member.remove')).toBe(true);
+  });
+
+  it('does not let caretakers change member roles', () => {
+    expect(can('caretaker', 'member.updateRole')).toBe(false);
+    expect(can('owner', 'member.updateRole')).toBe(true);
+  });
 });

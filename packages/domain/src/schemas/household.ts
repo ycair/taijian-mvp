@@ -1,6 +1,17 @@
 import { z } from 'zod';
 
-export const TimezoneSchema = z.string().min(1).max(60);
+export const TimezoneSchema = z
+  .string()
+  .min(1)
+  .max(60)
+  .refine((value) => {
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone: value });
+      return true;
+    } catch {
+      return false;
+    }
+  }, 'invalid IANA timezone');
 export const CreateHouseholdPayload = z.object({
   name: z.string().trim().min(1).max(40),
   timezone: TimezoneSchema.default('Asia/Taipei'),

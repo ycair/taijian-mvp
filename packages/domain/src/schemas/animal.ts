@@ -18,5 +18,4 @@ export const CreateAnimalPayload = z.object({
 
 export const UpdateAnimalPayload = CreateAnimalPayload.partial().extend({
   animalId: z.string().min(1),
-  status: AnimalStatusSchema.optional(),
 });
