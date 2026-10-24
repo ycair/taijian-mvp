@@ -1,6 +1,12 @@
-import { AppError, CommandEnvelopeSchema, commandSchemas, type CommandResult, type CommandType } from '@taijian/domain';
+import {
+  AppError,
+  CommandEnvelopeSchema,
+  commandSchemas,
+  type CommandResult,
+  type CommandType,
+} from '@taijian/domain';
 import { db } from '../lib/firestore';
-import { getReplay, saveCommand } from '../lib/idempotency';
+import { getReplay, peekReplay, saveCommand } from '../lib/idempotency';
 import { requestHash } from '../lib/ids';
 import { reserveRateLimits, type RateLimitRule } from '../lib/rateLimit';
 import type { HandlerMap, Source } from './types';
@@ -12,34 +18,90 @@ export type RunCommandInput = {
   handlers: HandlerMap;
 };
 
-function rateLimitRules(type: string): RateLimitRule[] {
-  const rules: RateLimitRule[] = [{ action: type, limit: 100, windowSeconds: 60 }];
+/** Per-UID budget shared by every command type. */
+export const COMMAND_LIMIT = 100;
+export const COMMAND_LIMIT_WINDOW_SECONDS = 60;
+export const RECORD_CREATE_LIMIT = 20;
+export const MEMBER_INVITE_DAILY_LIMIT = 10;
+
+export function rateLimitRules(type: string): RateLimitRule[] {
+  const rules: RateLimitRule[] = [
+    { action: 'command', limit: COMMAND_LIMIT, windowSeconds: COMMAND_LIMIT_WINDOW_SECONDS },
+  ];
   if (type === 'record.create') {
-    rules.push({ action: 'record.create:burst', limit: 20, windowSeconds: 60 });
+    rules.push({
+      action: 'record.create',
+      limit: RECORD_CREATE_LIMIT,
+      windowSeconds: COMMAND_LIMIT_WINDOW_SECONDS,
+    });
   }
   if (type === 'member.invite') {
-    rules.push({ action: 'member.invite:daily', limit: 10, windowSeconds: 86400 });
+    rules.push({
+      action: 'member.invite',
+      limit: MEMBER_INVITE_DAILY_LIMIT,
+      windowSeconds: 86400,
+    });
   }
   return rules;
 }
 
-export async function runCommand(input: RunCommandInput): Promise<CommandResult> {
-  const envelope = CommandEnvelopeSchema.parse(input.envelope);
-  const schema = commandSchemas[envelope.type as CommandType];
-  if (!schema) throw new AppError('VALIDATION_ERROR', `Unknown command: ${envelope.type}`);
+/**
+ * Consumes the caller's budget in its own transaction so that rejected or
+ * failed commands are charged too. The command transaction itself never writes
+ * rate-limit counters, which keeps its read/write ordering simple.
+ */
+async function chargeRateLimits(uid: string, type: string): Promise<void> {
+  const rules = rateLimitRules(type);
+  await db.runTransaction(async (tx) => {
+    const commit = await reserveRateLimits(tx, uid, rules);
+    commit();
+  });
+}
 
-  const payload = schema.parse(envelope.payload);
+export async function runCommand(input: RunCommandInput): Promise<CommandResult> {
+  // Rate limiting happens before validation would otherwise bail out, so invalid
+  // requests still consume the global budget.
+  const envelopeResult = CommandEnvelopeSchema.safeParse(input.envelope);
+  if (!envelopeResult.success) {
+    await chargeRateLimits(input.uid, 'invalid');
+    throw new AppError('VALIDATION_ERROR', 'invalid envelope', {
+      issues: envelopeResult.error.issues,
+    });
+  }
+
+  const envelope = envelopeResult.data;
+  const schema = commandSchemas[envelope.type as CommandType];
+  if (!schema) {
+    await chargeRateLimits(input.uid, envelope.type);
+    throw new AppError('VALIDATION_ERROR', 'invalid payload', {
+      issues: [
+        { code: 'custom', path: ['type'], message: `unknown command: ${envelope.type}` },
+      ],
+    });
+  }
+
+  const payloadResult = schema.safeParse(envelope.payload);
+  if (!payloadResult.success) {
+    await chargeRateLimits(input.uid, envelope.type);
+    throw new AppError('VALIDATION_ERROR', 'invalid payload', {
+      issues: payloadResult.error.issues,
+    });
+  }
+
+  const payload = payloadResult.data;
   const normalizedEnvelope = { ...envelope, payload };
   const hash = requestHash(envelope.type, payload);
 
-  return db.runTransaction(async (tx) => {
-    const replay = await getReplay(tx, envelope.commandId, hash);
-    if (replay) return replay;
+  // Retries are free: an existing command replays before any budget is spent.
+  const replay = await peekReplay(input.uid, envelope.commandId, hash);
+  if (replay) return replay;
 
-    // Reads for the rate-limit buckets must happen before any write in the
-    // transaction, and handler reads must happen before the counters are
-    // written, so the increment is deferred until the handler returns.
-    const commitRateLimits = await reserveRateLimits(tx, input.uid, rateLimitRules(envelope.type));
+  await chargeRateLimits(input.uid, envelope.type);
+
+  return db.runTransaction(async (tx) => {
+    // Re-check inside the transaction so concurrent duplicates stay race-free.
+    const committed = await getReplay(tx, input.uid, envelope.commandId, hash);
+    if (committed) return committed;
 
     const handler = input.handlers[envelope.type];
     if (!handler) {
@@ -53,7 +115,6 @@ export async function runCommand(input: RunCommandInput): Promise<CommandResult>
       source: input.source,
       now: new Date(),
     });
-    commitRateLimits();
     saveCommand(tx, envelope.commandId, input.uid, envelope.type, hash, result);
     return result;
   });

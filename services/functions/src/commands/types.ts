@@ -11,6 +11,12 @@ export type HandlerContext = {
   now: Date;
 };
 
+/**
+ * Handlers run inside a Firestore transaction that is retried on contention.
+ * They must only touch data through `ctx.tx` and must not perform
+ * non-transactional side effects (LINE push messages, token exchange, HTTP
+ * calls, timers), because a retry or a failed commit would repeat them.
+ */
 export type Handler = (ctx: HandlerContext) => Promise<CommandResult>;
 
 export type HandlerMap = Record<string, Handler>;

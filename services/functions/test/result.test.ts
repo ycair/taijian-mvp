@@ -15,4 +15,17 @@ describe('toFailure', () => {
       expect(failure.lastChangedFields).toEqual(['weight']);
     }
   });
+
+  it('never lets details override the envelope contract', () => {
+    const failure = toFailure(
+      new AppError('NOT_FOUND', 'missing', { ok: true, code: 'INTERNAL', message: 'spoofed' }),
+      'cmd_2',
+    );
+    expect(failure).toMatchObject({
+      ok: false,
+      commandId: 'cmd_2',
+      code: 'NOT_FOUND',
+      message: 'missing',
+    });
+  });
 });
