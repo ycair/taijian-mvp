@@ -24,3 +24,14 @@ export function timezoneOptions(current?: string): string[] {
   if (current && !zones.includes(current)) zones.unshift(current);
   return zones;
 }
+
+/** Mirrors the server `TimezoneSchema` so the form rejects bad input early. */
+export function isValidTimezone(value: string): boolean {
+  if (!value) return false;
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+}

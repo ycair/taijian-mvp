@@ -46,7 +46,7 @@ export function HouseholdCreatePage() {
       // Re-read the profile, then select the new household. Today waits on the
       // household document, so navigation cannot flash "還沒有家庭".
       await refresh();
-      select(householdId);
+      void select(householdId);
       navigate('/', { replace: true });
     } catch (error_) {
       setError(callErrorMessage(error_, '無法建立家庭，請檢查網路後再試。'));
