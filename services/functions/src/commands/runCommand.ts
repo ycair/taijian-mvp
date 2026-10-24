@@ -103,7 +103,7 @@ export async function runCommand(input: RunCommandInput): Promise<CommandResult>
     const committed = await getReplay(tx, input.uid, envelope.commandId, hash);
     if (committed) return committed;
 
-    const handler = input.handlers[envelope.type];
+    const handler = input.handlers[envelope.type as CommandType];
     if (!handler) {
       throw new AppError('VALIDATION_ERROR', `Unknown command: ${envelope.type}`);
     }

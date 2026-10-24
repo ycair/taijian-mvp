@@ -3,9 +3,12 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { writeAudit } from '../../lib/audit';
 import { db } from '../../lib/firestore';
 import {
+  actorTypeFor,
   assertCan,
+  counterPatch,
   detachHouseholdFromUser,
   mustGetHousehold,
+  nextOwnerUid,
   requireHouseholdId,
   requireMember,
   success,
@@ -33,7 +36,7 @@ export async function updateMemberRole(ctx: HandlerContext): Promise<CommandResu
     writeAudit(ctx.tx, {
       householdId,
       actorUid: ctx.uid,
-      actorType: 'user',
+      actorType: actorTypeFor(ctx),
       action: 'member.updateRole',
       targetType: 'member',
       targetId: payload.uid,
@@ -48,19 +51,25 @@ export async function updateMemberRole(ctx: HandlerContext): Promise<CommandResu
     throw new AppError('LAST_OWNER', 'cannot demote the last owner');
   }
 
+  // Reads before the writes below: a demoted `ownerUid` hands over to another owner.
+  const newOwnerUid =
+    target.role === 'owner'
+      ? await nextOwnerUid(ctx.tx, householdId, household, payload.uid)
+      : undefined;
+
   ctx.tx.set(targetRef, { role: payload.role }, { merge: true });
   ctx.tx.set(
     db.collection('households').doc(householdId),
-    {
+    counterPatch(ctx, {
       ownerCount: FieldValue.increment(payload.role === 'owner' ? 1 : -1),
-      updatedAt: FieldValue.serverTimestamp(),
-    },
+      ...(newOwnerUid ? { ownerUid: newOwnerUid } : {}),
+    }),
     { merge: true },
   );
   writeAudit(ctx.tx, {
     householdId,
     actorUid: ctx.uid,
-    actorType: 'user',
+    actorType: actorTypeFor(ctx),
     action: 'member.updateRole',
     targetType: 'member',
     targetId: payload.uid,
@@ -80,6 +89,11 @@ export async function removeMember(ctx: HandlerContext): Promise<CommandResult> 
 
   const household = await mustGetHousehold(ctx.tx, householdId);
   const payload = ctx.envelope.payload as { uid: string };
+  // Leaving is a self-service action with its own last-owner rules.
+  if (payload.uid === ctx.uid) {
+    throw new AppError('FORBIDDEN', 'use member.leave to leave the household');
+  }
+
   const targetRef = db.doc(`households/${householdId}/members/${payload.uid}`);
   const targetSnap = await ctx.tx.get(targetRef);
   if (!targetSnap.exists) throw new AppError('NOT_FOUND', 'member not found');
@@ -89,23 +103,27 @@ export async function removeMember(ctx: HandlerContext): Promise<CommandResult> 
     throw new AppError('LAST_OWNER', 'cannot remove the last owner');
   }
 
-  // Reads the target profile before the writes below.
+  // Reads before the writes below: a removed `ownerUid` hands over to another owner.
+  const newOwnerUid =
+    target.role === 'owner'
+      ? await nextOwnerUid(ctx.tx, householdId, household, payload.uid)
+      : undefined;
   await detachHouseholdFromUser(ctx.tx, payload.uid, householdId);
 
   ctx.tx.delete(targetRef);
   ctx.tx.set(
     db.collection('households').doc(householdId),
-    {
+    counterPatch(ctx, {
       memberCount: FieldValue.increment(-1),
       ownerCount: FieldValue.increment(target.role === 'owner' ? -1 : 0),
-      updatedAt: FieldValue.serverTimestamp(),
-    },
+      ...(newOwnerUid ? { ownerUid: newOwnerUid } : {}),
+    }),
     { merge: true },
   );
   writeAudit(ctx.tx, {
     householdId,
     actorUid: ctx.uid,
-    actorType: 'user',
+    actorType: actorTypeFor(ctx),
     action: 'member.remove',
     targetType: 'member',
     targetId: payload.uid,
@@ -126,23 +144,27 @@ export async function leaveHousehold(ctx: HandlerContext): Promise<CommandResult
     throw new AppError('LAST_OWNER', 'transfer ownership before leaving');
   }
 
-  // Reads the profile before the writes below.
+  // Reads before the writes below: a leaving `ownerUid` hands over to another owner.
+  const newOwnerUid =
+    member.role === 'owner'
+      ? await nextOwnerUid(ctx.tx, householdId, household, ctx.uid)
+      : undefined;
   await detachHouseholdFromUser(ctx.tx, ctx.uid, householdId);
 
   ctx.tx.delete(db.doc(`households/${householdId}/members/${ctx.uid}`));
   ctx.tx.set(
     db.collection('households').doc(householdId),
-    {
+    counterPatch(ctx, {
       memberCount: FieldValue.increment(-1),
       ownerCount: FieldValue.increment(member.role === 'owner' ? -1 : 0),
-      updatedAt: FieldValue.serverTimestamp(),
-    },
+      ...(newOwnerUid ? { ownerUid: newOwnerUid } : {}),
+    }),
     { merge: true },
   );
   writeAudit(ctx.tx, {
     householdId,
     actorUid: ctx.uid,
-    actorType: 'user',
+    actorType: actorTypeFor(ctx),
     action: 'member.leave',
     targetType: 'member',
     targetId: ctx.uid,

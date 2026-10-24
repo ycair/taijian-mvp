@@ -14,8 +14,12 @@ vi.mock('../src/lib/firestore', () => ({ db: mocks.db }));
 const { linkLine, unlinkLine } = await import('../src/commands/handlers/line');
 
 const UID = 'line_U123';
+const auditRef = { path: `users/${UID}/auditLogs/a1` };
 const mappingRef = { path: 'lineUsers/U123' };
-const userRef = { path: `users/${UID}` };
+const userRef = {
+  path: `users/${UID}`,
+  collection: vi.fn(() => ({ doc: vi.fn(() => auditRef) })),
+};
 
 function stubLineVerify(sub = 'U123'): void {
   vi.stubGlobal(
@@ -124,6 +128,10 @@ describe('linkLine', () => {
       userRef,
       expect.objectContaining({ householdIds: [], schemaVersion: 1 }),
     );
+    expect(tx.set).toHaveBeenCalledWith(
+      auditRef,
+      expect.objectContaining({ action: 'line.link', targetId: 'U123' }),
+    );
     expect(result).toMatchObject({ ok: true, data: { linked: true } });
   });
 
@@ -174,7 +182,7 @@ describe('unlinkLine', () => {
     const tx = makeTx({
       get: vi.fn().mockResolvedValue({
         empty: false,
-        docs: [{ ref: mappingRef, data: () => ({ uid: UID, status: 'active' }) }],
+        docs: [{ id: 'U123', ref: mappingRef, data: () => ({ uid: UID, status: 'active' }) }],
       }),
     });
 
@@ -187,6 +195,10 @@ describe('unlinkLine', () => {
       { merge: true },
     );
     expect(result).toMatchObject({ ok: true, data: { linked: false } });
+    expect(tx.set).toHaveBeenCalledWith(
+      auditRef,
+      expect.objectContaining({ action: 'line.unlink', targetId: 'U123' }),
+    );
   });
 
   it('reports NOT_FOUND when no active mapping is linked', async () => {
@@ -209,7 +221,7 @@ describe('unlinkLine', () => {
     const tx = makeTx({
       get: vi.fn().mockResolvedValue({
         empty: false,
-        docs: [{ ref: mappingRef, data: () => ({ uid: UID, status: 'active' }) }],
+        docs: [{ id: 'U123', ref: mappingRef, data: () => ({ uid: UID, status: 'active' }) }],
       }),
     });
 

@@ -4,9 +4,10 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { config } from '../../config';
 import { getAuthUserCached, invalidateAuthUser } from '../../lib/authUser';
+import { writeAccountAudit } from '../../lib/audit';
 import { db } from '../../lib/firestore';
 import { verifiedLineProfile } from '../../line/verify';
-import { ensureUserDoc } from '../helpers';
+import { actorTypeFor, ensureUserDoc } from '../helpers';
 import type { HandlerContext } from '../types';
 
 /** Providers that can keep the account usable after LINE is unlinked. */
@@ -70,6 +71,17 @@ export async function linkLine(ctx: HandlerContext): Promise<CommandResult> {
     },
     { merge: true },
   );
+  writeAccountAudit(ctx.tx, ctx.uid, {
+    actorUid: ctx.uid,
+    actorType: actorTypeFor(ctx),
+    action: 'line.link',
+    targetType: 'lineUser',
+    targetId: profile.sub,
+    before: existing ? { uid: existing.uid ?? null, status: existing.status ?? 'active' } : null,
+    after: { uid: ctx.uid, status: 'active' },
+    commandId: ctx.envelope.commandId,
+    source: ctx.source,
+  });
 
   return {
     ok: true,
@@ -106,11 +118,23 @@ export async function unlinkLine(ctx: HandlerContext): Promise<CommandResult> {
   }
 
   for (const mapping of linked) {
+    const data = mapping.data() as LineMappingData;
     ctx.tx.set(
       mapping.ref,
       { status: 'unlinked', unlinkedAt: FieldValue.serverTimestamp() },
       { merge: true },
     );
+    writeAccountAudit(ctx.tx, ctx.uid, {
+      actorUid: ctx.uid,
+      actorType: actorTypeFor(ctx),
+      action: 'line.unlink',
+      targetType: 'lineUser',
+      targetId: mapping.id,
+      before: { uid: data.uid ?? ctx.uid, status: data.status ?? 'active' },
+      after: { status: 'unlinked' },
+      commandId: ctx.envelope.commandId,
+      source: ctx.source,
+    });
   }
 
   return {

@@ -3,9 +3,11 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { writeAudit } from '../../lib/audit';
 import { db } from '../../lib/firestore';
 import {
+  actorTypeFor,
   assertCan,
   assertRevision,
   bump,
+  counterPatch,
   detachHouseholdFromUser,
   ensureUserDoc,
   mustGetHousehold,
@@ -58,7 +60,7 @@ export async function createHousehold(ctx: HandlerContext): Promise<CommandResul
   writeAudit(ctx.tx, {
     householdId,
     actorUid: ctx.uid,
-    actorType: 'user',
+    actorType: actorTypeFor(ctx),
     action: 'household.create',
     targetType: 'household',
     targetId: householdId,
@@ -84,7 +86,7 @@ export async function updateHousehold(ctx: HandlerContext): Promise<CommandResul
   writeAudit(ctx.tx, {
     householdId,
     actorUid: ctx.uid,
-    actorType: 'user',
+    actorType: actorTypeFor(ctx),
     action: 'household.update',
     targetType: 'household',
     targetId: householdId,
@@ -107,26 +109,50 @@ export async function deleteHousehold(ctx: HandlerContext): Promise<CommandResul
     throw new AppError('FORBIDDEN', 'remove other members or transfer ownership first');
   }
 
-  // Reads the profile before the writes below.
+  // Reads first: active invites and the profile, before any write below.
+  const invitesSnap = await ctx.tx.get(
+    db.collection('invites').where('householdId', '==', householdId),
+  );
+  const activeInvites = invitesSnap.docs.filter((doc) => doc.data().status === 'active');
   await detachHouseholdFromUser(ctx.tx, ctx.uid, householdId);
 
+  for (const invite of activeInvites) {
+    ctx.tx.set(
+      invite.ref,
+      {
+        status: 'revoked',
+        revokedAt: FieldValue.serverTimestamp(),
+        revokedBy: ctx.uid,
+      },
+      { merge: true },
+    );
+  }
   ctx.tx.set(
     db.collection('households').doc(householdId),
-    { deletedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() },
+    counterPatch(ctx, {
+      memberCount: 0,
+      ownerCount: 0,
+      deletedAt: FieldValue.serverTimestamp(),
+    }),
     { merge: true },
   );
   ctx.tx.delete(db.doc(`households/${householdId}/members/${ctx.uid}`));
   writeAudit(ctx.tx, {
     householdId,
     actorUid: ctx.uid,
-    actorType: 'user',
+    actorType: actorTypeFor(ctx),
     action: 'household.delete',
     targetType: 'household',
     targetId: householdId,
     before: household,
+    after: { deleted: true, revokedInvites: activeInvites.length },
     commandId: ctx.envelope.commandId,
     source: ctx.source,
   });
 
-  return success(ctx, { householdId, deleted: true });
+  return success(ctx, {
+    householdId,
+    deleted: true,
+    revokedInvites: activeInvites.length,
+  });
 }

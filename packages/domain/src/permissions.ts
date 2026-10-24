@@ -5,6 +5,7 @@ export const ACTIONS = [
   'household.update',
   'household.delete',
   'member.invite',
+  'member.revokeInvite',
   'member.remove',
   'member.updateRole',
   'animal.create',

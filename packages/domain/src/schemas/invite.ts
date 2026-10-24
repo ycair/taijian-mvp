@@ -8,3 +8,7 @@ export const CreateInvitePayload = z.object({
 export const AcceptInvitePayload = z.object({
   token: z.string().min(20).max(200),
 });
+
+export const RevokeInvitePayload = z.object({
+  inviteId: z.string().min(1),
+});

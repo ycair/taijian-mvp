@@ -1,4 +1,4 @@
-import type { CommandEnvelope, CommandResult } from '@taijian/domain';
+import type { CommandEnvelope, CommandResult, CommandType } from '@taijian/domain';
 import type { Tx } from '../lib/firestore';
 
 export type Source = 'liff' | 'ios' | 'android' | 'bot' | 'test';
@@ -19,4 +19,5 @@ export type HandlerContext = {
  */
 export type Handler = (ctx: HandlerContext) => Promise<CommandResult>;
 
-export type HandlerMap = Record<string, Handler>;
+/** Registered handlers; every key is compile-time checked against `CommandType`. */
+export type HandlerMap = Partial<Record<CommandType, Handler>>;

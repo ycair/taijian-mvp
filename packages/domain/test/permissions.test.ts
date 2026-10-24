@@ -33,4 +33,9 @@ describe('permissions', () => {
     expect(can('caretaker', 'member.updateRole')).toBe(false);
     expect(can('owner', 'member.updateRole')).toBe(true);
   });
+
+  it('lets only owners revoke invites', () => {
+    expect(can('owner', 'member.revokeInvite')).toBe(true);
+    expect(can('caretaker', 'member.revokeInvite')).toBe(false);
+  });
 });

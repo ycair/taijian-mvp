@@ -224,6 +224,8 @@ describe('linkLine with the unified identity model', () => {
       schemaVersion: 1,
     });
     expect(await mappingDoc('UtestA')).toMatchObject({ uid: 'google-abc', status: 'active' });
+    const accountAudit = await adminDb.collection('users/google-abc/auditLogs').get();
+    expect(accountAudit.docs.map((doc) => doc.data().action)).toContain('line.link');
   });
 
   it('re-activates an unlinked mapping and keeps its linkedAt', async () => {

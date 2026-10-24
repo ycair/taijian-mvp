@@ -5,7 +5,7 @@ import {
   TimezoneSchema,
   UpdateHouseholdPayload,
 } from './schemas/household';
-import { AcceptInvitePayload, CreateInvitePayload } from './schemas/invite';
+import { AcceptInvitePayload, CreateInvitePayload, RevokeInvitePayload } from './schemas/invite';
 import { CreateRecordPayload, UpdateRecordPayload } from './schemas/record';
 import { CreateReminderPayload, UpdateReminderPayload } from './schemas/reminder';
 
@@ -27,6 +27,7 @@ export const commandSchemas = {
   'household.delete': z.object({}),
   'member.invite': CreateInvitePayload,
   'member.accept': AcceptInvitePayload,
+  'member.revokeInvite': RevokeInvitePayload,
   'member.remove': z.object({ uid: z.string().min(1) }),
   'member.updateRole': z.object({
     uid: z.string().min(1),

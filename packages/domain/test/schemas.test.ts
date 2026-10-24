@@ -19,7 +19,10 @@ describe('command schemas', () => {
   });
 
   it('rejects an empty animal name', () => {
-    const result = commandSchemas['animal.create'].safeParse({ name: '', species: 'leopard-gecko' });
+    const result = commandSchemas['animal.create'].safeParse({
+      name: '',
+      species: 'leopard-gecko',
+    });
     expect(result.success).toBe(false);
   });
 
@@ -70,6 +73,13 @@ describe('invite payload', () => {
   it('rejects a short invite token', () => {
     expect(commandSchemas['member.accept'].safeParse({ token: 'too-short' }).success).toBe(false);
   });
+
+  it('requires an invite id to revoke', () => {
+    expect(commandSchemas['member.revokeInvite'].safeParse({}).success).toBe(false);
+    expect(commandSchemas['member.revokeInvite'].safeParse({ inviteId: 'inv_1' }).success).toBe(
+      true,
+    );
+  });
 });
 
 describe('timezone validation', () => {
@@ -98,9 +108,9 @@ describe('timezone validation', () => {
       timezone: 'Mars/Phobos',
     });
     expect(reminder.success).toBe(false);
-    expect(commandSchemas['user.updateProfile'].safeParse({ timezone: 'Mars/Phobos' }).success).toBe(
-      false,
-    );
+    expect(
+      commandSchemas['user.updateProfile'].safeParse({ timezone: 'Mars/Phobos' }).success,
+    ).toBe(false);
   });
 });
 

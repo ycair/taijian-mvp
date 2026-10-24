@@ -3,7 +3,16 @@ import { AppError, type CommandResult, type Role } from '@taijian/domain';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { writeAudit } from '../../lib/audit';
 import { db } from '../../lib/firestore';
-import { assertCan, ensureUserDoc, requireHouseholdId, requireMember, success } from '../helpers';
+import {
+  actorTypeFor,
+  assertCan,
+  counterPatch,
+  ensureUserDoc,
+  mustGetHousehold,
+  requireHouseholdId,
+  requireMember,
+  success,
+} from '../helpers';
 import type { HandlerContext } from '../types';
 
 const DAY_MS = 86_400_000;
@@ -43,6 +52,8 @@ export async function inviteMember(ctx: HandlerContext): Promise<CommandResult> 
   const householdId = requireHouseholdId(ctx);
   const member = await requireMember(ctx.tx, householdId, ctx.uid);
   assertCan(member.role, 'member.invite');
+  // Rejects a deleted or missing household before minting an unusable invite.
+  await mustGetHousehold(ctx.tx, householdId);
 
   const payload = ctx.envelope.payload as { role: Role; expiresInDays: number };
   const inviteRef = db.collection('invites').doc();
@@ -66,7 +77,7 @@ export async function inviteMember(ctx: HandlerContext): Promise<CommandResult> 
   writeAudit(ctx.tx, {
     householdId,
     actorUid: ctx.uid,
-    actorType: 'user',
+    actorType: actorTypeFor(ctx),
     action: 'member.invite',
     targetType: 'invite',
     targetId: inviteRef.id,
@@ -103,7 +114,7 @@ export async function acceptInvite(ctx: HandlerContext): Promise<CommandResult> 
     writeAudit(ctx.tx, {
       householdId: invite.householdId,
       actorUid: ctx.uid,
-      actorType: 'user',
+      actorType: actorTypeFor(ctx),
       action: 'member.accept',
       targetType: 'member',
       targetId: ctx.uid,
@@ -117,6 +128,9 @@ export async function acceptInvite(ctx: HandlerContext): Promise<CommandResult> 
   // Invites can never grant ownership; transfers go through member.updateRole.
   if (invite.role !== 'caretaker') {
     throw new AppError('VALIDATION_ERROR', 'invites can only grant the caretaker role');
+  }
+  if (invite.status === 'revoked') {
+    throw new AppError('INVITE_EXPIRED', 'invite has been revoked');
   }
   if (invite.status !== 'active' || invite.usedCount >= invite.maxUses) {
     throw new AppError('INVITE_USED', 'invite has already been used');
@@ -164,15 +178,13 @@ export async function acceptInvite(ctx: HandlerContext): Promise<CommandResult> 
     },
     { merge: true },
   );
-  ctx.tx.set(
-    householdRef,
-    { memberCount: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() },
-    { merge: true },
-  );
+  ctx.tx.set(householdRef, counterPatch(ctx, { memberCount: FieldValue.increment(1) }), {
+    merge: true,
+  });
   writeAudit(ctx.tx, {
     householdId: invite.householdId,
     actorUid: ctx.uid,
-    actorType: 'user',
+    actorType: actorTypeFor(ctx),
     action: 'member.accept',
     targetType: 'member',
     targetId: ctx.uid,
@@ -182,4 +194,59 @@ export async function acceptInvite(ctx: HandlerContext): Promise<CommandResult> 
   });
 
   return success(ctx, { householdId: invite.householdId });
+}
+
+export async function revokeInvite(ctx: HandlerContext): Promise<CommandResult> {
+  const householdId = requireHouseholdId(ctx);
+  const member = await requireMember(ctx.tx, householdId, ctx.uid);
+  assertCan(member.role, 'member.revokeInvite');
+
+  const payload = ctx.envelope.payload as { inviteId: string };
+  const inviteRef = db.collection('invites').doc(payload.inviteId);
+  const inviteSnap = await ctx.tx.get(inviteRef);
+  if (!inviteSnap.exists) throw new AppError('NOT_FOUND', 'invite not found');
+  const invite = inviteSnap.data() as InviteDoc;
+  // Never reveal invites that belong to another household.
+  if (invite.householdId !== householdId) throw new AppError('NOT_FOUND', 'invite not found');
+
+  if (invite.status === 'revoked' || invite.status === 'used') {
+    // Revoking a dead invite is a no-op the caller can retry safely.
+    writeAudit(ctx.tx, {
+      householdId,
+      actorUid: ctx.uid,
+      actorType: actorTypeFor(ctx),
+      action: 'member.revokeInvite',
+      targetType: 'invite',
+      targetId: payload.inviteId,
+      before: { status: invite.status },
+      after: { status: invite.status, idempotent: true },
+      commandId: ctx.envelope.commandId,
+      source: ctx.source,
+    });
+    return success(ctx, { inviteId: payload.inviteId, status: invite.status });
+  }
+
+  ctx.tx.set(
+    inviteRef,
+    {
+      status: 'revoked',
+      revokedAt: FieldValue.serverTimestamp(),
+      revokedBy: ctx.uid,
+    },
+    { merge: true },
+  );
+  writeAudit(ctx.tx, {
+    householdId,
+    actorUid: ctx.uid,
+    actorType: actorTypeFor(ctx),
+    action: 'member.revokeInvite',
+    targetType: 'invite',
+    targetId: payload.inviteId,
+    before: { status: invite.status },
+    after: { status: 'revoked' },
+    commandId: ctx.envelope.commandId,
+    source: ctx.source,
+  });
+
+  return success(ctx, { inviteId: payload.inviteId, status: 'revoked' });
 }

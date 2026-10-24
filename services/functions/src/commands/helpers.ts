@@ -24,6 +24,11 @@ export type UserProfile = {
   defaultHouseholdId?: string;
 };
 
+/** Bot-originated commands are audited as `bot`; everything else as `user`. */
+export function actorTypeFor(ctx: HandlerContext): 'user' | 'bot' {
+  return ctx.source === 'bot' ? 'bot' : 'user';
+}
+
 export function requireHouseholdId(ctx: HandlerContext): string {
   if (!ctx.envelope.householdId) {
     throw new AppError('VALIDATION_ERROR', 'householdId is required');
@@ -153,4 +158,45 @@ export async function detachHouseholdFromUser(
     patch.defaultHouseholdId = remaining[0] ?? FieldValue.delete();
   }
   tx.set(ref, patch, { merge: true });
+}
+
+/**
+ * Household counter fields (`memberCount`, `ownerCount`) are non-revisioned
+ * metadata: they change without bumping `revision`, because a revision bump
+ * would produce false `CONFLICT`s for editors who never touched membership.
+ * Member document listeners remain the authoritative membership source.
+ */
+export function counterPatch(
+  ctx: HandlerContext,
+  counters: Record<string, unknown>,
+): Record<string, unknown> {
+  return {
+    ...counters,
+    updatedBy: ctx.uid,
+    updatedFrom: ctx.source,
+    updatedAt: FieldValue.serverTimestamp(),
+  };
+}
+
+/**
+ * Keeps `household.ownerUid` pointing at a live owner. When `leavingUid` is the
+ * recorded owner, returns the UID of another owner; throws `LAST_OWNER` when no
+ * replacement exists so the field can never dangle. Returns `undefined` when
+ * `leavingUid` is not the recorded owner and the field should stay put.
+ */
+export async function nextOwnerUid(
+  tx: Tx,
+  householdId: string,
+  household: HouseholdDoc,
+  leavingUid: string,
+): Promise<string | undefined> {
+  if (household.ownerUid !== leavingUid) return undefined;
+  const owners = await tx.get(
+    db.collection(`households/${householdId}/members`).where('role', '==', 'owner').limit(2),
+  );
+  const replacement = owners.docs.find((doc) => doc.id !== leavingUid);
+  if (!replacement) {
+    throw new AppError('LAST_OWNER', 'no other owner can inherit the household');
+  }
+  return replacement.id;
 }
