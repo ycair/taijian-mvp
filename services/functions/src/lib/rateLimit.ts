@@ -75,6 +75,18 @@ export async function reserveRateLimits(
 }
 
 /**
+ * Charges a set of buckets in their own transaction, so a rejected or failed
+ * request still consumes budget. Callers with a transaction that must read
+ * afterwards use {@link reserveRateLimits} directly instead.
+ */
+export async function consumeRateLimits(uid: string, rules: RateLimitRule[]): Promise<void> {
+  await db.runTransaction(async (tx) => {
+    const commit = await reserveRateLimits(tx, uid, rules);
+    commit();
+  });
+}
+
+/**
  * Convenience wrapper that reserves and immediately writes a single bucket.
  * Prefer `reserveRateLimits` inside transactions that still need to read
  * afterwards: Firestore rejects reads that follow a write.

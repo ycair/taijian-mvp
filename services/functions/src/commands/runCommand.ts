@@ -8,7 +8,7 @@ import {
 import { db } from '../lib/firestore';
 import { getReplay, peekReplay, saveCommand } from '../lib/idempotency';
 import { requestHash } from '../lib/ids';
-import { reserveRateLimits, type RateLimitRule } from '../lib/rateLimit';
+import { consumeRateLimits, type RateLimitRule } from '../lib/rateLimit';
 import type { HandlerMap, Source } from './types';
 
 export type RunCommandInput = {
@@ -24,10 +24,30 @@ export const COMMAND_LIMIT_WINDOW_SECONDS = 60;
 export const RECORD_CREATE_LIMIT = 20;
 export const MEMBER_INVITE_DAILY_LIMIT = 10;
 
-export function rateLimitRules(type: string): RateLimitRule[] {
+/**
+ * Bot traffic has its own, tighter budget. It covers every bot interaction,
+ * including read-only replies that never reach `runCommand`, so the reference
+ * install's 30 interactions/minute/UID holds for the whole chatbot.
+ */
+export const BOT_INTERACTION_ACTION = 'bot';
+export const BOT_INTERACTION_LIMIT = 30;
+export const BOT_INTERACTION_WINDOW_SECONDS = 60;
+
+export function botRateLimitRules(): RateLimitRule[] {
+  return [
+    {
+      action: BOT_INTERACTION_ACTION,
+      limit: BOT_INTERACTION_LIMIT,
+      windowSeconds: BOT_INTERACTION_WINDOW_SECONDS,
+    },
+  ];
+}
+
+export function rateLimitRules(type: string, source: Source): RateLimitRule[] {
   const rules: RateLimitRule[] = [
     { action: 'command', limit: COMMAND_LIMIT, windowSeconds: COMMAND_LIMIT_WINDOW_SECONDS },
   ];
+  if (source === 'bot') rules.push(...botRateLimitRules());
   if (type === 'record.create') {
     rules.push({
       action: 'record.create',
@@ -50,12 +70,8 @@ export function rateLimitRules(type: string): RateLimitRule[] {
  * failed commands are charged too. The command transaction itself never writes
  * rate-limit counters, which keeps its read/write ordering simple.
  */
-async function chargeRateLimits(uid: string, type: string): Promise<void> {
-  const rules = rateLimitRules(type);
-  await db.runTransaction(async (tx) => {
-    const commit = await reserveRateLimits(tx, uid, rules);
-    commit();
-  });
+async function chargeRateLimits(uid: string, type: string, source: Source): Promise<void> {
+  await consumeRateLimits(uid, rateLimitRules(type, source));
 }
 
 export async function runCommand(input: RunCommandInput): Promise<CommandResult> {
@@ -63,7 +79,7 @@ export async function runCommand(input: RunCommandInput): Promise<CommandResult>
   // requests still consume the global budget.
   const envelopeResult = CommandEnvelopeSchema.safeParse(input.envelope);
   if (!envelopeResult.success) {
-    await chargeRateLimits(input.uid, 'invalid');
+    await chargeRateLimits(input.uid, 'invalid', input.source);
     throw new AppError('VALIDATION_ERROR', 'invalid envelope', {
       issues: envelopeResult.error.issues,
     });
@@ -72,17 +88,15 @@ export async function runCommand(input: RunCommandInput): Promise<CommandResult>
   const envelope = envelopeResult.data;
   const schema = commandSchemas[envelope.type as CommandType];
   if (!schema) {
-    await chargeRateLimits(input.uid, envelope.type);
+    await chargeRateLimits(input.uid, envelope.type, input.source);
     throw new AppError('VALIDATION_ERROR', 'invalid payload', {
-      issues: [
-        { code: 'custom', path: ['type'], message: `unknown command: ${envelope.type}` },
-      ],
+      issues: [{ code: 'custom', path: ['type'], message: `unknown command: ${envelope.type}` }],
     });
   }
 
   const payloadResult = schema.safeParse(envelope.payload);
   if (!payloadResult.success) {
-    await chargeRateLimits(input.uid, envelope.type);
+    await chargeRateLimits(input.uid, envelope.type, input.source);
     throw new AppError('VALIDATION_ERROR', 'invalid payload', {
       issues: payloadResult.error.issues,
     });
@@ -96,7 +110,7 @@ export async function runCommand(input: RunCommandInput): Promise<CommandResult>
   const replay = await peekReplay(input.uid, envelope.commandId, hash);
   if (replay) return replay;
 
-  await chargeRateLimits(input.uid, envelope.type);
+  await chargeRateLimits(input.uid, envelope.type, input.source);
 
   return db.runTransaction(async (tx) => {
     // Re-check inside the transaction so concurrent duplicates stay race-free.
