@@ -1,9 +1,11 @@
 // Emulator-backed helpers. Import this module before anything that constructs a
-// Firestore client so the emulator host is in place first.
+// Firestore or Auth client so the emulator hosts are in place first.
 process.env.FIRESTORE_EMULATOR_HOST ??= '127.0.0.1:8080';
+process.env.FIREBASE_AUTH_EMULATOR_HOST ??= '127.0.0.1:9099';
 process.env.GCLOUD_PROJECT ??= 'demo-taijian';
 
 import { getApps, initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { newCommandId, type CommandEnvelope } from '@taijian/domain';
 import { rateLimitDocId } from '../../src/lib/rateLimit';
@@ -11,8 +13,10 @@ import { rateLimitDocId } from '../../src/lib/rateLimit';
 if (!getApps().length) initializeApp({ projectId: 'demo-taijian' });
 
 export const adminDb = getFirestore();
+export const adminAuth = getAuth();
 
 const emulatorHost = process.env.FIRESTORE_EMULATOR_HOST;
+const authEmulatorHost = process.env.FIREBASE_AUTH_EMULATOR_HOST;
 const projectId = process.env.GCLOUD_PROJECT ?? 'demo-taijian';
 
 export async function clearFirestore(): Promise<void> {
@@ -22,6 +26,16 @@ export async function clearFirestore(): Promise<void> {
   );
   if (!response.ok) {
     throw new Error(`failed to clear firestore: ${response.status}`);
+  }
+}
+
+export async function clearAuth(): Promise<void> {
+  const response = await fetch(
+    `http://${authEmulatorHost}/emulator/v1/projects/${projectId}/accounts`,
+    { method: 'DELETE' },
+  );
+  if (!response.ok) {
+    throw new Error(`failed to clear auth users: ${response.status}`);
   }
 }
 

@@ -1,7 +1,14 @@
 import { z } from 'zod';
 
+/** Env vars arrive as strings; only the literal "true"/"1" enables a flag. */
+const BooleanFlag = z
+  .union([z.boolean(), z.string()])
+  .default(false)
+  .transform((value) => value === true || value === 'true' || value === '1');
+
 const ConfigSchema = z.object({
   APP_ENV: z.enum(['dev', 'staging', 'prod']).default('dev'),
+  ENFORCE_APP_CHECK: BooleanFlag,
   LINE_LOGIN_CHANNEL_ID: z.string().min(1).default('test-login-channel'),
   LINE_MESSAGING_CHANNEL_ID: z.string().min(1).default('test-messaging-channel'),
   LINE_MESSAGING_CHANNEL_SECRET: z.string().min(1).default('test-messaging-secret'),

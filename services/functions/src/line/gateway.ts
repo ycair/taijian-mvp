@@ -27,7 +27,10 @@ export class LineGateway {
       signal: AbortSignal.timeout(10_000),
     });
     if (!response.ok) {
-      throw new Error(`LINE API ${path} failed with ${response.status}`);
+      const detail = await response.text().catch(() => '');
+      throw new Error(
+        `LINE API ${path} failed with ${response.status}${detail ? `: ${detail}` : ''}`,
+      );
     }
   }
 

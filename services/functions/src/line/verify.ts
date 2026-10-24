@@ -1,6 +1,7 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { AppError } from '@taijian/domain';
 import { config } from '../config';
+import { createTtlCache } from '../lib/memo';
 
 /** Issuer LINE puts in every ID token it mints. */
 export const LINE_ISSUER = 'https://access.line.me';
@@ -73,10 +74,10 @@ export async function verifyLineIdToken(
   if (data.aud !== channelId || !data.sub) {
     throw new AppError('UNAUTHENTICATED', 'LINE token audience mismatch');
   }
-  if (data.iss !== undefined && data.iss !== LINE_ISSUER) {
+  if (data.iss !== LINE_ISSUER) {
     throw new AppError('UNAUTHENTICATED', 'LINE token issuer mismatch');
   }
-  if (data.exp !== undefined && data.exp * 1000 <= Date.now()) {
+  if (typeof data.exp !== 'number' || data.exp * 1000 <= Date.now()) {
     throw new AppError('UNAUTHENTICATED', 'LINE token expired');
   }
 
@@ -85,4 +86,26 @@ export async function verifyLineIdToken(
     ...(data.name !== undefined ? { name: data.name } : {}),
     ...(data.picture !== undefined ? { picture: data.picture } : {}),
   };
+}
+
+const profileCache = createTtlCache<LineProfile>();
+
+/**
+ * Memoized equivalent of {@link verifyLineIdToken}. `lineLogin` and `linkLine`
+ * both run inside retried Firestore transactions, so the same ID token must not
+ * be exchanged with LINE once per attempt.
+ */
+export function verifiedLineProfile(
+  idToken: string,
+  channelId = config.LINE_LOGIN_CHANNEL_ID,
+): Promise<LineProfile> {
+  // The cache key hashes the token so a bearer credential is not retained as a
+  // plaintext Map key in a warm instance.
+  const tokenKey = createHash('sha256').update(idToken).digest('hex');
+  return profileCache.get(`${channelId}:${tokenKey}`, () => verifyLineIdToken(idToken, channelId));
+}
+
+/** Test hook: drop memoized ID-token exchanges. */
+export function clearLineVerifyCache(): void {
+  profileCache.clear();
 }

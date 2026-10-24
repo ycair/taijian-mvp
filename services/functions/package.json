@@ -10,7 +10,7 @@
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --exclude '**/integration/**'",
-    "test:integration": "firebase emulators:exec --config ../../firebase.json --only firestore,auth --project demo-taijian \"vitest run test/integration\""
+    "test:integration": "firebase emulators:exec --config ../../firebase.json --only firestore,auth --project demo-taijian \"vitest run test/integration --no-file-parallelism\""
   },
   "dependencies": {
     "@taijian/domain": "workspace:*",
