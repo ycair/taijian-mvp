@@ -3,11 +3,14 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 import { useAuth } from './auth';
 
-type Household = { id: string; name: string };
+const DEFAULT_TIMEZONE = 'Asia/Taipei';
+
+type Household = { id: string; name: string; timezone: string };
 type HouseholdState = {
   household: Household | null;
   householdIds: string[];
   loading: boolean;
+  error: string | null;
   select: (id: string) => void;
 };
 
@@ -15,6 +18,7 @@ const HouseholdContext = createContext<HouseholdState>({
   household: null,
   householdIds: [],
   loading: true,
+  error: null,
   select: () => undefined,
 });
 
@@ -23,16 +27,30 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
   const [householdIds, setHouseholdIds] = useState<string[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [household, setHousehold] = useState<Household | null>(null);
-  const [loading, setLoading] = useState(true);
+  // `loading` stays true until the profile *and* the selected household doc
+  // have resolved, so the Today page never flashes "還沒有家庭" mid-read.
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  const [resolvedId, setResolvedId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    return onSnapshot(doc(db, 'users', user.uid), (snap) => {
-      const ids = (snap.data()?.householdIds as string[] | undefined) ?? [];
-      setHouseholdIds(ids);
-      setSelectedId((current) => current ?? ids[0] ?? null);
-      setLoading(false);
-    });
+    const unsubscribe = onSnapshot(
+      doc(db, 'users', user.uid),
+      (snap) => {
+        const ids = (snap.data()?.householdIds as string[] | undefined) ?? [];
+        setHouseholdIds(ids);
+        setSelectedId((current) =>
+          current && ids.includes(current) ? current : (ids[0] ?? null),
+        );
+        setProfileLoaded(true);
+      },
+      (snapError) => {
+        setError(`讀取家庭資料失敗：${snapError.message}`);
+        setProfileLoaded(true);
+      },
+    );
+    return unsubscribe;
   }, [user]);
 
   useEffect(() => {
@@ -40,15 +58,34 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
       setHousehold(null);
       return;
     }
-    return onSnapshot(doc(db, 'households', selectedId), (snap) => {
-      if (!snap.exists()) return;
-      setHousehold({ id: snap.id, name: snap.data().name as string });
-    });
+    const id = selectedId;
+    const unsubscribe = onSnapshot(
+      doc(db, 'households', id),
+      (snap) => {
+        setHousehold(
+          snap.exists()
+            ? {
+                id: snap.id,
+                name: (snap.data().name as string | undefined) ?? '我的家庭',
+                timezone: (snap.data().timezone as string | undefined) ?? DEFAULT_TIMEZONE,
+              }
+            : null,
+        );
+        setResolvedId(id);
+      },
+      (snapError) => {
+        setError(`讀取家庭資料失敗：${snapError.message}`);
+        setResolvedId(id);
+      },
+    );
+    return unsubscribe;
   }, [selectedId]);
 
+  const loading = !profileLoaded || (selectedId !== null && resolvedId !== selectedId);
+
   const value = useMemo(
-    () => ({ household, householdIds, loading, select: setSelectedId }),
-    [household, householdIds, loading],
+    () => ({ household, householdIds, loading, error, select: setSelectedId }),
+    [household, householdIds, loading, error],
   );
   return <HouseholdContext.Provider value={value}>{children}</HouseholdContext.Provider>;
 }

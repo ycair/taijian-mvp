@@ -25,6 +25,7 @@ export type TodayTask = {
   animalId: string;
   animalName: string;
   title: string;
+  timezone: string;
   dueDate: string;
   dueAt: Date;
   overdue: boolean;
@@ -33,6 +34,27 @@ export type TodayTask = {
 
 function toDate(value: ReminderLike['nextDueAt']): Date {
   return value instanceof Date ? value : value.toDate();
+}
+
+/** Shifts a `YYYY-MM-DD` key by whole days without touching the host timezone. */
+export function shiftDateKey(dateKey: string, days: number): string {
+  const [year = 1970, month = 1, day = 1] = dateKey.split('-').map(Number);
+  const shifted = new Date(Date.UTC(year, month - 1, day));
+  shifted.setUTCDate(shifted.getUTCDate() + days);
+  return shifted.toISOString().slice(0, 10);
+}
+
+/**
+ * The completions window the Today page reads: yesterday → tomorrow in the
+ * household's timezone. Wide enough for late writes and clock skew, bounded so
+ * the listener never grows with household history.
+ */
+export function taskCompletionWindow(
+  now: Date,
+  timezone: string,
+): { today: string; from: string; to: string } {
+  const today = localDateKey(now, timezone);
+  return { today, from: shiftDateKey(today, -1), to: shiftDateKey(today, 1) };
 }
 
 export function buildTodayTasks(
@@ -63,6 +85,7 @@ export function buildTodayTasks(
         animalId: reminder.animalId,
         animalName: animal?.name ?? '未命名居民',
         title: reminder.title,
+        timezone: reminder.timezone,
         dueDate,
         dueAt,
         overdue: dueAt.getTime() < now.getTime(),

@@ -11,7 +11,11 @@ export function TaskRow({
   return (
     <button
       type="button"
-      onClick={() => !done && onComplete(task)}
+      disabled={done}
+      aria-disabled={done}
+      onClick={() => {
+        if (!done) onComplete(task);
+      }}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -22,6 +26,7 @@ export function TaskRow({
         borderBottom: '1px dashed var(--line)',
         background: 'transparent',
         padding: '12px 2px',
+        cursor: done ? 'default' : 'pointer',
       }}
     >
       <span
@@ -45,7 +50,11 @@ export function TaskRow({
           {task.animalName} · {task.title}
         </span>
         <span style={{ display: 'block', color: 'var(--muted)', fontSize: 12, marginTop: 2 }}>
-          {task.dueAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}
+          {task.dueAt.toLocaleTimeString('zh-TW', {
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: task.timezone,
+          })}
           {done ? ` · 已完成 by ${task.completedBy}` : ''}
         </span>
       </span>
