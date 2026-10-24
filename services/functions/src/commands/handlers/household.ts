@@ -105,7 +105,11 @@ export async function deleteHousehold(ctx: HandlerContext): Promise<CommandResul
   assertCan(member.role, 'household.delete');
 
   const household = await mustGetHousehold(ctx.tx, householdId);
-  if (household.memberCount !== 1) {
+  // `memberCount` is metadata and can drift (a crashed invite accept, a manual
+  // fix). The member documents are authoritative, so deletion needs to see the
+  // real membership before it soft-deletes the household.
+  const membersSnap = await ctx.tx.get(db.collection(`households/${householdId}/members`).limit(2));
+  if (membersSnap.size !== 1 || membersSnap.docs[0]?.id !== ctx.uid) {
     throw new AppError('FORBIDDEN', 'remove other members or transfer ownership first');
   }
 

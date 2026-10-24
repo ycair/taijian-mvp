@@ -7,10 +7,18 @@ service cloud.firestore {
 
     // Membership is defined by the existence of the member document: removing a
     // member deletes `households/{id}/members/{uid}`, which revokes access on the
-    // next request. There is no separate active flag to check.
+    // next request. There is no separate active flag to check. The household
+    // itself must still be live: a soft-deleted household can retain member
+    // documents (an interrupted account deletion), and those must not read it.
+    function householdLive(householdId) {
+      let household = get(/databases/$(database)/documents/households/$(householdId));
+      return household != null && household.data.deletedAt == null;
+    }
+
     function isMember(householdId) {
       return signedIn()
-        && exists(/databases/$(database)/documents/households/$(householdId)/members/$(request.auth.uid));
+        && exists(/databases/$(database)/documents/households/$(householdId)/members/$(request.auth.uid))
+        && householdLive(householdId);
     }
 
     match /users/{uid} {
@@ -79,6 +87,10 @@ service cloud.firestore {
     }
 
     match /notificationLog/{logId} {
+      allow read, write: if false;
+    }
+
+    match /lineEvents/{webhookEventId} {
       allow read, write: if false;
     }
 

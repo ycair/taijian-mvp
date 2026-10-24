@@ -6,7 +6,16 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { collection, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore';
+import {
+  Timestamp,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  setDoc,
+  where,
+} from 'firebase/firestore';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 let env: RulesTestEnvironment;
@@ -39,7 +48,10 @@ beforeEach(async () => {
     });
     await setDoc(doc(db, 'households/h1/members/alice'), { uid: 'alice', role: 'owner' });
     await setDoc(doc(db, 'households/h1/members/bob'), { uid: 'bob', role: 'caretaker' });
-    await setDoc(doc(db, 'households/h1/auditLogs/h1log'), { action: 'member.add', actorUid: 'alice' });
+    await setDoc(doc(db, 'households/h1/auditLogs/h1log'), {
+      action: 'member.add',
+      actorUid: 'alice',
+    });
     await setDoc(doc(db, 'animals/a1'), { householdId: 'h1', name: '阿肥' });
     await setDoc(doc(db, 'records/r1'), { householdId: 'h1', animalId: 'a1' });
     await setDoc(doc(db, 'reminders/m1'), { householdId: 'h1', enabled: true });
@@ -54,7 +66,10 @@ beforeEach(async () => {
       deletedAt: null,
     });
     await setDoc(doc(db, 'households/h2/members/carol'), { uid: 'carol', role: 'owner' });
-    await setDoc(doc(db, 'households/h2/auditLogs/h2log'), { action: 'member.add', actorUid: 'carol' });
+    await setDoc(doc(db, 'households/h2/auditLogs/h2log'), {
+      action: 'member.add',
+      actorUid: 'carol',
+    });
     await setDoc(doc(db, 'animals/a2'), { householdId: 'h2', name: '小白' });
     await setDoc(doc(db, 'records/r2'), { householdId: 'h2', animalId: 'a2' });
     await setDoc(doc(db, 'users/carol'), { displayName: 'Carol' });
@@ -68,6 +83,7 @@ beforeEach(async () => {
     await setDoc(doc(db, 'rateLimits/rl1'), { counts: {} });
     await setDoc(doc(db, 'loginRateLimits/lrl1'), { counts: {} });
     await setDoc(doc(db, 'notificationLog/n1'), { uid: 'alice' });
+    await setDoc(doc(db, 'lineEvents/e1'), { webhookEventId: 'e1' });
   });
 });
 
@@ -152,6 +168,7 @@ describe('firestore rules', () => {
       'rateLimits/rl1',
       'loginRateLimits/lrl1',
       'notificationLog/n1',
+      'lineEvents/e1',
     ]) {
       await assertFails(getDoc(doc(db, path)));
       await assertFails(setDoc(doc(db, `${path}-new`), { uid: 'alice' }));
@@ -188,6 +205,31 @@ describe('firestore rules', () => {
       query(collection(carol, 'animals'), where('householdId', '==', 'h2')),
     );
     expect(theirs.docs.map((snapshot) => snapshot.id)).toEqual(['a2']);
+  });
+
+  it('denies reading a soft-deleted household even for a leftover member', async () => {
+    // An interrupted account deletion can leave the member document behind.
+    await env.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore();
+      await setDoc(
+        doc(db, 'households/h1'),
+        { deletedAt: Timestamp.fromDate(new Date()) },
+        { merge: true },
+      );
+    });
+
+    const alice = env.authenticatedContext('alice').firestore();
+    await assertFails(getDoc(doc(alice, 'households/h1')));
+    await assertFails(getDoc(doc(alice, 'households/h1/auditLogs/h1log')));
+    await assertFails(getDoc(doc(alice, 'animals/a1')));
+    await assertFails(getDoc(doc(alice, 'records/r1')));
+    await assertFails(getDoc(doc(alice, 'reminders/m1')));
+    await assertFails(getDoc(doc(alice, 'taskCompletions/t1')));
+
+    // The other household is unaffected.
+    const carol = env.authenticatedContext('carol').firestore();
+    await assertSucceeds(getDoc(doc(carol, 'households/h2')));
+    await assertSucceeds(getDoc(doc(carol, 'animals/a2')));
   });
 
   it('denies unlisted nested paths through the catch-all', async () => {

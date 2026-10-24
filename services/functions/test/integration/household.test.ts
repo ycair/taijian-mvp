@@ -234,6 +234,29 @@ describe('household commands', () => {
     });
   });
 
+  it('refuses to delete when the member documents disagree with memberCount', async () => {
+    const householdId = await householdWithCaretaker();
+    // A drifted counter must not hide a live member from the delete command.
+    await adminDb
+      .collection('households')
+      .doc(householdId)
+      .set({ memberCount: 1 }, { merge: true });
+
+    await expect(
+      runCommand({
+        uid: OWNER,
+        envelope: envelope('household.delete', {}, { householdId }),
+        source: 'test',
+        handlers: commandHandlers,
+      }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+
+    // Nothing was soft-deleted and both members survive.
+    expect((await householdDoc(householdId))?.deletedAt).toBeNull();
+    expect(await memberDoc(householdId, OWNER)).toBeDefined();
+    expect(await memberDoc(householdId, HELPER)).toBeDefined();
+  });
+
   it('records bot-sourced commands as bot actors', async () => {
     const result = await runCommand({
       uid: OWNER,
