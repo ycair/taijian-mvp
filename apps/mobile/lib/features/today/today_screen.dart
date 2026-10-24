@@ -22,20 +22,30 @@ class TodayScreen extends ConsumerStatefulWidget {
 class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingObserver {
   Timer? _timer;
   String? _busyKey;
+  late String _dateKey;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _dateKey = localDateKey(DateTime.now(), ref.read(householdTimezoneProvider));
     _timer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (!mounted) return;
+      _refreshDateBoundary();
+      // Recompute overdue/upcoming every minute; the completion window only
+      // changes when the local date key changes.
       ref.invalidate(todayTasksProvider);
-      // Recompute the completion window at midnight.
-      ref.invalidate(todayCompletionsProvider);
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(ref.read(outboxProvider).flush());
     });
+  }
+
+  void _refreshDateBoundary() {
+    final nextKey = localDateKey(DateTime.now(), ref.read(householdTimezoneProvider));
+    if (nextKey == _dateKey) return;
+    _dateKey = nextKey;
+    ref.invalidate(todayCompletionsProvider);
   }
 
   @override
@@ -49,6 +59,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       unawaited(ref.read(outboxProvider).flush());
+      _refreshDateBoundary();
       ref.invalidate(todayTasksProvider);
     }
   }

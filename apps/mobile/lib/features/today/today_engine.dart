@@ -14,6 +14,7 @@ class TodayTask {
     this.overdue = false,
     this.completedBy,
     this.completedByName,
+    this.pendingCompletion = false,
   });
 
   final String reminderId;
@@ -27,11 +28,15 @@ class TodayTask {
   final String? completedBy;
   final String? completedByName;
 
+  /// True while a queued `task.complete` is still waiting to be sent.
+  final bool pendingCompletion;
+
   bool get completed => completedBy != null;
 
   String get clockLabel => formatClock(dueAt, timezone);
 
   String get completedLabel {
+    if (pendingCompletion) return '已完成 · 同步中…';
     final name = completedByName?.trim();
     return name == null || name.isEmpty ? '已完成' : '已完成 · $name';
   }
@@ -52,6 +57,7 @@ class TodayEngine {
     required DateTime now,
     required String householdTimezone,
     int overdueLookbackDays = 0,
+    Set<String> pendingCompletionKeys = const {},
   }) {
     final animalById = {
       for (final animal in animals)
@@ -71,10 +77,18 @@ class TodayEngine {
         final occurrence = scheduleOccurrence(reminder.schedule, dateKey, reminder.timezone);
         if (occurrence == null) continue;
 
-        final completion = completionByKey['${reminder.id}:$dateKey'];
+        // Never show an occurrence that predates the reminder itself (or its
+        // most recent re-enable). A reminder created at noon must not appear
+        // overdue for its 08:30 slot earlier that morning.
+        final notBefore = _notBefore(reminder);
+        if (notBefore != null && occurrence.isBefore(notBefore)) continue;
+
+        final key = '${reminder.id}:$dateKey';
+        final completion = completionByKey[key];
+        final pending = completion == null && pendingCompletionKeys.contains(key);
         // Past occurrences only matter when they were missed; one completed long
         // ago should not occupy Today forever.
-        if (offset < 0 && completion != null) continue;
+        if (offset < 0 && (completion != null || pending)) continue;
 
         final task = TodayTask(
           reminderId: reminder.id,
@@ -84,9 +98,10 @@ class TodayEngine {
           dueDate: dateKey,
           dueAt: occurrence,
           timezone: reminder.timezone,
-          overdue: completion == null && occurrence.isBefore(now),
-          completedBy: completion?.completedBy,
+          overdue: completion == null && !pending && occurrence.isBefore(now),
+          completedBy: completion?.completedBy ?? (pending ? _pendingMarker : null),
           completedByName: completion?.completedByName,
+          pendingCompletion: pending,
         );
         tasks.add(task);
       }
@@ -98,6 +113,20 @@ class TodayEngine {
       return a.dueAt.compareTo(b.dueAt);
     });
     return tasks;
+  }
+
+  static const _pendingMarker = '__pending__';
+
+  /// The earliest instant this reminder may produce a task.
+  ///
+  /// `updatedAt` is used only when the last write was a re-enable, which the
+  /// backend marks with `enabled` in `lastChangedFields`. Other edits (title,
+  /// schedule) keep `createdAt` as the floor.
+  static DateTime? _notBefore(Reminder reminder) {
+    if (reminder.enabled && reminder.lastChangedFields.contains('enabled')) {
+      return reminder.updatedAt ?? reminder.createdAt;
+    }
+    return reminder.createdAt;
   }
 
   /// Completion window read from Firestore: yesterday → tomorrow in the

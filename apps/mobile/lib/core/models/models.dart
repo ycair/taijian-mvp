@@ -260,11 +260,20 @@ enum RecordType {
   note,
   custom;
 
+  /// Strict parser for command payloads and stored documents. Unknown values
+  /// are a validation error, never silently downgraded to `note`.
   static RecordType parse(Object? value) {
-    return RecordType.values.firstWhere(
-      (type) => type.name == value,
-      orElse: () => RecordType.note,
-    );
+    final parsed = tryParse(value);
+    if (parsed == null) throw FormatException('unknown record type: $value');
+    return parsed;
+  }
+
+  static RecordType? tryParse(Object? value) {
+    if (value is! String) return null;
+    for (final type in RecordType.values) {
+      if (type.name == value) return type;
+    }
+    return null;
   }
 
   String get label => switch (this) {
@@ -292,6 +301,8 @@ class CareRecord {
     this.note,
     this.source = 'ios',
     this.revision = 0,
+    this.createdBy,
+    this.payloadHash,
   });
 
   factory CareRecord.fromMap(String id, Map<String, dynamic> map) {
@@ -306,6 +317,8 @@ class CareRecord {
       note: (map['note'] as String?)?.trim(),
       source: readString(map, 'source', 'ios'),
       revision: readInt(map, 'revision'),
+      createdBy: map['createdBy'] as String?,
+      payloadHash: map['payloadHash'] as String?,
     );
   }
 
@@ -319,6 +332,8 @@ class CareRecord {
   final String? note;
   final String source;
   final int revision;
+  final String? createdBy;
+  final String? payloadHash;
 
   String get summary {
     if (note != null && note!.isNotEmpty) return note!;
@@ -395,6 +410,9 @@ class Reminder {
     required this.enabled,
     required this.revision,
     this.nextDueAt,
+    this.createdAt,
+    this.updatedAt,
+    this.lastChangedFields = const [],
   });
 
   factory Reminder.fromMap(String id, Map<String, dynamic> map) {
@@ -409,6 +427,9 @@ class Reminder {
       enabled: map['enabled'] != false,
       revision: readInt(map, 'revision'),
       nextDueAt: readDate(map, 'nextDueAt'),
+      createdAt: readDate(map, 'createdAt'),
+      updatedAt: readDate(map, 'updatedAt'),
+      lastChangedFields: readStringList(map, 'lastChangedFields'),
     );
   }
 
@@ -422,6 +443,9 @@ class Reminder {
   final bool enabled;
   final int revision;
   final DateTime? nextDueAt;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+  final List<String> lastChangedFields;
 
   Reminder copyWith({
     String? title,
@@ -431,6 +455,9 @@ class Reminder {
     bool? enabled,
     int? revision,
     DateTime? nextDueAt,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    List<String>? lastChangedFields,
   }) {
     return Reminder(
       id: id,
@@ -443,6 +470,9 @@ class Reminder {
       enabled: enabled ?? this.enabled,
       revision: revision ?? this.revision,
       nextDueAt: nextDueAt ?? this.nextDueAt,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      lastChangedFields: lastChangedFields ?? this.lastChangedFields,
     );
   }
 }

@@ -91,6 +91,8 @@ class MockCommandApi implements CommandApi {
           return _updateAnimal(commandId, payload, householdId, baseRevision);
         case 'animal.archive':
           return _archiveAnimal(commandId, payload, householdId, baseRevision);
+        case 'animal.delete':
+          return _deleteAnimal(commandId, payload, householdId, baseRevision);
         case 'record.create':
           return _createRecord(commandId, payload, householdId);
         case 'reminder.create':
@@ -311,7 +313,7 @@ class MockCommandApi implements CommandApi {
     int? baseRevision,
   ) {
     final household = _requireHousehold(householdId);
-    _requireMember(household.id, 'animal.archive');
+    _requireRole(household.id, MemberRole.owner, 'animal.archive');
     final animal = _requireAnimal(household.id, _string(payload['animalId']));
     _assertRevision(animal.revision, baseRevision, _animalJson(animal));
     final next = Animal(
@@ -343,13 +345,42 @@ class MockCommandApi implements CommandApi {
     );
   }
 
+  CommandResult _deleteAnimal(
+    String commandId,
+    Map<String, dynamic> payload,
+    String? householdId,
+    int? baseRevision,
+  ) {
+    final household = _requireHousehold(householdId);
+    _requireRole(household.id, MemberRole.owner, 'animal.delete');
+    final animal = _requireAnimal(household.id, _string(payload['animalId']));
+    _assertRevision(animal.revision, baseRevision, _animalJson(animal));
+    store.mutate(() {
+      store.animals.remove(animal.id);
+      store.records.removeWhere((record) => record.animalId == animal.id);
+      final reminderIds = store.reminders.values
+          .where((reminder) => reminder.animalId == animal.id)
+          .map((reminder) => reminder.id)
+          .toSet();
+      for (final id in reminderIds) {
+        store.reminders.remove(id);
+      }
+      store.completions.removeWhere((_, completion) => reminderIds.contains(completion.reminderId));
+    });
+    return CommandResult.success(
+      commandId: commandId,
+      revision: animal.revision + 1,
+      data: {'animalId': animal.id, 'deleted': true},
+    );
+  }
+
   CommandResult _createRecord(
     String commandId,
     Map<String, dynamic> payload,
     String? householdId,
   ) {
     final household = _requireHousehold(householdId);
-    _requireMember(household.id, 'record.create');
+    final member = _requireMember(household.id, 'record.create');
     final animal = _requireAnimal(household.id, _string(payload['animalId']));
     final occurredAt = parseDateValue(payload['occurredAt']);
     if (occurredAt == null) throw const _CommandError('VALIDATION_ERROR', 'occurredAt is required');
@@ -361,8 +392,25 @@ class MockCommandApi implements CommandApi {
         'occurredAt must be within the last 365 days and no more than 5 minutes in the future',
       );
     }
+    final type = RecordType.tryParse(payload['type']);
+    if (type == null) {
+      throw const _CommandError('VALIDATION_ERROR', 'unknown record type');
+    }
     final id = _nullableString(payload['recordId']) ?? newRecordId();
-    if (store.records.any((record) => record.id == id)) {
+    final payloadHash = _fingerprint('record.create', payload, householdId, null);
+    CareRecord? existing;
+    for (final record in store.records) {
+      if (record.id == id) {
+        existing = record;
+        break;
+      }
+    }
+    if (existing != null) {
+      // A record id is owned by its creator and payload. Reusing it with a
+      // different body is a duplicate-id bug, not an idempotent replay.
+      if (existing.createdBy != member.uid || existing.payloadHash != payloadHash) {
+        throw const _CommandError('DUPLICATE_ID', 'record id already used');
+      }
       return CommandResult.success(
         commandId: commandId,
         data: {'recordId': id, 'alreadyExists': true},
@@ -373,12 +421,14 @@ class MockCommandApi implements CommandApi {
       id: id,
       householdId: household.id,
       animalId: animal.id,
-      type: RecordType.parse(payload['type']),
+      type: type,
       occurredAt: occurredAt,
       value: value is num ? value.toDouble() : null,
       unit: _nullableString(payload['unit']),
       note: _nullableString(payload['note']),
       source: 'ios',
+      createdBy: member.uid,
+      payloadHash: payloadHash,
     );
     store.mutate(() => store.records.add(record));
     return CommandResult.success(
@@ -402,6 +452,7 @@ class MockCommandApi implements CommandApi {
     }
     final schedule = ReminderSchedule.fromMap(_map(payload['schedule']));
     final timezone = _string(payload['timezone'], household.timezone);
+    final now = DateTime.now().toUtc();
     final id = 'reminder_${_uuid.v4().replaceAll('-', '').substring(0, 16)}';
     final reminder = Reminder(
       id: id,
@@ -414,6 +465,8 @@ class MockCommandApi implements CommandApi {
       enabled: payload['enabled'] != false,
       revision: 0,
       nextDueAt: nextDueAt(schedule, timezone, DateTime.now().toUtc()),
+      createdAt: now,
+      updatedAt: now,
     );
     store.mutate(() => store.reminders[id] = reminder);
     return CommandResult.success(
@@ -442,7 +495,17 @@ class MockCommandApi implements CommandApi {
         : ReminderSchedule.fromMap(_map(payload['schedule']));
     final timezone = payload['timezone'] as String?;
     final enabled = payload['enabled'] is bool ? payload['enabled'] as bool : null;
-    final rescheduled = schedule != null || timezone != null || (enabled == true && !reminder.enabled);
+    final reenabled = enabled == true && !reminder.enabled;
+    final rescheduled = schedule != null || timezone != null || reenabled;
+    final now = DateTime.now().toUtc();
+    final changed = <String>[
+      if (payload['title'] != null) 'title',
+      if (payload['type'] != null) 'type',
+      if (schedule != null) 'schedule',
+      if (timezone != null) 'timezone',
+      if (enabled != null) 'enabled',
+      if (rescheduled) 'nextDueAt',
+    ];
     final nextSchedule = schedule ?? reminder.schedule;
     final nextTimezone = timezone ?? reminder.timezone;
     final next = Reminder(
@@ -456,8 +519,11 @@ class MockCommandApi implements CommandApi {
       enabled: enabled ?? reminder.enabled,
       revision: reminder.revision + 1,
       nextDueAt: rescheduled
-          ? nextDueAt(nextSchedule, nextTimezone, DateTime.now().toUtc())
+          ? nextDueAt(nextSchedule, nextTimezone, now)
           : reminder.nextDueAt,
+      createdAt: reminder.createdAt,
+      updatedAt: now,
+      lastChangedFields: changed,
     );
     store.mutate(() => store.reminders[next.id] = next);
     return CommandResult.success(

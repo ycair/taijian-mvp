@@ -60,6 +60,7 @@ class Outbox {
   final int maxAttempts;
 
   bool _flushing = false;
+  bool _rerunRequested = false;
 
   Future<QueuedCommand> enqueue(
     String type,
@@ -70,6 +71,9 @@ class Outbox {
     String? commandId,
   }) async {
     final currentUid = uid();
+    if (currentUid.isEmpty) {
+      throw StateError('Cannot queue a command without a signed-in user');
+    }
     final id = commandId ?? newCommandId();
     final command = QueuedCommand(
       commandId: id,
@@ -95,6 +99,9 @@ class Outbox {
           ),
           mode: InsertMode.insertOrIgnore,
         );
+    // A row inserted after the current pass took its snapshot must be drained
+    // before the active flush returns.
+    if (_flushing) _rerunRequested = true;
     return command;
   }
 
@@ -124,94 +131,112 @@ class Outbox {
   }
 
   /// Sends queued commands sequentially. Concurrent callers share one flush.
+  ///
+  /// If a command is enqueued while a pass is running, the pass sets a rerun
+  /// flag and drains the new row before this future completes. A retryable
+  /// network failure stops the loop so a flaky connection is not hammered.
   Future<OutboxFlushResult> flush() async {
-    if (_flushing) return const OutboxFlushResult();
+    if (_flushing) {
+      _rerunRequested = true;
+      return const OutboxFlushResult();
+    }
     _flushing = true;
     var sent = 0;
     var conflicts = 0;
     var failed = 0;
+    var stopForTransport = false;
     try {
-      final rows = await pendingEntries();
-      for (final row in rows) {
-        if (row.uid != uid()) continue;
-        await (db.update(db.outboxEntries)..where((r) => r.commandId.equals(row.commandId))).write(
-          const OutboxEntriesCompanion(status: Value(OutboxStatus.sending)),
-        );
-
-        Map<String, dynamic> payload;
-        try {
-          payload = Map<String, dynamic>.from(jsonDecode(row.payloadJson) as Map);
-        } catch (_) {
-          await _markFailed(row, 'invalid payload json');
-          failed += 1;
-          continue;
-        }
-
-        try {
-          final result = await api.executeCommand(
-            row.type,
-            payload,
-            commandId: row.commandId,
-            householdId: row.householdId,
-            baseRevision: row.baseRevision,
+      do {
+        _rerunRequested = false;
+        final rows = await pendingEntries();
+        for (final row in rows) {
+          if (row.uid != uid()) continue;
+          await (db.update(db.outboxEntries)..where((r) => r.commandId.equals(row.commandId))).write(
+            const OutboxEntriesCompanion(status: Value(OutboxStatus.sending)),
           );
-          if (result.ok) {
-            await (db.delete(db.outboxEntries)..where((r) => r.commandId.equals(row.commandId))).go();
-            sent += 1;
-          } else if (result.isConflict) {
-            await (db.update(db.outboxEntries)..where((r) => r.commandId.equals(row.commandId))).write(
-              OutboxEntriesCompanion(
-                status: const Value(OutboxStatus.conflict),
-                attempts: Value(row.attempts + 1),
-                lastError: Value(result.message),
-                conflictJson: Value(result.current == null ? null : jsonEncode(result.current)),
-                conflictRevision: Value(result.currentRevision),
-              ),
+
+          Map<String, dynamic> payload;
+          try {
+            payload = Map<String, dynamic>.from(jsonDecode(row.payloadJson) as Map);
+          } catch (_) {
+            await _markFailed(row, 'invalid payload json');
+            failed += 1;
+            continue;
+          }
+
+          try {
+            final result = await api.executeCommand(
+              row.type,
+              payload,
+              commandId: row.commandId,
+              householdId: row.householdId,
+              baseRevision: row.baseRevision,
             );
-            conflicts += 1;
-          } else {
-            final retryable = _retryableCode(result.code);
+            if (result.ok) {
+              await (db.delete(db.outboxEntries)..where((r) => r.commandId.equals(row.commandId))).go();
+              sent += 1;
+            } else if (result.isConflict) {
+              await (db.update(db.outboxEntries)..where((r) => r.commandId.equals(row.commandId))).write(
+                OutboxEntriesCompanion(
+                  status: const Value(OutboxStatus.conflict),
+                  attempts: Value(row.attempts + 1),
+                  lastError: Value(result.message),
+                  conflictJson: Value(result.current == null ? null : jsonEncode(result.current)),
+                  conflictRevision: Value(result.currentRevision),
+                ),
+              );
+              conflicts += 1;
+            } else {
+              final retryable = _retryableCode(result.code);
+              final attempts = row.attempts + 1;
+              final status = retryable && attempts < maxAttempts
+                  ? OutboxStatus.pending
+                  : OutboxStatus.failed;
+              await (db.update(db.outboxEntries)..where((r) => r.commandId.equals(row.commandId))).write(
+                OutboxEntriesCompanion(
+                  status: Value(status),
+                  attempts: Value(attempts),
+                  lastError: Value(result.message ?? result.code),
+                ),
+              );
+              failed += 1;
+              // A transport/rate-limit failure will likely hit the same wall
+              // for the next row; stop this pass and retry on the next trigger.
+              if (retryable) {
+                stopForTransport = true;
+                break;
+              }
+            }
+          } on CommandApiException catch (error) {
             final attempts = row.attempts + 1;
-            final status = retryable && attempts < maxAttempts
+            final status = error.retryable && attempts < maxAttempts
                 ? OutboxStatus.pending
                 : OutboxStatus.failed;
             await (db.update(db.outboxEntries)..where((r) => r.commandId.equals(row.commandId))).write(
               OutboxEntriesCompanion(
                 status: Value(status),
                 attempts: Value(attempts),
-                lastError: Value(result.message ?? result.code),
+                lastError: Value(error.message),
               ),
             );
             failed += 1;
-            // A transport/rate-limit failure will likely hit the same wall for
-            // the next row; stop this pass and retry on the next trigger.
-            if (retryable) break;
+            if (error.retryable) {
+              stopForTransport = true;
+              break;
+            }
+          } catch (error) {
+            await (db.update(db.outboxEntries)..where((r) => r.commandId.equals(row.commandId))).write(
+              const OutboxEntriesCompanion(
+                status: Value(OutboxStatus.pending),
+                lastError: Value('unexpected command failure'),
+              ),
+            );
+            failed += 1;
+            stopForTransport = true;
+            break;
           }
-        } on CommandApiException catch (error) {
-          final attempts = row.attempts + 1;
-          final status = error.retryable && attempts < maxAttempts
-              ? OutboxStatus.pending
-              : OutboxStatus.failed;
-          await (db.update(db.outboxEntries)..where((r) => r.commandId.equals(row.commandId))).write(
-            OutboxEntriesCompanion(
-              status: Value(status),
-              attempts: Value(attempts),
-              lastError: Value(error.message),
-            ),
-          );
-          failed += 1;
-          if (error.retryable) break;
-        } catch (error) {
-          await (db.update(db.outboxEntries)..where((r) => r.commandId.equals(row.commandId))).write(
-            const OutboxEntriesCompanion(
-              status: Value(OutboxStatus.pending),
-              lastError: Value('unexpected command failure'),
-            ),
-          );
-          failed += 1;
-          break;
         }
-      }
+      } while (!stopForTransport && _rerunRequested);
     } finally {
       _flushing = false;
     }
@@ -226,15 +251,22 @@ class Outbox {
   }
 
   Future<void> discard(String commandId) async {
-    await (db.delete(db.outboxEntries)..where((row) => row.commandId.equals(commandId))).go();
+    await (db.delete(db.outboxEntries)
+          ..where((row) => row.commandId.equals(commandId) & row.uid.equals(uid())))
+        .go();
+  }
+
+  /// Removes every queued row owned by [ownerUid] (sign-out privacy cleanup).
+  Future<int> purgeForUid(String ownerUid) {
+    return (db.delete(db.outboxEntries)..where((row) => row.uid.equals(ownerUid))).go();
   }
 
   /// "保留我的": re-read the latest revision from the conflict response, keep the
   /// local payload, and resubmit under a fresh commandId.
   Future<String?> keepMine(String commandId) async {
-    final row = await (db.select(
-      db.outboxEntries,
-    )..where((entry) => entry.commandId.equals(commandId))).getSingleOrNull();
+    final row = await (db.select(db.outboxEntries)
+          ..where((entry) => entry.commandId.equals(commandId) & entry.uid.equals(uid())))
+        .getSingleOrNull();
     if (row == null || row.conflictRevision == null) return null;
     Map<String, dynamic> payload;
     try {
@@ -265,12 +297,15 @@ class Outbox {
   }
 
   Future<void> retryFailed(String commandId) async {
-    await (db.update(db.outboxEntries)..where((row) => row.commandId.equals(commandId))).write(
-      const OutboxEntriesCompanion(
-        status: Value(OutboxStatus.pending),
-        lastError: Value(null),
-      ),
-    );
+    await (db.update(db.outboxEntries)
+          ..where((row) => row.commandId.equals(commandId) & row.uid.equals(uid())))
+        .write(
+          const OutboxEntriesCompanion(
+            status: Value(OutboxStatus.pending),
+            attempts: Value(0),
+            lastError: Value(null),
+          ),
+        );
   }
 
   Future<void> _markFailed(OutboxEntry row, String error) async {

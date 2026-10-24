@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../core/config/app_config.dart';
 import '../data/command/command_api.dart';
@@ -26,6 +27,7 @@ class AppDependencies {
     required this.outbox,
     required this.outboxDatabase,
     this.push,
+    this.appVersion = '1.0.0',
   });
 
   final AppConfig config;
@@ -35,6 +37,7 @@ class AppDependencies {
   final Outbox outbox;
   final OutboxDatabase outboxDatabase;
   final PushService? push;
+  final String appVersion;
 }
 
 /// Wires either the in-memory stack or Firebase. Mock mode never touches
@@ -44,6 +47,7 @@ Future<AppDependencies> bootstrap(AppConfig config) async {
   final ReadStore readStore;
   final CommandApi commandApi;
   PushService? push;
+  final appVersion = await _readAppVersion();
 
   if (config.useMock) {
     final store = MockStore.seeded();
@@ -63,7 +67,7 @@ Future<AppDependencies> bootstrap(AppConfig config) async {
     push = firebase;
     auth = FirebaseAuthService(config: config);
     readStore = FirestoreReadStore();
-    commandApi = FirebaseCommandApi();
+    commandApi = FirebaseCommandApi(appVersion: appVersion);
   }
 
   final outboxDatabase = OutboxDatabase();
@@ -81,6 +85,7 @@ Future<AppDependencies> bootstrap(AppConfig config) async {
     outbox: outbox,
     outboxDatabase: outboxDatabase,
     push: push,
+    appVersion: appVersion,
   );
 
   // Drain anything left over from a previous launch, without blocking startup.
@@ -90,4 +95,16 @@ Future<AppDependencies> bootstrap(AppConfig config) async {
   }));
 
   return deps;
+}
+
+/// `package_info_plus` reads the real bundle version; fall back to a safe
+/// constant only if the platform channel is unavailable (unit tests, previews).
+Future<String> _readAppVersion() async {
+  try {
+    final info = await PackageInfo.fromPlatform();
+    final version = info.version.trim();
+    return version.isEmpty ? '1.0.0' : version;
+  } catch (_) {
+    return '1.0.0';
+  }
 }

@@ -162,6 +162,8 @@ class MockStore {
         enabled: true,
         revision: 0,
         nextDueAt: dueAt(today, '08:30', timezone),
+        createdAt: clock.subtract(const Duration(days: 30)),
+        updatedAt: clock.subtract(const Duration(days: 30)),
       ),
       'rem_lulu_water': Reminder(
         id: 'rem_lulu_water',
@@ -174,6 +176,8 @@ class MockStore {
         enabled: true,
         revision: 0,
         nextDueAt: dueAt(today, '20:30', timezone),
+        createdAt: clock.subtract(const Duration(days: 30)),
+        updatedAt: clock.subtract(const Duration(days: 30)),
       ),
       'rem_slow_check': Reminder(
         id: 'rem_slow_check',
@@ -186,6 +190,8 @@ class MockStore {
         enabled: true,
         revision: 1,
         nextDueAt: dueAt(today, '07:00', timezone),
+        createdAt: clock.subtract(const Duration(days: 30)),
+        updatedAt: clock.subtract(const Duration(days: 30)),
       ),
     };
 
