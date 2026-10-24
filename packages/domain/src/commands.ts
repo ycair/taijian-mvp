@@ -15,6 +15,9 @@ export const UpdateProfilePayload = z.object({
   avatarUrl: z.string().url().max(500).optional(),
   locale: z.string().max(10).optional(),
   timezone: TimezoneSchema.optional(),
+  // The household the client opens by default. The handler verifies membership
+  // before writing, so a stale or forged id can never point at another family.
+  defaultHouseholdId: IdSchema.optional(),
 });
 
 /** LINE ID tokens are JWTs of a few KB; anything larger is not a token. */

@@ -21,6 +21,17 @@ service cloud.firestore {
         && householdLive(householdId);
     }
 
+    // Owner-only reads (currently the invite list). The member document is the
+    // authority, so a demotion takes effect on the next request without any
+    // counter or cached role to keep in sync.
+    function isOwner(householdId) {
+      let member = get(/databases/$(database)/documents/households/$(householdId)/members/$(request.auth.uid));
+      return signedIn()
+        && member != null
+        && member.data.role == 'owner'
+        && householdLive(householdId);
+    }
+
     match /users/{uid} {
       allow read: if signedIn() && request.auth.uid == uid;
       allow write: if false;
@@ -71,7 +82,10 @@ service cloud.firestore {
     }
 
     match /invites/{inviteId} {
-      allow read, write: if false;
+      // Owners can list their own household's invites in Settings. Writes stay
+      // server-only: minting and revoking go through commands.
+      allow read: if isOwner(resource.data.householdId);
+      allow write: if false;
     }
 
     match /commands/{commandId} {

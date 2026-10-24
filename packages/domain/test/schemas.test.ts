@@ -65,6 +65,18 @@ describe('animal update payload', () => {
   });
 });
 
+describe('profile payload', () => {
+  it('accepts a default household id and rejects an overlong one', () => {
+    expect(
+      commandSchemas['user.updateProfile'].safeParse({ defaultHouseholdId: 'hh_1' }).success,
+    ).toBe(true);
+    expect(
+      commandSchemas['user.updateProfile'].safeParse({ defaultHouseholdId: 'x'.repeat(129) })
+        .success,
+    ).toBe(false);
+  });
+});
+
 describe('invite payload', () => {
   it('rejects a missing invite token', () => {
     expect(commandSchemas['member.accept'].safeParse({}).success).toBe(false);

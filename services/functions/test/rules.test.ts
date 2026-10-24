@@ -9,6 +9,7 @@ import {
 import {
   Timestamp,
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -79,7 +80,8 @@ beforeEach(async () => {
     await setDoc(doc(db, 'users/bob/auditLogs/bl1'), { action: 'line.link' });
     await setDoc(doc(db, 'commands/c1'), { uid: 'alice' });
     await setDoc(doc(db, 'lineUsers/u1'), { uid: 'alice' });
-    await setDoc(doc(db, 'invites/i1'), { householdId: 'h1', status: 'pending' });
+    await setDoc(doc(db, 'invites/i1'), { householdId: 'h1', status: 'active' });
+    await setDoc(doc(db, 'invites/i2'), { householdId: 'h2', status: 'active' });
     await setDoc(doc(db, 'rateLimits/rl1'), { counts: {} });
     await setDoc(doc(db, 'loginRateLimits/lrl1'), { counts: {} });
     await setDoc(doc(db, 'notificationLog/n1'), { uid: 'alice' });
@@ -164,7 +166,6 @@ describe('firestore rules', () => {
     for (const path of [
       'commands/c1',
       'lineUsers/u1',
-      'invites/i1',
       'rateLimits/rl1',
       'loginRateLimits/lrl1',
       'notificationLog/n1',
@@ -173,6 +174,37 @@ describe('firestore rules', () => {
       await assertFails(getDoc(doc(db, path)));
       await assertFails(setDoc(doc(db, `${path}-new`), { uid: 'alice' }));
     }
+  });
+
+  it('lets an owner read and list their own household invites', async () => {
+    const alice = env.authenticatedContext('alice').firestore();
+    await assertSucceeds(getDoc(doc(alice, 'invites/i1')));
+
+    const active = await getDocs(
+      query(collection(alice, 'invites'), where('householdId', '==', 'h1')),
+    );
+    expect(active.docs.map((snapshot) => snapshot.id)).toEqual(['i1']);
+  });
+
+  it('keeps caretakers and other households out of invites', async () => {
+    const bob = env.authenticatedContext('bob').firestore();
+    await assertFails(getDoc(doc(bob, 'invites/i1')));
+    await assertFails(getDocs(query(collection(bob, 'invites'), where('householdId', '==', 'h1'))));
+
+    // The owner of h2 cannot read h1's invite even with a matching invite id.
+    const carol = env.authenticatedContext('carol').firestore();
+    await assertFails(getDoc(doc(carol, 'invites/i1')));
+    await assertFails(getDocs(query(collection(carol, 'invites'), where('householdId', '==', 'h1'))));
+    await assertSucceeds(getDoc(doc(carol, 'invites/i2')));
+  });
+
+  it('keeps invite writes server-only even for an owner', async () => {
+    const alice = env.authenticatedContext('alice').firestore();
+    await assertFails(setDoc(doc(alice, 'invites/new'), { householdId: 'h1', status: 'active' }));
+    await assertFails(
+      setDoc(doc(alice, 'invites/i1'), { householdId: 'h1', status: 'revoked' }),
+    );
+    await assertFails(deleteDoc(doc(alice, 'invites/i1')));
   });
 
   it('keeps a member of one household out of another household', async () => {

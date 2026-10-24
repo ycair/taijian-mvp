@@ -5,6 +5,17 @@ import { adminAuth, adminDb, clearAuth, clearFirestore, envelope, seedUser } fro
 
 const UID = 'u_profile';
 
+async function createHousehold(uid = UID): Promise<string> {
+  const result = await runCommand({
+    uid,
+    envelope: envelope('household.create', { name: '我們家', timezone: 'Asia/Taipei' }),
+    source: 'test',
+    handlers: commandHandlers,
+  });
+  if (!result.ok) throw new Error('household.create failed');
+  return (result.data as { householdId: string }).householdId;
+}
+
 beforeEach(async () => {
   await Promise.all([clearFirestore(), clearAuth()]);
 });
@@ -104,5 +115,57 @@ describe('user.updateProfile', () => {
         handlers: commandHandlers,
       }),
     ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+  });
+
+  it('sets defaultHouseholdId to a household the user belongs to', async () => {
+    await seedUser(UID);
+    const householdId = await createHousehold();
+    // Creating the household already defaults to it; start from another value
+    // so the assertion proves this command wrote the field.
+    await adminDb.collection('users').doc(UID).set({ defaultHouseholdId: 'hh_other' }, { merge: true });
+
+    const result = await runCommand({
+      uid: UID,
+      envelope: envelope('user.updateProfile', { defaultHouseholdId: householdId }),
+      source: 'test',
+      handlers: commandHandlers,
+    });
+
+    expect(result.ok).toBe(true);
+    const user = (await adminDb.collection('users').doc(UID).get()).data();
+    expect(user?.defaultHouseholdId).toBe(householdId);
+    expect(user?.householdIds).toContain(householdId);
+
+    const audits = await adminDb.collection(`users/${UID}/auditLogs`).get();
+    expect(audits.docs.map((doc) => doc.data())).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          action: 'user.updateProfile',
+          after: { defaultHouseholdId: householdId },
+        }),
+      ]),
+    );
+  });
+
+  it('refuses a defaultHouseholdId the user is not a member of', async () => {
+    await seedUser(UID);
+    await adminDb
+      .collection('users')
+      .doc(UID)
+      .set({ defaultHouseholdId: 'hh_keep' }, { merge: true });
+
+    await expect(
+      runCommand({
+        uid: UID,
+        envelope: envelope('user.updateProfile', { defaultHouseholdId: 'hh_not_a_member' }),
+        source: 'test',
+        handlers: commandHandlers,
+      }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+
+    const user = (await adminDb.collection('users').doc(UID).get()).data();
+    expect(user?.defaultHouseholdId).toBe('hh_keep');
+    const audits = await adminDb.collection(`users/${UID}/auditLogs`).get();
+    expect(audits.docs).toHaveLength(0);
   });
 });
