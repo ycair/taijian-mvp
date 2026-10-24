@@ -3,7 +3,7 @@
 > LINE-first, conflict-safe care log for reptiles and exotic pets.  
 > 把每一次照顧，留在同一個家。
 
-**Status:** v1 design spec in review — implementation not started.  
+**Status:** v1 design spec approved — Phase 0 (foundation) in progress.  
 **Working name:** 苔間（商標／網域尚未檢索）  
 **Target:** iOS first; LINE LIFF + LINE Bot as the primary test surface.
 
@@ -109,7 +109,7 @@ docs/
   superpowers/specs/    v1 設計規格
 ```
 
-目前 repo 只有設計文件；Phase 0 會建立 monorepo、Emulator 設定與 CI。
+目前 repo 只有設計文件；Phase 0 建立 monorepo、Emulator 設定與 CI。
 
 ## Documentation
 
@@ -120,6 +120,16 @@ docs/
 苔間的架構參考自一份 private 逆向研究，但**不包含**任何原 App 的程式碼、素材、角色、文案或品牌識別。
 
 ## Development
+
+Prerequisites: Node 22.x (`pnpm` downloads and pins it via `.npmrc`) and pnpm 10.
+
+```bash
+pnpm install     # install workspace dependencies
+pnpm lint        # ESLint across the monorepo
+pnpm typecheck   # tsc across every workspace package
+pnpm test        # Vitest across every workspace package
+pnpm build       # build every workspace package
+```
 
 Phase 0 會加入：
 
