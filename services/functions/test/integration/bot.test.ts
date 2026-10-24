@@ -1,13 +1,13 @@
 // The bot handler reads LINE mappings, users, animals, and reminders, and runs
 // real commands, so its behaviour is verified against the emulator.
 import { Timestamp } from 'firebase-admin/firestore';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CommandResult, CommandSuccess } from '@taijian/domain';
 import { commandHandlers } from '../../src/commands/registry';
 import { runCommand } from '../../src/commands/runCommand';
 import { botCommandId, handleLineEvent, type LineWebhookEvent } from '../../src/line/handler';
 import { rateLimitDocId } from '../../src/lib/rateLimit';
-import { adminDb, clearAuth, clearFirestore, envelope, seedUser } from './helpers';
+import { adminDb, clearAuth, clearFirestore, envelope, readLimitCount, seedUser } from './helpers';
 
 const OWNER = 'u_bot_owner';
 const LINE_USER = 'U_bot_line_user';
@@ -88,7 +88,9 @@ async function createReminder(
   householdId: string,
   animalId: string,
   title: string,
+  options: { dueAt?: Date; enabled?: boolean; timezone?: string } = {},
 ): Promise<string> {
+  const timezone = options.timezone ?? 'Asia/Taipei';
   const result = success(
     await send(
       OWNER,
@@ -98,18 +100,26 @@ async function createReminder(
         title,
         type: 'feeding',
         schedule: { kind: 'daily', times: ['08:30'] },
-        timezone: 'Asia/Taipei',
+        timezone,
+        ...(options.enabled === false ? { enabled: false } : {}),
       },
       householdId,
     ),
     'reminder.create',
   );
   const reminderId = (result.data as { reminderId: string }).reminderId;
-  // Pin the occurrence to now so the bot's "today" window is deterministic.
+  // Pin the occurrence so the bot's "today" window is deterministic.
   await adminDb
     .collection('reminders')
     .doc(reminderId)
-    .set({ nextDueAt: Timestamp.now(), timezone: 'Asia/Taipei' }, { merge: true });
+    .set(
+      {
+        nextDueAt: Timestamp.fromDate(options.dueAt ?? new Date()),
+        timezone,
+        ...(options.enabled === false ? { enabled: false } : {}),
+      },
+      { merge: true },
+    );
   return reminderId;
 }
 
@@ -138,6 +148,10 @@ beforeEach(async () => {
   await clearAuth();
 });
 
+afterEach(() => {
+  vi.useRealTimers();
+});
+
 describe('handleLineEvent identity resolution', () => {
   it('sends a LIFF login link to an unlinked LINE user', async () => {
     await seedUser(OWNER);
@@ -151,6 +165,29 @@ describe('handleLineEvent identity resolution', () => {
     expect((await adminDb.collection('commands').get()).empty).toBe(true);
     expect((await adminDb.collection('rateLimits').get()).empty).toBe(true);
   });
+
+  it.each(['unlinked', 'deleted'])(
+    'rejects a %s LINE mapping without reading or writing household data',
+    async (status) => {
+      const { householdId } = await setup();
+      await adminDb.collection('lineUsers').doc(LINE_USER).set({ uid: OWNER, status });
+      const { replies, gateway } = recorder();
+      const event = messageEvent('餵食 阿肥');
+
+      await handleLineEvent(event, gateway);
+
+      // The revoked link gets the login link, never the membership reply or data.
+      expect(replies).toHaveLength(1);
+      expect(replies[0]).toContain('liff.line.me');
+      expect(replies[0]).not.toContain('你已不在這個家庭');
+      expect(await records(householdId)).toHaveLength(0);
+      expect(
+        (await adminDb.collection('commands').doc(botCommandId(event.webhookEventId)).get()).exists,
+      ).toBe(false);
+      // No account was resolved, so the bot budget is untouched.
+      expect(await readLimitCount(OWNER, 'bot')).toBeUndefined();
+    },
+  );
 
   it('sends a create-household link to a user without a household', async () => {
     await seedUser(OWNER);
@@ -296,6 +333,56 @@ describe('handleLineEvent command dispatch', () => {
     expect(replies).toEqual(['找不到居民「小美」。', '找不到任務「不存在的任務」。']);
   });
 
+  it('does not complete an overdue or a disabled occurrence', async () => {
+    const { householdId, animalId } = await setup();
+    const overdue = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+    // Both share the title, so only the due-today + enabled filter can pick one.
+    await createReminder(householdId, animalId, '換水', { dueAt: overdue });
+    await createReminder(householdId, animalId, '換水', { enabled: false });
+    const { replies, gateway } = recorder();
+
+    await handleLineEvent(messageEvent('完成 換水'), gateway);
+
+    expect(replies).toEqual(['找不到任務「換水」。']);
+    expect((await adminDb.collection('taskCompletions').get()).empty).toBe(true);
+  });
+
+  it('uses the household timezone for today and completion keys', async () => {
+    const { householdId, animalId, reminderId } = await setup();
+    // 2026-10-24T11:00Z is 2026-10-25 in Kiritimati (UTC+14) but still 10-24
+    // in the user's Asia/Taipei, so the two timezones disagree on "today".
+    const instant = new Date('2026-10-24T11:00:00Z');
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(instant);
+    await adminDb
+      .collection('households')
+      .doc(householdId)
+      .set({ timezone: 'Pacific/Kiritimati' }, { merge: true });
+    // The setup reminder belongs to another day: it must not appear.
+    await adminDb
+      .collection('reminders')
+      .doc(reminderId)
+      .set({ nextDueAt: Timestamp.fromDate(new Date('2026-10-20T00:00:00Z')) }, { merge: true });
+    await createReminder(householdId, animalId, '換水', {
+      dueAt: instant,
+      timezone: 'Pacific/Kiritimati',
+    });
+
+    const { replies, gateway } = recorder();
+    await handleLineEvent(messageEvent('今日'), gateway);
+    await handleLineEvent(messageEvent('完成 換水'), gateway);
+    await handleLineEvent(messageEvent('今日'), gateway);
+
+    expect(replies[0]).toBe('今日任務（0/1）：\n○ 換水');
+    expect(replies[1]).toBe('已完成「換水」。');
+    expect(replies[2]).toBe('今日任務（1/1）：\n✓ 換水');
+
+    const completions = await adminDb.collection('taskCompletions').get();
+    expect(completions.size).toBe(1);
+    // The key follows the household timezone, which is where 10-25 came from.
+    expect(completions.docs[0]?.data().dueDate).toBe('2026-10-25');
+  });
+
   it('creates an invite link the LIFF invite page can read', async () => {
     const { householdId } = await setup();
     const { replies, gateway } = recorder();
@@ -405,7 +492,7 @@ describe('handleLineEvent rate limits', () => {
     expect(replies).toEqual(['操作太頻繁，請稍後再試。']);
   });
 
-  it('rate limits bot commands through the command runner', async () => {
+  it('rate limits a bot command before dispatch', async () => {
     const { householdId } = await setup();
     await pinBotBudget(30);
     const { replies, gateway } = recorder();
@@ -414,5 +501,36 @@ describe('handleLineEvent rate limits', () => {
 
     expect(replies).toEqual(['操作太頻繁，請稍後再試。']);
     expect(await records(householdId)).toHaveLength(0);
+  });
+
+  it('meters an early-exit reply against the same bucket', async () => {
+    await setup();
+    await pinBotBudget(30);
+    const { replies, gateway } = recorder();
+
+    // The animal does not exist, but the attempt still counts as an interaction.
+    await handleLineEvent(messageEvent('餵食 不存在的居民'), gateway);
+
+    expect(replies).toEqual(['操作太頻繁，請稍後再試。']);
+  });
+
+  it('charges exactly one point per delivery and stops at 30', async () => {
+    await setup();
+    const { replies, gateway } = recorder();
+
+    await handleLineEvent(messageEvent('餵食 阿肥'), gateway);
+    expect(await readLimitCount(OWNER, 'bot')).toBe(1);
+
+    await handleLineEvent(messageEvent('今日'), gateway);
+    expect(await readLimitCount(OWNER, 'bot')).toBe(2);
+
+    // One point short of the limit is still allowed; the next one is refused.
+    await pinBotBudget(29);
+    await handleLineEvent(messageEvent('居民'), gateway);
+    expect(await readLimitCount(OWNER, 'bot')).toBe(30);
+
+    await handleLineEvent(messageEvent('居民'), gateway);
+    expect(replies.at(-1)).toBe('操作太頻繁，請稍後再試。');
+    expect(await readLimitCount(OWNER, 'bot')).toBe(30);
   });
 });

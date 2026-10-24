@@ -8,10 +8,10 @@ import {
   type CommandType,
 } from '@taijian/domain';
 import { commandHandlers } from '../commands/registry';
-import { botRateLimitRules, runCommand } from '../commands/runCommand';
+import { runCommand } from '../commands/runCommand';
 import { config } from '../config';
 import { db } from '../lib/firestore';
-import { consumeRateLimits } from '../lib/rateLimit';
+import { botRateLimitRules, consumeRateLimits } from '../lib/rateLimit';
 import { toFailure } from '../lib/result';
 import { parseBotCommand } from './commands';
 import { LineGateway } from './gateway';
@@ -43,6 +43,20 @@ const HELP_TEXT = [
 ].join('\n');
 
 const RATE_LIMITED_TEXT = '操作太頻繁，請稍後再試。';
+
+/** LINE rejects text messages longer than this many characters. */
+const LINE_TEXT_LIMIT = 5_000;
+
+/**
+ * Keeps every reply within LINE's text limit. The cut never lands between the
+ * halves of a surrogate pair, so an emoji at the boundary stays intact.
+ */
+export function truncateReplyText(text: string): string {
+  if (text.length <= LINE_TEXT_LIMIT) return text;
+  let cut = text.slice(0, LINE_TEXT_LIMIT - 1);
+  if (/[\ud800-\udbff]$/.test(cut)) cut = cut.slice(0, -1);
+  return `${cut}…`;
+}
 
 /**
  * LINE's `webhookEventId` is a ULID, but every command envelope requires a
@@ -94,7 +108,7 @@ function failureText(result: CommandFailure): string {
 
 async function reply(gateway: ReplyGateway, event: LineWebhookEvent, text: string): Promise<void> {
   if (!event.replyToken) return;
-  await gateway.reply(event.replyToken, [{ type: 'text', text }]);
+  await gateway.reply(event.replyToken, [{ type: 'text', text: truncateReplyText(text) }]);
 }
 
 /** Runs a command for the bot and turns thrown errors into a reply-ready result. */
@@ -127,14 +141,19 @@ type ReminderDoc = {
   title?: string;
   timezone?: string;
   nextDueAt?: Timestamp;
+  enabled?: boolean;
   deletedAt?: unknown;
 };
 
 type TaskSummary = { done: number; total: number; lines: string[] };
 
-/** Today's due tasks for this household, in the reminder's own timezone. */
-async function taskSummary(householdId: string, timezone: string): Promise<TaskSummary> {
-  const today = localDateKey(new Date(), timezone);
+/**
+ * Today's due tasks for this household. The household timezone defines "today"
+ * (and therefore the completion keys), while each reminder's own stored
+ * timezone decides which calendar day its `nextDueAt` belongs to.
+ */
+async function taskSummary(householdId: string, householdTimezone: string): Promise<TaskSummary> {
+  const today = localDateKey(new Date(), householdTimezone);
   const [reminders, completions] = await Promise.all([
     db
       .collection('reminders')
@@ -155,7 +174,7 @@ async function taskSummary(householdId: string, timezone: string): Promise<TaskS
     .filter(({ data }) => data.nextDueAt instanceof Timestamp)
     .filter(
       ({ data }) =>
-        localDateKey((data.nextDueAt as Timestamp).toDate(), data.timezone ?? DEFAULT_TIMEZONE) ===
+        localDateKey((data.nextDueAt as Timestamp).toDate(), data.timezone ?? householdTimezone) ===
         today,
     );
 
@@ -195,7 +214,10 @@ async function resolveAnimal(
   return matches[0]!;
 }
 
-/** Read-only replies still consume the shared bot budget before they run. */
+/**
+ * Charges one bot interaction. Every attributable delivery consumes a point,
+ * whether it writes, only reads, or exits early with a "not found" reply.
+ */
 async function botBudgetExceeded(uid: string): Promise<boolean> {
   try {
     await consumeRateLimits(uid, botRateLimitRules());
@@ -230,12 +252,19 @@ export async function handleLineEvent(
 
   const commandId = event.webhookEventId ? botCommandId(event.webhookEventId) : randomUUID();
 
+  // Command writes leave a `commands/{commandId}` record, so a redelivery is
+  // skipped here. Read-only replies write nothing: a duplicate delivery of one
+  // of those is only stopped by LINE's single-use reply token, which is why no
+  // extra marker collection is introduced this round.
   const processed = await db.collection('commands').doc(commandId).get();
   if (processed.exists) return;
 
   const mapping = await db.collection('lineUsers').doc(lineUserId).get();
-  const uid = mapping.data()?.uid as string | undefined;
-  if (!uid) {
+  const mappingData = mapping.data() as { uid?: string; status?: string } | undefined;
+  const uid = mappingData?.uid;
+  // A revoked mapping (unlink / account deletion) keeps its UID for audit, so
+  // the status decides whether this LINE account may still act.
+  if (!uid || (mappingData?.status ?? 'active') !== 'active') {
     await reply(gateway, event, `請先透過 LIFF 登入苔間：${liffUrl('/')}`);
     return;
   }
@@ -244,6 +273,14 @@ export async function handleLineEvent(
   const user = userSnap.data() as UserDoc | undefined;
   if (user?.deletedAt != null) {
     await reply(gateway, event, '這個帳號已刪除，請重新註冊。');
+    return;
+  }
+
+  // One point per attributable interaction, charged before any household
+  // resolution so that early-exit replies ("no household", "not a member",
+  // "animal not found", ambiguous names, unknown tasks) are metered too.
+  if (await botBudgetExceeded(uid)) {
+    await reply(gateway, event, RATE_LIMITED_TEXT);
     return;
   }
 
@@ -261,20 +298,13 @@ export async function handleLineEvent(
     return;
   }
 
-  const command = parseBotCommand(event.message.text ?? '');
-  const timezone = user?.timezone ?? DEFAULT_TIMEZONE;
+  // The household timezone, not the user's, defines "today" for task keys; the
+  // user timezone is only a fallback for a household document without one.
+  const householdSnap = await db.collection('households').doc(householdId).get();
+  const householdTimezone =
+    (householdSnap.data()?.timezone as string | undefined) ?? user?.timezone ?? DEFAULT_TIMEZONE;
 
-  // Commands are charged by `runCommand`; read-only replies are charged here so
-  // every bot interaction draws from the same 30/minute budget.
-  const isCommand =
-    command.kind === 'feed' ||
-    command.kind === 'weight' ||
-    command.kind === 'complete' ||
-    command.kind === 'invite';
-  if (!isCommand && (await botBudgetExceeded(uid))) {
-    await reply(gateway, event, RATE_LIMITED_TEXT);
-    return;
-  }
+  const command = parseBotCommand(event.message.text ?? '');
 
   if (command.kind === 'help' || command.kind === 'unknown') {
     await reply(gateway, event, HELP_TEXT);
@@ -282,7 +312,7 @@ export async function handleLineEvent(
   }
 
   if (command.kind === 'today') {
-    const summary = await taskSummary(householdId, timezone);
+    const summary = await taskSummary(householdId, householdTimezone);
     await reply(
       gateway,
       event,
@@ -334,13 +364,25 @@ export async function handleLineEvent(
     return;
   }
 
-  // 完成 is resolved against reminders, never against animals.
+  // 完成 is resolved against reminders, never against animals, and only for an
+  // occurrence that is actually due today in the household timezone.
   if (command.kind === 'complete') {
+    const today = localDateKey(new Date(), householdTimezone);
     const snap = await db.collection('reminders').where('householdId', '==', householdId).get();
     const query = command.taskName.trim().toLowerCase();
     const reminders = snap.docs
       .map((doc) => ({ id: doc.id, data: doc.data() as ReminderDoc }))
-      .filter(({ data }) => data.deletedAt == null)
+      .filter(
+        ({ data }) =>
+          data.enabled === true && data.deletedAt == null && data.nextDueAt instanceof Timestamp,
+      )
+      .filter(
+        ({ data }) =>
+          localDateKey(
+            (data.nextDueAt as Timestamp).toDate(),
+            data.timezone ?? householdTimezone,
+          ) === today,
+      )
       .map((reminder) => ({ ...reminder, title: reminder.data.title ?? '' }));
     const exact = reminders.filter((reminder) => reminder.title.toLowerCase() === query);
     const matches =
@@ -362,14 +404,9 @@ export async function handleLineEvent(
     }
 
     const task = matches[0]!;
-    const dueAt = task.data.nextDueAt;
-    const dueDate =
-      dueAt instanceof Timestamp
-        ? localDateKey(dueAt.toDate(), task.data.timezone ?? timezone)
-        : localDateKey(new Date(), timezone);
     const result = await runBotCommand(uid, commandId, 'task.complete', householdId, {
       reminderId: task.id,
-      dueDate,
+      dueDate: today,
     });
     if (!result.ok) {
       await reply(gateway, event, failureText(result));

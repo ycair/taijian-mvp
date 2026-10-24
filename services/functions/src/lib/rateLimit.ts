@@ -10,6 +10,26 @@ export type RateLimitRule = {
 };
 
 /**
+ * Bot traffic has its own, tighter budget than the command API. One bucket
+ * covers every attributable bot interaction — reads, writes, and early-exit
+ * replies alike — so the 30 interactions/minute/UID limit holds for the whole
+ * chatbot rather than only for commands that reach the runner.
+ */
+export const BOT_INTERACTION_ACTION = 'bot';
+export const BOT_INTERACTION_LIMIT = 30;
+export const BOT_INTERACTION_WINDOW_SECONDS = 60;
+
+export function botRateLimitRules(): RateLimitRule[] {
+  return [
+    {
+      action: BOT_INTERACTION_ACTION,
+      limit: BOT_INTERACTION_LIMIT,
+      windowSeconds: BOT_INTERACTION_WINDOW_SECONDS,
+    },
+  ];
+}
+
+/**
  * Applies the reserved counters. Firestore transactions reject reads that
  * happen after a write, so the reserve step reads and validates every bucket
  * before any counter is written back.

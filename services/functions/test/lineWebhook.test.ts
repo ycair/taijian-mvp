@@ -92,4 +92,17 @@ describe('handleWebhookRequest', () => {
     expect(JSON.stringify(error.mock.calls)).not.toContain('今日');
     error.mockRestore();
   });
+
+  it('returns 500 when every event failed, so LINE retries the delivery', async () => {
+    const rawBody = JSON.stringify({ events: [messageEvent('e1'), messageEvent('e2')] });
+    const dispatch = vi.fn().mockRejectedValue(new Error('firestore unavailable'));
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const result = await handleWebhookRequest(Buffer.from(rawBody), signed(rawBody), dispatch);
+
+    expect(result.status).toBe(500);
+    expect(dispatch).toHaveBeenCalledTimes(2);
+    expect(error).toHaveBeenCalledTimes(2);
+    error.mockRestore();
+  });
 });

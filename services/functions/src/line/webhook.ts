@@ -34,17 +34,25 @@ export async function handleWebhookRequest(
       )
     : [];
 
-  // One failing event must not make LINE redeliver the whole batch; each event
-  // is already idempotent through `commands/{commandId}`.
+  // One failing event must not make LINE redeliver a batch that partially
+  // succeeded; each event is already idempotent through `commands/{commandId}`.
+  // A batch where every event failed is a transient problem (Firestore, LINE
+  // API), so it returns 5xx and lets LINE retry the delivery.
   const results = await Promise.allSettled(events.map((event) => dispatch(event)));
+  let failed = 0;
   results.forEach((result, index) => {
     if (result.status === 'rejected') {
+      failed += 1;
       console.error('line webhook event failed', {
         webhookEventId: events[index]?.webhookEventId,
         error: result.reason instanceof Error ? result.reason.message : String(result.reason),
       });
     }
   });
+
+  if (events.length > 0 && failed === events.length) {
+    return { status: 500, body: 'event handling failed' };
+  }
 
   return { status: 200, body: 'ok' };
 }

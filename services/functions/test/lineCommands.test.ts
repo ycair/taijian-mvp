@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseBotCommand } from '../src/line/commands';
-import { botCommandId } from '../src/line/handler';
+import { botCommandId, truncateReplyText } from '../src/line/handler';
 
 describe('parseBotCommand', () => {
   it('parses today and animals', () => {
@@ -71,6 +71,32 @@ describe('parseBotCommand', () => {
     expect(parseBotCommand('體重 阿肥 0')).toEqual({ kind: 'unknown' });
     expect(parseBotCommand('完成')).toEqual({ kind: 'unknown' });
     expect(parseBotCommand('')).toEqual({ kind: 'unknown' });
+  });
+});
+
+describe('truncateReplyText', () => {
+  it('leaves short replies untouched', () => {
+    expect(truncateReplyText('今日任務（1/1）：\n✓ 餵食')).toBe('今日任務（1/1）：\n✓ 餵食');
+  });
+
+  it('clamps a long summary to the LINE text limit', () => {
+    const text = '○ 餵食\n'.repeat(1_001);
+    const clamped = truncateReplyText(text);
+
+    expect(text.length).toBeGreaterThan(5_000);
+    expect(clamped.length).toBe(5_000);
+    expect(clamped.endsWith('…')).toBe(true);
+  });
+
+  it('never splits a surrogate pair at the boundary', () => {
+    // 4,999 BMP characters, then an emoji that would straddle the cut.
+    const text = `${'a'.repeat(4_999)}🐢${'b'.repeat(100)}`;
+    const clamped = truncateReplyText(text);
+
+    expect(clamped.length).toBeLessThanOrEqual(5_000);
+    expect(clamped.endsWith('…')).toBe(true);
+    expect(clamped).not.toContain('🐢');
+    expect(clamped.slice(4_998)).toBe('a…');
   });
 });
 
