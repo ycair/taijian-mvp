@@ -44,6 +44,28 @@ function emitDoc(path: string, data: Record<string, unknown>) {
   });
 }
 
+function emitQuery(path: string, rows: Array<Record<string, unknown> & { id: string }>) {
+  const next = h.listeners.get(path);
+  if (!next) throw new Error(`no query listener for ${path}`);
+  act(() => {
+    next({
+      docs: rows.map((row) => ({ id: row.id, data: () => row })),
+    });
+  });
+}
+
+const reminderRow = {
+  id: 'r1',
+  animalId: 'a1',
+  title: '晚間餵食',
+  type: 'feeding',
+  schedule: { kind: 'daily' as const, times: ['20:00'] },
+  timezone: 'Asia/Taipei',
+  enabled: true,
+  revision: 2,
+  deletedAt: null,
+};
+
 function renderPage() {
   return render(
     <MemoryRouter initialEntries={['/animals/a1']}>
@@ -134,8 +156,12 @@ describe('AnimalDetailPage', () => {
     await waitFor(() => expect(mockedCall).toHaveBeenCalledTimes(1));
     expect(mockedCall).toHaveBeenCalledWith(
       'record.create',
-      expect.objectContaining({ animalId: 'a1', note: '吃了兩隻蟋蟀' }),
-      { householdId: 'h1' },
+      expect.objectContaining({
+        animalId: 'a1',
+        note: '吃了兩隻蟋蟀',
+        recordId: expect.any(String),
+      }),
+      { householdId: 'h1', commandId: expect.any(String) },
     );
 
     // Closed after success, and the form is reset for the next open.
@@ -144,5 +170,66 @@ describe('AnimalDetailPage', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: '＋ 新增紀錄' }));
     expect(screen.getByLabelText('備註')).toHaveValue('');
+  });
+
+  it('scopes the records query to the resident', () => {
+    renderPage();
+    emitDoc('animals/a1', baseAnimal);
+
+    expect(h.where).toHaveBeenCalledWith('householdId', '==', 'h1');
+    expect(h.where).toHaveBeenCalledWith('animalId', '==', 'a1');
+    expect(h.orderBy).toHaveBeenCalledWith('occurredAt', 'desc');
+  });
+
+  it('lists the animal reminders with edit and delete', async () => {
+    mockedCall.mockResolvedValue({
+      ok: true,
+      commandId: 'c1',
+      data: { reminderId: 'r1', deleted: true },
+      serverTime: new Date().toISOString(),
+    });
+
+    renderPage();
+    emitDoc('animals/a1', baseAnimal);
+    emitQuery('reminders', [reminderRow]);
+
+    expect(screen.getByText('晚間餵食')).toBeInTheDocument();
+    expect(screen.getByText(/每日 20:00/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '編輯' }));
+    expect(screen.getByText('編輯提醒')).toBeInTheDocument();
+    expect(screen.getByLabelText('提醒名稱')).toHaveValue('晚間餵食');
+    fireEvent.click(screen.getByRole('button', { name: '取消' }));
+
+    fireEvent.click(screen.getByRole('button', { name: '刪除' }));
+    await waitFor(() => {
+      expect(mockedCall).toHaveBeenCalledWith(
+        'reminder.delete',
+        { reminderId: 'r1' },
+        { householdId: 'h1', baseRevision: 2, commandId: expect.any(String) },
+      );
+    });
+  });
+
+  it('shows the current revision when a delete conflicts', async () => {
+    mockedCall.mockResolvedValue({
+      ok: false,
+      commandId: 'c1',
+      code: 'CONFLICT',
+      message: 'revision mismatch',
+      currentRevision: 4,
+      lastChangedFields: ['enabled'],
+      serverTime: new Date().toISOString(),
+    });
+
+    renderPage();
+    emitDoc('animals/a1', baseAnimal);
+    emitQuery('reminders', [reminderRow]);
+
+    fireEvent.click(screen.getByRole('button', { name: '刪除' }));
+
+    expect(await screen.findByText('資料已更新')).toBeInTheDocument();
+    expect(screen.getByText(/目前版本：4/)).toBeInTheDocument();
+    expect(screen.getByText(/變更欄位：enabled/)).toBeInTheDocument();
   });
 });
