@@ -165,6 +165,8 @@ VITE_FIREBASE_APP_ID=1:demo:web:demo
 VITE_LIFF_ID=test-liff
 VITE_USE_EMULATORS=true
 VITE_USE_MOCK_LINE=true
+VITE_RECAPTCHA_ENTERPRISE_KEY=
+VITE_APP_CHECK_DEBUG_TOKEN=
 ```
 
 ```text
@@ -191,6 +193,40 @@ Vite `DEV` 建置生效。`pnpm test:e2e` 的 global setup 會先確認 emulator
 都在執行，再自動重跑 `pnpm seed`（清掉舊的 `taskCompletions` 並把 `nextDueAt` 設為
 當下），因此跨午夜或同一天重跑都不會誤判。驗收清單見
 [`docs/acceptance/phase-1.md`](docs/acceptance/phase-1.md)。
+
+### LIFF onboarding, reminders, and retries
+
+- **建立家庭**：沒有家庭時，Today／居民頁的空狀態與 `/household/new` 都提供
+  「建立家庭」表單（名稱＋IANA 時區）。成功後會選取新家庭、重讀
+  `users/{uid}.householdIds`，再導向 Today，因此不會先閃出「還沒有家庭」。
+- **提醒管理**：居民詳情頁可新增、編輯、刪除提醒（每日／每週／每 N 天、單一時刻、
+  時區、啟用開關）。更新與刪除都帶 `baseRevision`；`CONFLICT` 會顯示
+  `currentRevision`／`lastChangedFields`，可選擇載入最新版本或保留自己的變更後重送。
+- **重試不重複**：表單每次「意圖」只產生一組 `commandId` 與（紀錄用的）
+  `recordId`、`occurredAt`。請求逾時後重按儲存會沿用同一組 id，伺服器以
+  `commands/{commandId}` 重播原結果；成功後才重置。修改表單內容會視為新的意圖。
+- **完成者名稱**：Today 使用 `task.complete` 寫入的 `completedByName` 快照；舊資料
+  沒有名稱時顯示「已刪除成員」，不會露出原始 UID。
+- **登入切換**：已有 Firebase session 時仍會用目前的 LINE ID token 交換並比對 UID；
+  UID 不同會先登出再登入新帳號，`HouseholdProvider` 也會以 UID 重新掛載。登出後
+  Gate 顯示「請重新登入 LINE」。
+
+### App Check
+
+App Check 由建置環境變數控制：
+
+```text
+VITE_RECAPTCHA_ENTERPRISE_KEY=<reCAPTCHA Enterprise site key>
+VITE_APP_CHECK_DEBUG_TOKEN=<dev-only debug token>
+```
+
+- **本機／E2E**：`VITE_RECAPTCHA_ENTERPRISE_KEY` 留空即可完全跳過 App Check
+  初始化，emulator 不需要 debug token。
+- **Dev 除錯**：設定 key 後，若同時設定 `VITE_APP_CHECK_DEBUG_TOKEN`（僅限 Vite
+  `DEV` 建置），會以該 debug token 初始化。
+- **Production**：必須設定 `VITE_RECAPTCHA_ENTERPRISE_KEY`；啟用後 LIFF 會自動
+  取得並更新 App Check token。伺服器端的 `ENFORCE_APP_CHECK` 仍由部署環境控制，
+  兩者需一起開啟。
 
 ## Security
 
