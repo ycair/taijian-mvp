@@ -8,6 +8,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/time/app_time.dart';
 import '../../core/widgets/common.dart';
 import '../records/quick_record_sheet.dart';
+import 'animal_repository.dart';
 import '../reminders/reminder_repository.dart';
 
 class AnimalDetailScreen extends ConsumerWidget {
@@ -22,6 +23,11 @@ class AnimalDetailScreen extends ConsumerWidget {
     final recordAsync = ref.watch(animalRecordsProvider(animalId));
     final timezone = ref.watch(householdTimezoneProvider);
     final animal = animalAsync.value;
+    final currentUid = ref.watch(currentUserProvider)?.uid;
+    final members = ref.watch(householdMembersProvider).value ?? const <HouseholdMember>[];
+    final isOwner = members.any(
+      (member) => member.uid == currentUid && member.role == MemberRole.owner,
+    );
 
     if (animalAsync.isLoading && animal == null) {
       return Scaffold(
@@ -51,6 +57,35 @@ class AnimalDetailScreen extends ConsumerWidget {
           onPressed: () => context.go('/animals'),
           icon: const Icon(Icons.arrow_back),
         ),
+        actions: [
+          IconButton(
+            tooltip: '編輯居民',
+            onPressed: () => _editAnimal(context, ref, animal),
+            icon: const Icon(Icons.edit_outlined),
+          ),
+          if (isOwner)
+            PopupMenuButton<_AnimalAdminAction>(
+              tooltip: '居民管理',
+              onSelected: (action) {
+                switch (action) {
+                  case _AnimalAdminAction.archive:
+                    _archiveAnimal(context, ref, animal);
+                  case _AnimalAdminAction.delete:
+                    _deleteAnimal(context, ref, animal);
+                }
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem(
+                  value: _AnimalAdminAction.archive,
+                  child: Text('封存居民'),
+                ),
+                PopupMenuItem(
+                  value: _AnimalAdminAction.delete,
+                  child: Text('刪除居民', style: TextStyle(color: AppTokens.overdue)),
+                ),
+              ],
+            ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 36),
@@ -199,6 +234,207 @@ class AnimalDetailScreen extends ConsumerWidget {
     'male' => '公',
     _ => '性別未知',
   };
+
+  static Future<void> _editAnimal(BuildContext context, WidgetRef ref, Animal animal) async {
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) => _AnimalEditSheet(animal: animal),
+    );
+    if (saved == true && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('居民資料已更新，會自動同步。')),
+      );
+    }
+  }
+
+  static Future<void> _archiveAnimal(
+    BuildContext context,
+    WidgetRef ref,
+    Animal animal,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('封存居民？'),
+        content: Text('「${animal.name}」會從居民列表隱藏，提醒也會停用；歷史紀錄仍保留。'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('取消')),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: AppTokens.overdue),
+            child: const Text('封存'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await ref.read(animalRepositoryProvider).archive(animal);
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('封存失敗：$error')));
+      }
+      return;
+    }
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('居民已封存，會自動同步。')),
+    );
+    context.go('/animals');
+  }
+
+  static Future<void> _deleteAnimal(
+    BuildContext context,
+    WidgetRef ref,
+    Animal animal,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('刪除居民？'),
+        content: Text('「${animal.name}」與相關提醒會一併刪除，歷史紀錄將從時間軸隱藏。此操作無法復原。'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('取消')),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: AppTokens.overdue),
+            child: const Text('刪除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await ref.read(animalRepositoryProvider).delete(animal);
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('刪除失敗：$error')));
+      }
+      return;
+    }
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('居民已刪除，會自動同步。')),
+    );
+    context.go('/animals');
+  }
+}
+
+enum _AnimalAdminAction { archive, delete }
+
+class _AnimalEditSheet extends ConsumerStatefulWidget {
+  const _AnimalEditSheet({required this.animal});
+
+  final Animal animal;
+
+  @override
+  ConsumerState<_AnimalEditSheet> createState() => _AnimalEditSheetState();
+}
+
+class _AnimalEditSheetState extends ConsumerState<_AnimalEditSheet> {
+  late final TextEditingController _name = TextEditingController(text: widget.animal.name);
+  late final TextEditingController _morph = TextEditingController(text: widget.animal.morph ?? '');
+  late final TextEditingController _notes = TextEditingController(text: widget.animal.notes ?? '');
+  bool _busy = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _morph.dispose();
+    _notes.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (_busy) return;
+    final name = _name.text.trim();
+    if (name.isEmpty) {
+      setState(() => _error = '請輸入名字');
+      return;
+    }
+    if (name.length > 40) {
+      setState(() => _error = '名字最多 40 個字');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await ref.read(animalRepositoryProvider).update(
+        animal: widget.animal,
+        name: name,
+        morph: _morph.text,
+        notes: _notes.text,
+      );
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (error) {
+      if (mounted) setState(() => _error = '儲存失敗：$error');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('編輯居民', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _name,
+              maxLength: 40,
+              decoration: const InputDecoration(labelText: '名字'),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _morph,
+              maxLength: 60,
+              decoration: const InputDecoration(labelText: '基因 / 型態（選填）'),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _notes,
+              maxLines: 3,
+              maxLength: 2000,
+              decoration: const InputDecoration(labelText: '備註（選填）', alignLabelWithHint: true),
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 8),
+              Text(_error!, style: const TextStyle(color: AppTokens.overdue)),
+            ],
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: _busy ? null : _save,
+              child: _busy
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                    )
+                  : const Text('儲存變更'),
+            ),
+            const SizedBox(height: 8),
+            const Center(
+              child: Text(
+                '若家人同時修改，儲存後會出現衝突提示。',
+                style: TextStyle(fontSize: 11, color: AppTokens.muted),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _MetaChip extends StatelessWidget {

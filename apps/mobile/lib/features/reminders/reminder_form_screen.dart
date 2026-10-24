@@ -9,6 +9,7 @@ import '../../core/time/app_time.dart';
 import '../../core/widgets/common.dart';
 import '../settings/outbox_banner.dart';
 import 'reminder_repository.dart';
+import 'reminder_schedule_edit.dart';
 
 class ReminderFormScreen extends ConsumerStatefulWidget {
   const ReminderFormScreen({super.key, this.reminderId, this.animalId});
@@ -87,7 +88,7 @@ class _ReminderFormScreenState extends ConsumerState<ReminderFormScreen> {
   String get _clock =>
       '${_time.hour.toString().padLeft(2, '0')}:${_time.minute.toString().padLeft(2, '0')}';
 
-  ReminderSchedule _buildSchedule() {
+  ReminderSchedule _buildSchedule(Reminder? editing) {
     final everyNDays = int.tryParse(_intervalController.text.trim()) ?? 7;
     final todayKey = localDateKey(DateTime.now(), ref.read(householdTimezoneProvider));
     return ReminderSchedule(
@@ -95,7 +96,9 @@ class _ReminderFormScreenState extends ConsumerState<ReminderFormScreen> {
       times: [_clock],
       weekdays: _scheduleKind == 'weekly' ? (_weekdays.toList()..sort()) : const [],
       everyNDays: _scheduleKind == 'interval' ? everyNDays.clamp(1, 365) : null,
-      startDate: _scheduleKind == 'interval' ? todayKey : null,
+      startDate: _scheduleKind == 'interval'
+          ? intervalStartDate(existingStartDate: editing?.schedule.startDate, today: todayKey)
+          : null,
     );
   }
 
@@ -113,7 +116,7 @@ class _ReminderFormScreenState extends ConsumerState<ReminderFormScreen> {
     setState(() => _busy = true);
     try {
       final repo = ref.read(reminderRepositoryProvider);
-      final schedule = _buildSchedule();
+      final schedule = _buildSchedule(editing);
       if (editing != null) {
         await repo.update(
           reminder: editing,

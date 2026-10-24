@@ -68,6 +68,17 @@ class AnimalRepository {
       targetId: 'animal:${animal.id}',
     );
   }
+
+  Future<void> delete(Animal animal) async {
+    if (householdId == null) throw StateError('No household');
+    await commands.submit(
+      'animal.delete',
+      {'animalId': animal.id},
+      householdId: householdId,
+      baseRevision: animal.revision,
+      targetId: 'animal:${animal.id}',
+    );
+  }
 }
 
 final animalRepositoryProvider = Provider<AnimalRepository>((ref) {
