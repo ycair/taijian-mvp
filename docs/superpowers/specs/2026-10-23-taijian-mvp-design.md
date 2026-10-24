@@ -210,6 +210,7 @@ All timestamps use Firestore `Timestamp`; server writes `createdAt` / `updatedAt
 ```text
 users/{uid}
   displayName, avatarUrl, locale, timezone
+  householdIds: string[]
   defaultHouseholdId
   schemaVersion, createdAt, updatedAt
 
@@ -217,7 +218,7 @@ lineUsers/{lineUserId}
   uid, displayName, pictureUrl, linkedAt
 
 households/{householdId}
-  name, ownerUid, ownerCount
+  name, ownerUid, ownerCount, memberCount
   timezone ("Asia/Taipei")
   settings { quietHours, notificationsEnabled }
   revision, schemaVersion, createdAt, updatedAt, deletedAt
@@ -293,6 +294,8 @@ Records and reminders are top-level with `householdId` and `animalId`, not neste
 - A simpler reminder scheduler.
 - Firestore rules based on a denormalized `householdId`.
 
+`users/{uid}.householdIds` is maintained transactionally by membership commands. It powers the household switcher without a collection-group query; `defaultHouseholdId` remembers the last selection.
+
 Animal detail filters by `animalId` + `occurredAt` descending.
 
 ### 7.3 Species
@@ -366,7 +369,7 @@ For each command, in one Firestore transaction:
 | `LINE webhook` | `webhookEventId` as `commandId` | Retries are ignored |
 | Flutter offline replay | Outbox + same `commandId` | Idempotent; conflicts surface to UI |
 
-`ownerCount` is updated in the same transaction as role changes; a weekly integrity job recomputes it from `members`.
+`ownerCount` and `memberCount` are updated in the same transaction as membership changes; a weekly integrity job recomputes both from `members`.
 
 ### 8.4 Record creation
 
@@ -708,7 +711,7 @@ Six cells:
 - Do not collect email unless Apple/Google provides it; no phone/address in v1.
 - Privacy policy and terms; subprocessors: Google Firebase, LINE.
 - Taiwan PDPA; GDPR notes if serving EU.
-- **Account deletion**: owner must transfer or delete the household; caretaker membership is removed. Delete Auth, FCM tokens, and personal Storage objects. Firestore records created by the user remain in the household but are attributed to「已刪除成員」. Audit logs are anonymized. Backups rotate within 30 days.
+- **Account deletion**: owner must transfer or delete the household; caretaker membership is removed. Delete Auth, FCM tokens, and personal Storage objects. Firestore records created by the user remain in the household but are attributed to「已刪除成員」. Audit logs retain only the pseudonymous UID (no display name or email). Backups rotate within 30 days.
 - Data export: v1.1 JSON/CSV; v1 via support.
 - Age rating: 4+ for v1 (no public UGC).
 
@@ -894,7 +897,6 @@ reminders:          householdId ASC, enabled ASC, nextDueAt ASC
 reminders:          enabled ASC, nextDueAt ASC          # scheduler
 taskCompletions:    householdId ASC, dueDate ASC
 invites:            householdId ASC, status ASC
-members (collection group): uid ASC                     # list a user's households
 auditLogs (subcollection): createdAt DESC
 ```
 
