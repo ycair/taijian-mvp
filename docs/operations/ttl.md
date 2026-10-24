@@ -12,7 +12,7 @@ environment (demo / staging / production).
 | `commands` | `expiresAt` | 24h after the command runs (`COMMAND_TTL_MS`) | `lib/idempotency.ts` |
 | `rateLimits` | `expiresAt` | per-action fixed window, `expiresAt = windowStart + 2 × window`: 60s windows → 120s, 86 400s window → 48h | `lib/rateLimit.ts` |
 | `loginRateLimits` | `expiresAt` | fixed 60s window, `expiresAt = windowStart + 1 × window` | `auth/loginRateLimit.ts` |
-| `notificationLog` | `expiresAt` | 30d delivery history | `line/notifications` (Task 13/14) |
+| `notificationLog` | `expiresAt` | 30d delivery history | `reminders/scheduler.ts` (Task 14) |
 
 Notes:
 
