@@ -5,6 +5,7 @@ import { AnimalDetailPage } from '../pages/AnimalDetailPage';
 import { callCommand } from '../lib/api';
 
 const h = vi.hoisted(() => ({
+  auth: { user: { uid: 'u1', displayName: '苔' }, loading: false, error: null },
   household: {
     household: null as null | { id: string; name: string; timezone: string },
     householdIds: [] as string[],
@@ -22,6 +23,7 @@ const h = vi.hoisted(() => ({
   unsubscribe: vi.fn<() => void>(),
 }));
 
+vi.mock('../lib/auth', () => ({ useAuth: () => h.auth }));
 vi.mock('../lib/household', () => ({ useHousehold: () => h.household }));
 vi.mock('../lib/firebase', () => ({ db: {} }));
 vi.mock('firebase/firestore', () => ({
@@ -83,12 +85,24 @@ const baseAnimal = {
   speciesLabel: '豹紋守宮',
   householdId: 'h1',
   status: 'active',
+  revision: 0,
+  morph: '橘化',
+  sex: 'female',
+  birthDate: '2025-04-01',
+  notes: '愛吃蟋蟀',
   deletedAt: null,
 };
+
+let confirmMock: ReturnType<typeof vi.fn>;
+
+function emitMember(role: 'owner' | 'caretaker') {
+  emitDoc('households/h1/members/u1', { uid: 'u1', role });
+}
 
 beforeEach(() => {
   vi.clearAllMocks();
   h.listeners.clear();
+  h.auth.user = { uid: 'u1', displayName: '苔' };
   h.household.household = { id: 'h1', name: '苔間', timezone: 'Asia/Taipei' };
   h.household.loading = false;
   h.household.error = null;
@@ -111,6 +125,8 @@ beforeEach(() => {
     data: { recordId: 'r1' },
     serverTime: new Date().toISOString(),
   });
+  confirmMock = vi.fn(() => true);
+  vi.stubGlobal('confirm', confirmMock);
 });
 
 describe('AnimalDetailPage', () => {
@@ -231,5 +247,151 @@ describe('AnimalDetailPage', () => {
     expect(await screen.findByText('資料已更新')).toBeInTheDocument();
     expect(screen.getByText(/目前版本：4/)).toBeInTheDocument();
     expect(screen.getByText(/變更欄位：enabled/)).toBeInTheDocument();
+  });
+
+  it('edits a resident and sends the observed baseRevision', async () => {
+    renderPage();
+    emitDoc('animals/a1', baseAnimal);
+
+    fireEvent.click(screen.getByRole('button', { name: '編輯居民' }));
+    fireEvent.change(screen.getByLabelText('名字'), { target: { value: '阿苔二號' } });
+    fireEvent.change(screen.getByLabelText('品系'), { target: { value: '白化' } });
+    fireEvent.change(screen.getByLabelText('性別'), { target: { value: 'male' } });
+    fireEvent.change(screen.getByLabelText('生日'), { target: { value: '2024-01-02' } });
+    fireEvent.change(screen.getByLabelText('備註'), { target: { value: '換季中' } });
+    fireEvent.click(screen.getByRole('button', { name: '儲存居民' }));
+
+    await waitFor(() => {
+      expect(mockedCall).toHaveBeenCalledWith(
+        'animal.update',
+        {
+          animalId: 'a1',
+          name: '阿苔二號',
+          species: 'leopard-gecko',
+          speciesLabel: '豹紋守宮',
+          morph: '白化',
+          sex: 'male',
+          birthDate: '2024-01-02',
+          notes: '換季中',
+        },
+        { householdId: 'h1', baseRevision: 0, commandId: expect.any(String) },
+      );
+    });
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: '儲存居民' })).not.toBeInTheDocument(),
+    );
+  });
+
+  it('shows the conflict banner and loads the latest values', async () => {
+    mockedCall.mockResolvedValueOnce({
+      ok: false,
+      commandId: 'c1',
+      code: 'CONFLICT',
+      message: 'stale revision',
+      currentRevision: 3,
+      lastChangedFields: ['name', 'notes'],
+      current: {
+        ...baseAnimal,
+        id: 'a1',
+        name: '對方改的名字',
+        morph: '白化',
+        notes: '對方改的備註',
+        revision: 3,
+      },
+      serverTime: new Date().toISOString(),
+    });
+
+    renderPage();
+    emitDoc('animals/a1', baseAnimal);
+
+    fireEvent.click(screen.getByRole('button', { name: '編輯居民' }));
+    fireEvent.change(screen.getByLabelText('名字'), { target: { value: '我改的名字' } });
+    fireEvent.click(screen.getByRole('button', { name: '儲存居民' }));
+
+    expect(await screen.findByText('資料已更新')).toBeInTheDocument();
+    expect(screen.getByText(/目前版本：3/)).toBeInTheDocument();
+    expect(screen.getByText(/變更欄位：name、notes/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '查看最新' }));
+
+    expect(screen.getByLabelText('名字')).toHaveValue('對方改的名字');
+    expect(screen.getByLabelText('品系')).toHaveValue('白化');
+    expect(screen.getByLabelText('備註')).toHaveValue('對方改的備註');
+    expect(screen.queryByText('資料已更新')).not.toBeInTheDocument();
+  });
+
+  it('keeps my edit on confirmation and resubmits with the new revision', async () => {
+    mockedCall.mockResolvedValueOnce({
+      ok: false,
+      commandId: 'c1',
+      code: 'CONFLICT',
+      message: 'stale revision',
+      currentRevision: 3,
+      lastChangedFields: ['name'],
+      current: { ...baseAnimal, id: 'a1', name: '對方改的名字', revision: 3 },
+      serverTime: new Date().toISOString(),
+    });
+
+    renderPage();
+    emitDoc('animals/a1', baseAnimal);
+
+    fireEvent.click(screen.getByRole('button', { name: '編輯居民' }));
+    fireEvent.change(screen.getByLabelText('名字'), { target: { value: '我改的名字' } });
+    fireEvent.click(screen.getByRole('button', { name: '儲存居民' }));
+    expect(await screen.findByText('資料已更新')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '保留我的' }));
+
+    await waitFor(() => expect(mockedCall).toHaveBeenCalledTimes(2));
+    expect(confirmMock).toHaveBeenCalled();
+    expect(mockedCall).toHaveBeenLastCalledWith(
+      'animal.update',
+      expect.objectContaining({ animalId: 'a1', name: '我改的名字' }),
+      { householdId: 'h1', baseRevision: 3, commandId: expect.any(String) },
+    );
+  });
+
+  it('archives a resident as the owner with baseRevision and confirmation', async () => {
+    renderPage();
+    emitDoc('animals/a1', baseAnimal);
+    emitMember('owner');
+
+    fireEvent.click(await screen.findByRole('button', { name: '封存居民' }));
+
+    await waitFor(() => {
+      expect(mockedCall).toHaveBeenCalledWith(
+        'animal.archive',
+        { animalId: 'a1' },
+        { householdId: 'h1', baseRevision: 0 },
+      );
+    });
+    expect(confirmMock).toHaveBeenCalled();
+  });
+
+  it('deletes a resident as the owner with baseRevision and confirmation', async () => {
+    renderPage();
+    emitDoc('animals/a1', baseAnimal);
+    emitMember('owner');
+
+    fireEvent.click(await screen.findByRole('button', { name: '刪除居民' }));
+
+    await waitFor(() => {
+      expect(mockedCall).toHaveBeenCalledWith(
+        'animal.delete',
+        { animalId: 'a1' },
+        { householdId: 'h1', baseRevision: 0 },
+      );
+    });
+    expect(confirmMock).toHaveBeenCalled();
+  });
+
+  it('hides lifecycle actions from a caretaker but keeps editing available', async () => {
+    renderPage();
+    emitDoc('animals/a1', baseAnimal);
+    emitMember('caretaker');
+
+    expect(await screen.findByRole('button', { name: '編輯居民' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '封存居民' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '刪除居民' })).not.toBeInTheDocument();
   });
 });
