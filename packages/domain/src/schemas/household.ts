@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ClockTimeSchema } from './common';
 
 export const TimezoneSchema = z
   .string()
@@ -21,7 +22,7 @@ export const UpdateHouseholdPayload = z.object({
   timezone: TimezoneSchema.optional(),
   settings: z
     .object({
-      quietHours: z.object({ start: z.string(), end: z.string() }).optional(),
+      quietHours: z.object({ start: ClockTimeSchema, end: ClockTimeSchema }).optional(),
       notificationsEnabled: z.boolean().optional(),
     })
     .optional(),

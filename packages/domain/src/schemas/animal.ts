@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { IdSchema } from './common';
 
 export const SexSchema = z.enum(['male', 'female', 'unknown']);
 export const AnimalStatusSchema = z.enum(['active', 'memorial', 'archived']);
@@ -17,5 +18,5 @@ export const CreateAnimalPayload = z.object({
 });
 
 export const UpdateAnimalPayload = CreateAnimalPayload.partial().extend({
-  animalId: z.string().min(1),
+  animalId: IdSchema,
 });

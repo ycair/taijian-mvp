@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { IdSchema } from './common';
 
 export const CreateInvitePayload = z.object({
   role: z.literal('caretaker').default('caretaker'),
@@ -10,5 +11,5 @@ export const AcceptInvitePayload = z.object({
 });
 
 export const RevokeInvitePayload = z.object({
-  inviteId: z.string().min(1),
+  inviteId: IdSchema,
 });

@@ -1,7 +1,6 @@
 import { z } from 'zod';
+import { ClockTimeSchema, IdSchema } from './common';
 import { TimezoneSchema } from './household';
-
-const TimeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 
 /**
  * v1 treats one reminder occurrence per local *day*: `notificationLog` is keyed
@@ -10,7 +9,7 @@ const TimeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
  * keys with the first and silently lose its notification/completion, so the
  * schema only allows exactly one time until occurrence-based keys land in v2.
  */
-const ScheduleTimesSchema = z.array(TimeSchema).length(1);
+const ScheduleTimesSchema = z.array(ClockTimeSchema).length(1);
 
 export const ScheduleSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('daily'), times: ScheduleTimesSchema }),
@@ -28,7 +27,7 @@ export const ScheduleSchema = z.discriminatedUnion('kind', [
 ]);
 
 export const CreateReminderPayload = z.object({
-  animalId: z.string().min(1),
+  animalId: IdSchema,
   title: z.string().trim().min(1).max(60),
   type: z.string().min(1).max(30),
   schedule: ScheduleSchema,
@@ -37,5 +36,5 @@ export const CreateReminderPayload = z.object({
 });
 
 export const UpdateReminderPayload = CreateReminderPayload.partial().extend({
-  reminderId: z.string().min(1),
+  reminderId: IdSchema,
 });

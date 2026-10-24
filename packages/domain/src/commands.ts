@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { IdSchema } from './schemas/common';
 import { CreateAnimalPayload, UpdateAnimalPayload } from './schemas/animal';
 import {
   CreateHouseholdPayload,
@@ -16,8 +17,11 @@ export const UpdateProfilePayload = z.object({
   timezone: TimezoneSchema.optional(),
 });
 
+/** LINE ID tokens are JWTs of a few KB; anything larger is not a token. */
+export const LINE_ID_TOKEN_MAX_LENGTH = 4096;
+
 export const CompleteTaskPayload = z.object({
-  reminderId: z.string().min(1),
+  reminderId: IdSchema,
   dueDate: z.string().date(),
 });
 
@@ -28,26 +32,26 @@ export const commandSchemas = {
   'member.invite': CreateInvitePayload,
   'member.accept': AcceptInvitePayload,
   'member.revokeInvite': RevokeInvitePayload,
-  'member.remove': z.object({ uid: z.string().min(1) }),
+  'member.remove': z.object({ uid: IdSchema }),
   'member.updateRole': z.object({
-    uid: z.string().min(1),
+    uid: IdSchema,
     role: z.enum(['owner', 'caretaker']),
   }),
   'member.leave': z.object({}),
   'animal.create': CreateAnimalPayload,
   'animal.update': UpdateAnimalPayload,
-  'animal.archive': z.object({ animalId: z.string().min(1) }),
-  'animal.delete': z.object({ animalId: z.string().min(1) }),
+  'animal.archive': z.object({ animalId: IdSchema }),
+  'animal.delete': z.object({ animalId: IdSchema }),
   'record.create': CreateRecordPayload,
   'record.update': UpdateRecordPayload,
-  'record.delete': z.object({ recordId: z.string().min(1) }),
+  'record.delete': z.object({ recordId: IdSchema }),
   'reminder.create': CreateReminderPayload,
   'reminder.update': UpdateReminderPayload,
-  'reminder.delete': z.object({ reminderId: z.string().min(1) }),
+  'reminder.delete': z.object({ reminderId: IdSchema }),
   'task.complete': CompleteTaskPayload,
   'task.uncomplete': CompleteTaskPayload,
   'user.updateProfile': UpdateProfilePayload,
-  'line.link': z.object({ idToken: z.string().min(1) }),
+  'line.link': z.object({ idToken: z.string().min(1).max(LINE_ID_TOKEN_MAX_LENGTH) }),
   'line.unlink': z.object({}),
 } as const;
 

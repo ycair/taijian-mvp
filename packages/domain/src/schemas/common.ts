@@ -7,6 +7,17 @@ export const UuidSchema = z
     'invalid uuid',
   );
 
+/**
+ * Document ids are Firestore ids or stable derived keys. The cap keeps a single
+ * request from carrying an unbounded string into a path lookup, a log line, or
+ * a stored reference.
+ */
+export const ID_MAX_LENGTH = 128;
+export const IdSchema = z.string().min(1).max(ID_MAX_LENGTH, 'id too long');
+
+/** 24-hour wall clock time, zero padded (`08:30`, never `8:30`). */
+export const ClockTimeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'expected HH:MM');
+
 export const PlatformSchema = z.enum(['liff', 'ios', 'android', 'bot', 'test']);
 export const ClientInfoSchema = z.object({
   platform: PlatformSchema,
@@ -15,8 +26,8 @@ export const ClientInfoSchema = z.object({
 
 export const CommandEnvelopeSchema = z.object({
   commandId: UuidSchema,
-  type: z.string().min(1),
-  householdId: z.string().min(1).optional(),
+  type: z.string().min(1).max(64),
+  householdId: IdSchema.optional(),
   baseRevision: z.number().int().min(0).optional(),
   payload: z.unknown(),
   client: ClientInfoSchema,

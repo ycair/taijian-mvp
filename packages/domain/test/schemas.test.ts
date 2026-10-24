@@ -183,3 +183,102 @@ describe('record occurredAt bounds', () => {
     ).toBe(true);
   });
 });
+
+describe('record input limits', () => {
+  const record = (extra: Record<string, unknown>) => ({
+    animalId: 'a1',
+    type: 'feeding',
+    occurredAt: new Date().toISOString(),
+    ...extra,
+  });
+  const parseRecord = (extra: Record<string, unknown>) =>
+    commandSchemas['record.create'].safeParse(record(extra));
+
+  it('accepts metadata at the 2KB boundary and rejects anything larger', () => {
+    // JSON overhead: {"pad":"…"} is 10 bytes, so 2038 payload bytes fills 2048.
+    const atLimit = { pad: 'x'.repeat(2048 - 10) };
+    expect(parseRecord({ metadata: atLimit }).success).toBe(true);
+
+    const tooLarge = { pad: 'x'.repeat(2049) };
+    expect(parseRecord({ metadata: tooLarge }).success).toBe(false);
+  });
+
+  it('rejects a non-finite, negative, or absurd record value', () => {
+    expect(parseRecord({ value: -1 }).success).toBe(false);
+    expect(parseRecord({ value: 1_000_001 }).success).toBe(false);
+    expect(parseRecord({ value: Number.POSITIVE_INFINITY }).success).toBe(false);
+    expect(parseRecord({ value: Number.NaN }).success).toBe(false);
+  });
+
+  it('accepts a value inside the measurement range', () => {
+    const parsed = commandSchemas['record.create'].safeParse(record({ value: 68 }));
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data.value).toBe(68);
+    expect(parseRecord({ value: 0 }).success).toBe(true);
+    expect(parseRecord({ value: 1_000_000 }).success).toBe(true);
+  });
+});
+
+describe('quiet hours validation', () => {
+  const householdWithQuietHours = (quietHours: unknown) => ({
+    settings: { quietHours },
+  });
+
+  it('rejects a malformed clock time', () => {
+    for (const quietHours of [
+      { start: '25:00', end: '07:00' },
+      { start: '22:00', end: '7:00' },
+      { start: '22:60', end: '07:00' },
+      { start: '晚上', end: '07:00' },
+    ]) {
+      expect(
+        commandSchemas['household.update'].safeParse(householdWithQuietHours(quietHours)).success,
+      ).toBe(false);
+    }
+  });
+
+  it('accepts a zero-padded HH:MM window', () => {
+    const parsed = commandSchemas['household.update'].safeParse(
+      householdWithQuietHours({ start: '22:00', end: '07:30' }),
+    );
+    expect(parsed.success).toBe(true);
+  });
+});
+
+describe('id length limits', () => {
+  const tooLong = 'x'.repeat(129);
+  const atLimit = 'x'.repeat(128);
+
+  it('rejects an overlong household id in the envelope', () => {
+    const base = {
+      commandId: newCommandId(),
+      type: 'animal.create',
+      payload: {},
+      client: { platform: 'liff', appVersion: '1.0.0' },
+    };
+    expect(CommandEnvelopeSchema.safeParse({ ...base, householdId: tooLong }).success).toBe(false);
+    expect(CommandEnvelopeSchema.safeParse({ ...base, householdId: atLimit }).success).toBe(true);
+  });
+
+  it('rejects overlong ids in command payloads', () => {
+    const cases: Array<[keyof typeof commandSchemas, Record<string, unknown>]> = [
+      ['animal.delete', { animalId: tooLong }],
+      ['record.delete', { recordId: tooLong }],
+      ['reminder.delete', { reminderId: tooLong }],
+      ['member.remove', { uid: tooLong }],
+      ['member.revokeInvite', { inviteId: tooLong }],
+      ['task.complete', { reminderId: tooLong, dueDate: '2026-10-24' }],
+    ];
+    for (const [type, payload] of cases) {
+      expect(commandSchemas[type].safeParse(payload).success).toBe(false);
+    }
+    expect(commandSchemas['animal.delete'].safeParse({ animalId: atLimit }).success).toBe(true);
+  });
+
+  it('caps the LINE id token length', () => {
+    expect(commandSchemas['line.link'].safeParse({ idToken: 'x'.repeat(4097) }).success).toBe(
+      false,
+    );
+    expect(commandSchemas['line.link'].safeParse({ idToken: 'x'.repeat(4096) }).success).toBe(true);
+  });
+});
