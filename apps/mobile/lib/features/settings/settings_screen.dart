@@ -1,0 +1,596 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../app/providers.dart';
+import '../../core/models/models.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/widgets/common.dart';
+import '../../data/outbox/outbox_database.dart';
+import '../household/household_repository.dart';
+
+class SettingsScreen extends ConsumerStatefulWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  bool _busy = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final config = ref.watch(appConfigProvider);
+    final user = ref.watch(appUserProvider).value;
+    final household = ref.watch(householdProvider).value;
+    final members = ref.watch(householdMembersProvider).value ?? const <HouseholdMember>[];
+    final outbox = ref.watch(outboxEntriesProvider).value ?? const <OutboxEntry>[];
+    final pending = outbox
+        .where((entry) => entry.status == OutboxStatus.pending || entry.status == OutboxStatus.sending)
+        .length;
+    final conflicts = outbox.where((entry) => entry.status == OutboxStatus.conflict).length;
+    final failed = outbox.where((entry) => entry.status == OutboxStatus.failed).length;
+
+    return SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.only(bottom: 36),
+        children: [
+          const PageHeader(kicker: 'Settings', title: '設定'),
+          if (config.useMock)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 0, 20, 16),
+              child: InlineBanner(
+                icon: Icons.science_outlined,
+                message: '測試模式：資料只存在這台裝置的記憶體中，重開 App 會回到範例資料。',
+                color: AppTokens.butter,
+              ),
+            ),
+          _Section(
+            title: '帳號',
+            child: MossCard(
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        alignment: Alignment.center,
+                        decoration: const BoxDecoration(
+                          color: AppTokens.successBg,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          (user?.displayName.isNotEmpty ?? false) ? user!.displayName.substring(0, 1) : '苔',
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              user?.displayName ?? '苔友',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              user?.timezone ?? 'Asia/Taipei',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _busy || user == null ? null : () => _editDisplayName(user),
+                        child: const Text('編輯'),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 24),
+                  _SettingRow(
+                    icon: Icons.public,
+                    title: '個人時區',
+                    value: timezoneLabel(user?.timezone ?? 'Asia/Taipei'),
+                    onTap: () => _editProfileTimezone(user?.timezone ?? 'Asia/Taipei'),
+                  ),
+                  _SettingRow(
+                    icon: Icons.link,
+                    title: '連結 LINE',
+                    value: config.liffConfigured ? '開啟 LIFF 完成連結' : '尚未設定 LIFF_URL',
+                    onTap: _linkLine,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          _Section(
+            title: '家庭',
+            child: household == null
+                ? MossCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('還沒有家庭', style: Theme.of(context).textTheme.titleMedium),
+                        const SizedBox(height: 6),
+                        Text(
+                          '建立家庭後就能邀請家人一起照顧居民。',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 14),
+                        FilledButton(
+                          onPressed: () => context.push('/household/new'),
+                          child: const Text('建立家庭'),
+                        ),
+                      ],
+                    ),
+                  )
+                : MossCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(household.name, style: Theme.of(context).textTheme.titleMedium),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${household.memberCount} 位成員 · ${timezoneLabel(household.timezone)}',
+                                    style: Theme.of(context).textTheme.bodySmall,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: _busy ? null : () => _editHouseholdName(household),
+                              child: const Text('改名'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            for (final member in members)
+                              Chip(
+                                avatar: CircleAvatar(
+                                  backgroundColor: member.role == MemberRole.owner
+                                      ? AppTokens.butter
+                                      : AppTokens.successBg,
+                                  child: Text(
+                                    member.displayName.substring(0, 1),
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+                                  ),
+                                ),
+                                label: Text('${member.displayName} · ${member.role.label}'),
+                              ),
+                          ],
+                        ),
+                        const Divider(height: 26),
+                        _SettingRow(
+                          icon: Icons.schedule,
+                          title: '家庭時區',
+                          value: timezoneLabel(household.timezone),
+                          onTap: _busy ? null : () => _editHouseholdTimezone(household),
+                        ),
+                        _SettingRow(
+                          icon: Icons.person_add_alt_1,
+                          title: '邀請家人',
+                          value: '建立 7 天有效的邀請連結',
+                          onTap: _busy ? null : _createInvite,
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+          const SizedBox(height: 20),
+          _Section(
+            title: '同步',
+            child: MossCard(
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      _SyncStat(label: '待同步', value: pending),
+                      const SizedBox(width: 16),
+                      _SyncStat(label: '衝突', value: conflicts, alert: conflicts > 0),
+                      const SizedBox(width: 16),
+                      _SyncStat(label: '失敗', value: failed, alert: failed > 0),
+                      const Spacer(),
+                      TextButton.icon(
+                        onPressed: _busy ? null : _flushOutbox,
+                        icon: const Icon(Icons.sync, size: 18),
+                        label: const Text('立即同步'),
+                      ),
+                    ],
+                  ),
+                  if (conflicts > 0 || failed > 0) ...[
+                    const SizedBox(height: 8),
+                    const Text(
+                      '有變更需要處理：衝突可以選擇保留最新或你的版本；失敗可重試。',
+                      style: TextStyle(fontSize: 12, color: AppTokens.muted, height: 1.4),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          _Section(
+            title: '關於',
+            child: MossCard(
+              child: Column(
+                children: [
+                  const _SettingRow(
+                    icon: Icons.eco_outlined,
+                    title: '苔間',
+                    value: '把每一次照顧，留在同一個家。',
+                  ),
+                  _SettingRow(
+                    icon: Icons.info_outline,
+                    title: '版本',
+                    value: '1.0.0 · ${config.useMock ? 'mock' : 'firebase'}',
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.logout, color: AppTokens.overdue),
+                    title: const Text('登出', style: TextStyle(color: AppTokens.overdue, fontWeight: FontWeight.w700)),
+                    onTap: _signOut,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _editDisplayName(AppUser user) async {
+    final value = await _textDialog(
+      title: '顯示名稱',
+      initial: user.displayName,
+      hint: '家人會看到這個名字',
+      maxLength: 40,
+    );
+    if (value == null) return;
+    await _run(
+      () => ref.read(householdRepositoryProvider).updateProfile(displayName: value),
+      success: '名稱已更新。',
+    );
+  }
+
+  Future<void> _editProfileTimezone(String current) async {
+    final value = await _timezoneDialog(current);
+    if (value == null) return;
+    await _run(
+      () => ref.read(householdRepositoryProvider).updateProfile(timezone: value),
+      success: '個人時區已更新，新提醒會使用這個時區。',
+    );
+  }
+
+  Future<void> _editHouseholdName(Household household) async {
+    final value = await _textDialog(
+      title: '家庭名稱',
+      initial: household.name,
+      hint: '例如：苔間小屋',
+      maxLength: 40,
+    );
+    if (value == null) return;
+    await _run(
+      () => ref.read(householdRepositoryProvider).updateName(name: value, revision: household.revision),
+      success: '家庭名稱已更新。',
+    );
+  }
+
+  Future<void> _editHouseholdTimezone(Household household) async {
+    final value = await _timezoneDialog(household.timezone);
+    if (value == null) return;
+    await _run(
+      () => ref.read(householdRepositoryProvider).updateTimezone(timezone: value, revision: household.revision),
+      success: '家庭時區已更新。',
+    );
+  }
+
+  Future<void> _createInvite() async {
+    setState(() => _busy = true);
+    try {
+      final invite = await ref.read(householdRepositoryProvider).createInvite();
+      if (!mounted) return;
+      final config = ref.read(appConfigProvider);
+      final url = config.inviteUrl(invite.token);
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('邀請連結'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                config.liffConfigured
+                    ? '把連結傳給家人，對方在 LINE 開啟後就能加入家庭。'
+                    : '目前使用預留的 LIFF 網址；設定 LIFF_URL 後即可實際邀請。',
+                style: const TextStyle(fontSize: 13, height: 1.4),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTokens.successBg,
+                  borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                ),
+                child: SelectableText(url, style: const TextStyle(fontSize: 12)),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '單次使用，7 天內有效。',
+                style: TextStyle(fontSize: 11, color: AppTokens.muted),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                await Clipboard.setData(ClipboardData(text: url));
+                if (context.mounted) Navigator.of(context).pop();
+                _toast('邀請連結已複製。');
+              },
+              child: const Text('複製連結'),
+            ),
+            FilledButton(onPressed: () => Navigator.of(context).pop(), child: const Text('完成')),
+          ],
+        ),
+      );
+    } catch (error) {
+      if (mounted) _toast('無法建立邀請：$error');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _linkLine() async {
+    final config = ref.read(appConfigProvider);
+    if (!config.liffConfigured) {
+      _toast('尚未設定 LIFF_URL，請在 build 時帶入 --dart-define=LIFF_URL=…');
+      return;
+    }
+    final ok = await ref.read(authServiceProvider).openLineLink();
+    if (!ok && mounted) _toast('無法開啟 LIFF 頁面，請確認已安裝 LINE。');
+  }
+
+  Future<void> _flushOutbox() async {
+    setState(() => _busy = true);
+    try {
+      final result = await ref.read(outboxProvider).flush();
+      if (!mounted) return;
+      _toast(
+        result.hasProblems
+            ? '同步完成，但有 ${result.conflicts + result.failed} 筆需要處理。'
+            : result.remaining > 0
+            ? '尚有 ${result.remaining} 筆等待連線。'
+            : '已同步 ${result.sent} 筆變更。',
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _signOut() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('登出苔間？'),
+        content: const Text('離線佇列中的變更會保留，下次登入同一帳號時繼續同步。'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('取消')),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('登出')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await ref.read(authServiceProvider).signOut();
+  }
+
+  Future<void> _run(Future<void> Function() action, {required String success}) async {
+    setState(() => _busy = true);
+    try {
+      await action();
+      if (mounted) _toast(success);
+    } catch (error) {
+      if (mounted) _toast('更新失敗：$error');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<String?> _textDialog({
+    required String title,
+    required String initial,
+    required String hint,
+    required int maxLength,
+  }) async {
+    final value = await showDialog<String>(
+      context: context,
+      builder: (context) => _TextPromptDialog(
+        title: title,
+        initial: initial,
+        hint: hint,
+        maxLength: maxLength,
+      ),
+    );
+    if (value == null || value.isEmpty || value == initial) return null;
+    return value;
+  }
+
+  Future<String?> _timezoneDialog(String current) {
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('選擇時區'),
+        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+        content: SizedBox(
+          width: 320,
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              for (final timezone in timezoneOptions)
+                ListTile(
+                  title: Text(timezoneLabel(timezone)),
+                  trailing: timezone == current
+                      ? const Icon(Icons.check, color: AppTokens.primaryStrong)
+                      : null,
+                  onTap: () => Navigator.of(context).pop(timezone),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _toast(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+class _Section extends StatelessWidget {
+  const _Section({required this.title, required this.child});
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 8),
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: AppTokens.primaryStrong,
+                letterSpacing: 0.6,
+              ),
+            ),
+          ),
+          child,
+          const SizedBox(height: 4),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingRow extends StatelessWidget {
+  const _SettingRow({
+    required this.icon,
+    required this.title,
+    required this.value,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String value;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon, color: AppTokens.primaryStrong, size: 22),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+      subtitle: Text(value, style: Theme.of(context).textTheme.bodySmall),
+      trailing: onTap == null ? null : const Icon(Icons.chevron_right, color: AppTokens.muted),
+      onTap: onTap,
+    );
+  }
+}
+
+class _TextPromptDialog extends StatefulWidget {
+  const _TextPromptDialog({
+    required this.title,
+    required this.initial,
+    required this.hint,
+    required this.maxLength,
+  });
+
+  final String title;
+  final String initial;
+  final String hint;
+  final int maxLength;
+
+  @override
+  State<_TextPromptDialog> createState() => _TextPromptDialogState();
+}
+
+class _TextPromptDialogState extends State<_TextPromptDialog> {
+  late final TextEditingController _controller = TextEditingController(text: widget.initial);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        maxLength: widget.maxLength,
+        decoration: InputDecoration(hintText: widget.hint),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('取消')),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
+          child: const Text('儲存'),
+        ),
+      ],
+    );
+  }
+}
+
+class _SyncStat extends StatelessWidget {
+  const _SyncStat({required this.label, required this.value, this.alert = false});
+
+  final String label;
+  final int value;
+  final bool alert;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$value',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+            color: alert ? AppTokens.overdue : AppTokens.ink,
+          ),
+        ),
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
+      ],
+    );
+  }
+}
