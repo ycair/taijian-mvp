@@ -60,6 +60,10 @@
     }
   ],
   "fieldOverrides": [
+    // Inert until a collection-group auditLogs query exists: no shipped code runs
+    // a collection-group query over auditLogs today. Kept so the index is already
+    // in place when an operator dashboard needs one. This file only declares
+    // indexes; it does not change read access.
     {
       "collectionGroup": "auditLogs",
       "fieldPath": "createdAt",

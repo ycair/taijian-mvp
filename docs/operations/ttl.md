@@ -7,22 +7,28 @@ environment (demo / staging / production).
 
 ## Policy
 
-| Collection group | TTL field | Intended retention | Written by |
+| Collection group | TTL field | Window / retention | Written by |
 |---|---|---|---|
-| `commands` | `expiresAt` | 24h after the command runs | `lib/idempotency.ts` (`COMMAND_TTL_MS`) |
-| `rateLimits` | `expiresAt` | 1h sliding window bucket | `lib/rateLimit.ts` |
-| `loginRateLimits` | `expiresAt` | 1h sliding window bucket | `auth/loginRateLimit.ts` |
+| `commands` | `expiresAt` | 24h after the command runs (`COMMAND_TTL_MS`) | `lib/idempotency.ts` |
+| `rateLimits` | `expiresAt` | per-action fixed window, `expiresAt = windowStart + 2 × window`: 60s windows → 120s, 86 400s window → 48h | `lib/rateLimit.ts` |
+| `loginRateLimits` | `expiresAt` | fixed 60s window, `expiresAt = windowStart + 1 × window` | `auth/loginRateLimit.ts` |
 | `notificationLog` | `expiresAt` | 30d delivery history | `line/notifications` (Task 13/14) |
 
 Notes:
 
-- TTL only ever deletes documents. Expiry is still enforced in code before a
-  document is used: `commands` checks `expiresAt` and treats an expired row as a
-  miss, rate limits compare the stored window, and duplicate LINE deliveries are
-  filtered before `notificationLog` is read.
-- `rateLimits` and `loginRateLimits` store `expiresAt = windowStart + 2 × window`
-  so a counter bucket can never be reused after it rolls over. The 1h figure is
-  the logical window; the physical retention is at most twice that.
+- Windows are fixed, not sliding: a counter bucket starts at the first request
+  in the window and resets when the window elapses. TTL only ever deletes a
+  document once `expiresAt` is in the past; expiry is still enforced in code
+  before a document is used. `commands` treats an expired row as a miss, and
+  rate limits compare the stored `windowStart` against the current window.
+- `rateLimits` stores one document per (uid, action hash). The global `command`
+  budget and `record.create` both use a 60s window; `member.invite` uses an
+  86 400s (24h) window. The document keeps `expiresAt = windowStart + 2 × window`
+  so a bucket cannot be reused after it rolls over — 120s for the 60s windows,
+  48h for the invite window.
+- `loginRateLimits` stores one document per hashed IP with a **fixed 60s**
+  window (`LOGIN_IP_WINDOW_MS`) and `expiresAt = windowStart + 1 × window`, so
+  the document can disappear as soon as the window it belongs to is over.
 - `invites.expiresAt` is **not** a TTL field. Expired invites are kept as an
   audit trail and rejected by `status`/`expiresAt` checks in the invite handler.
 - The Firestore emulator ignores TTL policies. No test depends on TTL; the
@@ -77,7 +83,8 @@ gcloud firestore fields ttls describe expiresAt \
 ```
 
 Each row should report `state: ACTIVE`. Deletions begin within roughly 24 hours
-of expiry and are not billed as writes.
+of expiry and are billed as document deletes (one delete operation per deleted
+document), not as writes.
 
 ## Disable / re-enable
 

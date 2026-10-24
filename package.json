@@ -6,6 +6,7 @@
   "scripts": {
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
+    "test:rules": "pnpm --filter @taijian/functions test:rules",
     "build": "pnpm -r build",
     "lint": "eslint .",
     "format": "prettier --write .",
