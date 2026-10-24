@@ -20,17 +20,63 @@ function runner(result: CommandResult = OK) {
   return vi.fn(async () => result);
 }
 
+/** Unit tests never touch the emulator: the invalid-request charge is stubbed. */
+function noopCharge() {
+  return vi.fn(async () => {});
+}
+
 describe('handleCommandRequest', () => {
   it('returns UNAUTHENTICATED when there is no auth user', async () => {
-    const result = await handleCommandRequest(undefined, {});
+    const charge = noopCharge();
+    const result = await handleCommandRequest(undefined, {}, { chargeInvalidCommand: charge });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.code).toBe('UNAUTHENTICATED');
+    expect(charge).not.toHaveBeenCalled();
   });
 
-  it('returns VALIDATION_ERROR for a malformed envelope', async () => {
-    const result = await handleCommandRequest('u1', { type: 'animal.create' });
+  it('returns VALIDATION_ERROR for a malformed envelope after charging the bucket', async () => {
+    const charge = noopCharge();
+    const result = await handleCommandRequest(
+      'u1',
+      { type: 'animal.create' },
+      {
+        chargeInvalidCommand: charge,
+      },
+    );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.code).toBe('VALIDATION_ERROR');
+    expect(charge).toHaveBeenCalledTimes(1);
+    expect(charge).toHaveBeenCalledWith('u1');
+  });
+
+  it('returns RATE_LIMITED instead of VALIDATION_ERROR when the invalid-request budget is gone', async () => {
+    const result = await handleCommandRequest(
+      'u1',
+      { type: 'animal.create' },
+      {
+        chargeInvalidCommand: async () => {
+          throw new AppError('RATE_LIMITED', 'too many requests');
+        },
+      },
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe('RATE_LIMITED');
+  });
+
+  it('rejects a client that claims the server-only bot platform', async () => {
+    const run = runner();
+    const charge = noopCharge();
+
+    const result = await handleCommandRequest(
+      'u1',
+      { ...VALID_COMMAND, client: { platform: 'bot', appVersion: '1.0.0' } },
+      { readProfile: async () => undefined, runCommand: run, chargeInvalidCommand: charge },
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe('VALIDATION_ERROR');
+    expect(run).not.toHaveBeenCalled();
+    expect(charge).toHaveBeenCalledWith('u1');
   });
 
   it('rejects a valid command from a tombstoned account without running it', async () => {
@@ -77,6 +123,37 @@ describe('handleCommandRequest', () => {
 
     expect(result).toEqual(OK);
     expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it('verifies a line.link token before the transaction and passes the profile through', async () => {
+    const run = runner();
+    const profile = { sub: 'U123', name: 'Test' };
+    const verify = vi.fn(async () => profile);
+
+    await handleCommandRequest(
+      'u1',
+      {
+        ...VALID_COMMAND,
+        type: 'line.link',
+        payload: { idToken: 'id-token' },
+      },
+      { readProfile: async () => undefined, runCommand: run, verifyLineProfile: verify },
+    );
+
+    expect(verify).toHaveBeenCalledWith('id-token', expect.any(String));
+    expect(run).toHaveBeenCalledWith(expect.objectContaining({ lineProfile: profile }));
+  });
+
+  it('does not verify a token for commands other than line.link', async () => {
+    const verify = vi.fn(async () => ({ sub: 'U123' }));
+
+    await handleCommandRequest('u1', VALID_COMMAND, {
+      readProfile: async () => undefined,
+      runCommand: runner(),
+      verifyLineProfile: verify,
+    });
+
+    expect(verify).not.toHaveBeenCalled();
   });
 
   it('maps a runner failure to a CommandResult envelope', async () => {

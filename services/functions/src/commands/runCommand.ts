@@ -9,6 +9,7 @@ import { db } from '../lib/firestore';
 import { getReplay, peekReplay, saveCommand } from '../lib/idempotency';
 import { requestHash } from '../lib/ids';
 import { consumeRateLimits, type RateLimitRule } from '../lib/rateLimit';
+import type { LineProfile } from '../line/verify';
 import type { HandlerMap, Source } from './types';
 
 export type RunCommandInput = {
@@ -16,6 +17,8 @@ export type RunCommandInput = {
   envelope: unknown;
   source: Source;
   handlers: HandlerMap;
+  /** A LINE profile already verified by the entrypoint (never fetched in a transaction). */
+  lineProfile?: LineProfile;
 };
 
 /** Per-UID budget shared by every command type. */
@@ -57,6 +60,15 @@ async function chargeRateLimits(uid: string, type: string): Promise<void> {
   await consumeRateLimits(uid, rateLimitRules(type));
 }
 
+/**
+ * Charges the global bucket for a request that never reached `runCommand`
+ * (malformed envelope, server-only platform). Returns the thrown
+ * `RATE_LIMITED` error to the caller so the failure shape stays consistent.
+ */
+export async function chargeInvalidCommand(uid: string): Promise<void> {
+  await chargeRateLimits(uid, 'invalid');
+}
+
 export async function runCommand(input: RunCommandInput): Promise<CommandResult> {
   // Rate limiting happens before validation would otherwise bail out, so invalid
   // requests still consume the global budget.
@@ -87,7 +99,10 @@ export async function runCommand(input: RunCommandInput): Promise<CommandResult>
 
   const payload = payloadResult.data;
   const normalizedEnvelope = { ...envelope, payload };
-  const hash = requestHash(envelope.type, payload);
+  const hash = requestHash(envelope.type, payload, {
+    ...(envelope.householdId !== undefined ? { householdId: envelope.householdId } : {}),
+    ...(envelope.baseRevision !== undefined ? { baseRevision: envelope.baseRevision } : {}),
+  });
 
   // Retries are free: an existing command replays before any budget is spent.
   const replay = await peekReplay(input.uid, envelope.commandId, hash);
@@ -111,6 +126,7 @@ export async function runCommand(input: RunCommandInput): Promise<CommandResult>
       envelope: normalizedEnvelope,
       source: input.source,
       now: new Date(),
+      ...(input.lineProfile !== undefined ? { lineProfile: input.lineProfile } : {}),
     });
     saveCommand(tx, envelope.commandId, input.uid, envelope.type, hash, result);
     return result;

@@ -12,4 +12,21 @@ describe('ids', () => {
       requestHash('animal.update', { b: 2, a: 1 }),
     );
   });
+
+  it('scopes the request hash to the household and base revision', () => {
+    const payload = { name: 'Home' };
+    const base = requestHash('household.update', payload, {
+      householdId: 'h1',
+      baseRevision: 1,
+    });
+
+    expect(
+      requestHash('household.update', payload, { householdId: 'h2', baseRevision: 1 }),
+    ).not.toBe(base);
+    expect(
+      requestHash('household.update', payload, { householdId: 'h1', baseRevision: 2 }),
+    ).not.toBe(base);
+    // An unscoped hash is the same as an explicit empty scope.
+    expect(requestHash('animal.update', payload)).toBe(requestHash('animal.update', payload, {}));
+  });
 });

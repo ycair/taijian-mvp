@@ -92,6 +92,36 @@ describe('runCommand idempotency', () => {
     ).rejects.toMatchObject({ code: 'IDEMPOTENCY_MISMATCH' });
   });
 
+  it('rejects the same commandId and payload in another household', async () => {
+    const handlers = makeHandlers();
+    const commandId = newCommandId();
+    const payload = { name: 'Renamed' };
+
+    await runCommand({
+      uid: UID_A,
+      envelope: envelope('household.update', payload, {
+        commandId,
+        householdId: 'h1',
+        baseRevision: 0,
+      }),
+      source: 'test',
+      handlers,
+    });
+
+    await expect(
+      runCommand({
+        uid: UID_A,
+        envelope: envelope('household.update', payload, {
+          commandId,
+          householdId: 'h2',
+          baseRevision: 0,
+        }),
+        source: 'test',
+        handlers,
+      }),
+    ).rejects.toMatchObject({ code: 'IDEMPOTENCY_MISMATCH' });
+  });
+
   it('ignores an expired command instead of replaying it', async () => {
     const calls: Call[] = [];
     const handlers = makeHandlers(calls);

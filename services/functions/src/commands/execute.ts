@@ -1,22 +1,36 @@
 import { onCall } from 'firebase-functions/v2/https';
-import { CommandEnvelopeSchema, type CommandResult } from '@taijian/domain';
+import {
+  AppError,
+  CommandEnvelopeSchema,
+  LINE_ID_TOKEN_MAX_LENGTH,
+  type CommandResult,
+} from '@taijian/domain';
 import { config } from '../config';
 import { db } from '../lib/firestore';
 import { toFailure } from '../lib/result';
+import { verifiedLineProfile, type LineProfile } from '../line/verify';
 import { commandHandlers } from './registry';
-import { runCommand } from './runCommand';
+import { chargeInvalidCommand, runCommand } from './runCommand';
 
 /** Only the fields the entrypoint needs; the profile has many more. */
 export type UserProfile = { deletedAt?: unknown };
 
 export type ProfileReader = (uid: string) => Promise<UserProfile | undefined>;
+export type LineVerifier = (idToken: string, channelId: string) => Promise<LineProfile>;
 
 export type CommandRequestDeps = {
   /** Reads `users/{uid}`. Missing profiles are allowed (Apple/Google pre-provisioning). */
   readProfile?: ProfileReader;
   /** Test seam; production always runs the real command runner. */
   runCommand?: typeof runCommand;
+  /** Test seam for the invalid-envelope charge; production uses the real bucket. */
+  chargeInvalidCommand?: (uid: string) => Promise<void>;
+  /** Test seam for the LINE token exchange done before the transaction. */
+  verifyLineProfile?: LineVerifier;
 };
+
+/** Only the server sets `bot`: it is how bot traffic is attributed and audited. */
+const SERVER_ONLY_PLATFORMS = new Set(['bot']);
 
 /**
  * The profile is the account tombstone: `deleteAccount` keeps the document but
@@ -31,11 +45,57 @@ async function readUserProfile(uid: string): Promise<UserProfile | undefined> {
 
 function failure(
   commandId: string,
-  code: 'UNAUTHENTICATED' | 'VALIDATION_ERROR',
+  code: 'UNAUTHENTICATED' | 'VALIDATION_ERROR' | 'RATE_LIMITED',
   message: string,
   serverTime: string,
 ): CommandResult {
   return { ok: false, commandId, code, message, serverTime };
+}
+
+/**
+ * Every request that reaches the command layer costs budget, including ones
+ * rejected before the runner (malformed envelope, server-only platform). The
+ * charge happens first so a caller cannot probe validation for free.
+ */
+async function chargeOrRateLimit(
+  uid: string,
+  commandId: string,
+  charge: (uid: string) => Promise<void>,
+  serverTime: string,
+): Promise<CommandResult | null> {
+  try {
+    await charge(uid);
+    return null;
+  } catch (error) {
+    if (error instanceof AppError && error.code === 'RATE_LIMITED') {
+      return failure(commandId, 'RATE_LIMITED', error.message, serverTime);
+    }
+    throw error;
+  }
+}
+
+/**
+ * `line.link` exchanges an ID token with LINE. That HTTP call belongs before the
+ * Firestore transaction, never inside it: a retried transaction must not repeat
+ * the exchange (or worse, hold a transaction open on a network call). The
+ * payload schema still validates the shape; a missing/short token falls through
+ * to the runner so the caller gets the normal VALIDATION_ERROR.
+ */
+async function preflightLineProfile(
+  type: string,
+  payload: unknown,
+  verify: LineVerifier,
+): Promise<LineProfile | undefined> {
+  if (type !== 'line.link') return undefined;
+  const idToken = (payload as { idToken?: unknown } | null)?.idToken;
+  if (
+    typeof idToken !== 'string' ||
+    idToken.length === 0 ||
+    idToken.length > LINE_ID_TOKEN_MAX_LENGTH
+  ) {
+    return undefined;
+  }
+  return verify(idToken, config.LINE_LOGIN_CHANNEL_ID);
 }
 
 /**
@@ -53,12 +113,26 @@ export async function handleCommandRequest(
     return failure('unknown', 'UNAUTHENTICATED', 'Sign in required', serverTime);
   }
 
+  const charge = deps.chargeInvalidCommand ?? chargeInvalidCommand;
   const parsed = CommandEnvelopeSchema.safeParse(data);
   if (!parsed.success) {
+    const limited = await chargeOrRateLimit(authUid, 'unknown', charge, serverTime);
+    if (limited) return limited;
     return failure('unknown', 'VALIDATION_ERROR', parsed.error.message, serverTime);
   }
 
   const { commandId } = parsed.data;
+  if (SERVER_ONLY_PLATFORMS.has(parsed.data.client.platform)) {
+    const limited = await chargeOrRateLimit(authUid, commandId, charge, serverTime);
+    if (limited) return limited;
+    return failure(
+      commandId,
+      'VALIDATION_ERROR',
+      'client.platform is set by the server',
+      serverTime,
+    );
+  }
+
   try {
     const readProfile = deps.readProfile ?? readUserProfile;
     const profile = await readProfile(authUid);
@@ -66,12 +140,19 @@ export async function handleCommandRequest(
       return failure(commandId, 'UNAUTHENTICATED', 'Account deleted', serverTime);
     }
 
+    const lineProfile = await preflightLineProfile(
+      parsed.data.type,
+      parsed.data.payload,
+      deps.verifyLineProfile ?? verifiedLineProfile,
+    );
+
     const run = deps.runCommand ?? runCommand;
     return await run({
       uid: authUid,
       envelope: parsed.data,
       source: parsed.data.client.platform,
       handlers: commandHandlers,
+      ...(lineProfile !== undefined ? { lineProfile } : {}),
     });
   } catch (error) {
     return toFailure(error, commandId);

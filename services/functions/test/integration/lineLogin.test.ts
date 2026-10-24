@@ -2,7 +2,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { adminAuth, adminDb, clearAuth, clearFirestore, envelope } from './helpers';
 import { config } from '../../src/config';
-import { loginWithLine } from '../../src/auth/line';
+import { lineLogin, loginWithLine } from '../../src/auth/line';
 import { LOGIN_IP_LIMIT, checkLoginRateLimit, loginIpKey } from '../../src/auth/loginRateLimit';
 import { runCommand } from '../../src/commands/runCommand';
 import { linkLine } from '../../src/commands/handlers/line';
@@ -251,6 +251,30 @@ describe('linkLine with the unified identity model', () => {
     expect(mapping).toMatchObject({ uid: 'google-abc', status: 'active' });
     expect(mapping?.unlinkedAt).toBeUndefined();
     expect((mapping?.linkedAt as Timestamp).toMillis()).toBe(linkedAt.toMillis());
+  });
+});
+
+describe('lineLogin callable', () => {
+  it('charges the IP bucket before rejecting an invalid payload', async () => {
+    const callable = lineLogin as unknown as { run: (request: unknown) => Promise<unknown> };
+
+    await expect(
+      callable.run({ data: {}, rawRequest: { ip: '203.0.113.9' } }),
+    ).rejects.toMatchObject({ code: 'invalid-argument' });
+
+    const limit = await adminDb.collection('loginRateLimits').doc(loginIpKey('203.0.113.9')).get();
+    expect(limit.data()?.count).toBe(1);
+  });
+
+  it('refuses to mint a token for a disabled Firebase user', async () => {
+    stubLineVerify('Udisabled');
+    await loginWithLine('token-first');
+    await adminAuth.updateUser('line_Udisabled', { disabled: true });
+
+    stubLineVerify('Udisabled');
+    await expect(loginWithLine('token-second')).rejects.toMatchObject({
+      code: 'UNAUTHENTICATED',
+    });
   });
 });
 

@@ -2,7 +2,7 @@
 // against the emulator rather than a stubbed reader.
 import { Timestamp } from 'firebase-admin/firestore';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { adminDb, clearFirestore, envelope, seedUser } from './helpers';
+import { adminDb, clearFirestore, envelope, readLimitCount, seedUser } from './helpers';
 import { handleCommandRequest } from '../../src/commands/execute';
 
 const DELETED_UID = 'u_deleted';
@@ -47,6 +47,16 @@ describe('handleCommandRequest tombstone check', () => {
       const householdId = (result.data as { householdId: string }).householdId;
       expect((await adminDb.collection('households').doc(householdId).get()).exists).toBe(true);
     }
+  });
+
+  it('charges the global bucket before returning VALIDATION_ERROR', async () => {
+    await seedUser(LIVE_UID);
+
+    const result = await handleCommandRequest(LIVE_UID, { type: 'animal.create' });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe('VALIDATION_ERROR');
+    expect(await readLimitCount(LIVE_UID, 'command')).toBe(1);
   });
 
   it('lets an unprovisioned profile through to the command layer', async () => {

@@ -21,6 +21,31 @@ const ConfigSchema = z.object({
 
 export const config = ConfigSchema.parse(process.env);
 
+/** The only hosts a production deployment may send LINE credentials to. */
+const LINE_HOSTS = new Set(['api.line.me', 'access.line.me']);
+
+/**
+ * `LINE_VERIFY_URL` and `LINE_API_BASE` are configurable so tests can point at a
+ * local mock. Outside `dev`, an override that sends an ID token or channel
+ * secret to another host is a credential leak, so only LINE's own hosts are
+ * accepted.
+ */
+export function assertLineEndpoints(appEnv: string, verifyUrl: string, apiBase: string): void {
+  if (appEnv === 'dev') return;
+  const endpoints: Array<[string, string]> = [
+    ['LINE_VERIFY_URL', verifyUrl],
+    ['LINE_API_BASE', apiBase],
+  ];
+  for (const [key, value] of endpoints) {
+    const host = new URL(value).hostname;
+    if (!LINE_HOSTS.has(host)) {
+      throw new Error(`${key} must use api.line.me or access.line.me in ${appEnv}`);
+    }
+  }
+}
+
+assertLineEndpoints(config.APP_ENV, config.LINE_VERIFY_URL, config.LINE_API_BASE);
+
 if (config.APP_ENV !== 'dev') {
   const forbiddenDefaults: Array<keyof typeof config> = [
     'LINE_MESSAGING_CHANNEL_SECRET',

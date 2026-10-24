@@ -39,7 +39,11 @@ function parseLinkPayload(input: unknown): { idToken: string } {
 
 export async function linkLine(ctx: HandlerContext): Promise<CommandResult> {
   const payload = parseLinkPayload(ctx.envelope.payload);
-  const profile = await verifiedLineProfile(payload.idToken, config.LINE_LOGIN_CHANNEL_ID);
+  // The entrypoint verifies the token before the transaction. The fallback keeps
+  // direct handler invocations (tests, scripts) working; in production
+  // `handleCommandRequest` always supplies `lineProfile`.
+  const profile =
+    ctx.lineProfile ?? (await verifiedLineProfile(payload.idToken, config.LINE_LOGIN_CHANNEL_ID));
 
   const ref = db.collection('lineUsers').doc(profile.sub);
   const snap = await ctx.tx.get(ref);

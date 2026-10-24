@@ -161,6 +161,26 @@ describe('linkLine', () => {
     expect(result).toMatchObject({ ok: true, data: { linked: true } });
   });
 
+  it('uses a pre-verified profile without calling LINE', async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+    const tx = makeTx();
+    const ctx = {
+      ...makeCtx(tx),
+      lineProfile: { sub: 'U123', name: 'Test' },
+    } as HandlerContext;
+
+    const result = await linkLine(ctx);
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(tx.set).toHaveBeenCalledWith(
+      mappingRef,
+      expect.objectContaining({ uid: UID, status: 'active' }),
+      { merge: true },
+    );
+    expect(result).toMatchObject({ ok: true, data: { linked: true } });
+  });
+
   it('rejects a payload without an id token', async () => {
     const tx = makeTx();
     await expect(linkLine(makeCtx(tx, {}))).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });

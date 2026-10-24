@@ -1,5 +1,6 @@
 import type { CommandEnvelope, CommandResult, CommandType } from '@taijian/domain';
 import type { Tx } from '../lib/firestore';
+import type { LineProfile } from '../line/verify';
 
 export type Source = 'liff' | 'ios' | 'android' | 'bot' | 'test';
 
@@ -9,6 +10,12 @@ export type HandlerContext = {
   envelope: CommandEnvelope;
   source: Source;
   now: Date;
+  /**
+   * Pre-verified LINE profile for `line.link`. The entrypoint exchanges the ID
+   * token before the transaction starts, so a retried transaction never repeats
+   * the HTTP call. Absent for every other command.
+   */
+  lineProfile?: LineProfile;
 };
 
 /**
