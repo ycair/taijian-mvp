@@ -14,9 +14,11 @@
     "seed": "tsx scripts/seed-emulator.ts",
     "mock:line": "tsx scripts/mock-line-server.ts",
     "build": "pnpm -r build",
+    "deploy:functions": "node scripts/prepare-functions-deploy.mjs",
+    "deploy:functions:check": "node scripts/check-functions-deploy.mjs",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "emulators": "pnpm --filter @taijian/functions build && firebase emulators:start --only auth,firestore,functions --project demo-taijian",
+    "emulators": "pnpm deploy:functions && firebase emulators:start --only auth,firestore,functions --project demo-taijian",
     "emulators:check": "firebase emulators:exec --only firestore --project demo-taijian \"node scripts/check-emulators.mjs\""
   },
   "devDependencies": {

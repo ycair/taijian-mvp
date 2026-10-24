@@ -27,3 +27,5 @@ jobs:
       - run: pnpm --filter @taijian/functions test:integration
       - run: pnpm --filter @taijian/functions test:rules
       - run: pnpm build
+      - run: pnpm deploy:functions
+      - run: pnpm deploy:functions:check
