@@ -65,7 +65,7 @@ export function truncateReplyText(text: string): string {
  * redeliveries.
  */
 export function botCommandId(webhookEventId: string): string {
-  const digest = createHash('sha1').update(`line:webhook:${webhookEventId}`).digest('hex');
+  const digest = createHash('sha256').update(`line:webhook:${webhookEventId}`).digest('hex');
   const variant = ((Number.parseInt(digest.slice(16, 18), 16) & 0x3f) | 0x80)
     .toString(16)
     .padStart(2, '0');
@@ -111,6 +111,49 @@ async function reply(gateway: ReplyGateway, event: LineWebhookEvent, text: strin
   await gateway.reply(event.replyToken, [{ type: 'text', text: truncateReplyText(text) }]);
 }
 
+/**
+ * How long a read-only delivery stays deduped. LINE retries a failed webhook
+ * for a short window; ten minutes covers it without growing a collection.
+ */
+const LINE_EVENT_TTL_MS = 10 * 60_000;
+
+/**
+ * A read-only reply (help, today, animals, an early exit) writes no command, so
+ * `commands/{commandId}` cannot dedupe a redelivery. `lineEvents/{webhookEventId}`
+ * is that marker. `create` is the claim: only the delivery that wins it replies.
+ */
+async function claimReadOnlyEvent(webhookEventId: string | undefined): Promise<boolean> {
+  if (!webhookEventId) return true;
+  const ref = db.collection('lineEvents').doc(webhookEventId);
+  try {
+    await ref.create({
+      webhookEventId,
+      createdAt: Timestamp.fromMillis(Date.now()),
+      expiresAt: Timestamp.fromMillis(Date.now() + LINE_EVENT_TTL_MS),
+    });
+    return true;
+  } catch (error) {
+    // gRPC code 6 is ALREADY_EXISTS: another delivery already replied.
+    if ((error as { code?: unknown }).code === 6) return false;
+    throw error;
+  }
+}
+
+async function readOnlyEventHandled(webhookEventId: string | undefined): Promise<boolean> {
+  if (!webhookEventId) return false;
+  const snap = await db.collection('lineEvents').doc(webhookEventId).get();
+  return snap.exists;
+}
+
+/** Replies at most once per webhook event, even if the delivery is duplicated. */
+async function replyOnce(
+  gateway: ReplyGateway,
+  event: LineWebhookEvent,
+  text: string,
+): Promise<void> {
+  if (await claimReadOnlyEvent(event.webhookEventId)) await reply(gateway, event, text);
+}
+
 /** Runs a command for the bot and turns thrown errors into a reply-ready result. */
 async function runBotCommand(
   uid: string,
@@ -138,6 +181,7 @@ async function runBotCommand(
 }
 
 type ReminderDoc = {
+  animalId?: string;
   title?: string;
   timezone?: string;
   nextDueAt?: Timestamp;
@@ -148,13 +192,29 @@ type ReminderDoc = {
 type TaskSummary = { done: number; total: number; lines: string[] };
 
 /**
+ * The animal ids whose reminders the bot may surface. A deleted or archived
+ * animal keeps its reminders (the delete cascade is bounded and leaves a
+ * `cleanupPending` tail), so the bot joins against the animal itself instead of
+ * trusting the reminder. The scheduler uses the same rule before pushing.
+ */
+async function liveAnimalIds(householdId: string): Promise<Set<string>> {
+  const snap = await db.collection('animals').where('householdId', '==', householdId).get();
+  const ids = new Set<string>();
+  for (const doc of snap.docs) {
+    const animal = doc.data() as AnimalDoc;
+    if (animal.deletedAt == null && animal.status === 'active') ids.add(doc.id);
+  }
+  return ids;
+}
+
+/**
  * Today's due tasks for this household. The household timezone defines "today"
  * (and therefore the completion keys), while each reminder's own stored
  * timezone decides which calendar day its `nextDueAt` belongs to.
  */
 async function taskSummary(householdId: string, householdTimezone: string): Promise<TaskSummary> {
   const today = localDateKey(new Date(), householdTimezone);
-  const [reminders, completions] = await Promise.all([
+  const [reminders, completions, liveAnimals] = await Promise.all([
     db
       .collection('reminders')
       .where('householdId', '==', householdId)
@@ -165,12 +225,14 @@ async function taskSummary(householdId: string, householdTimezone: string): Prom
       .where('householdId', '==', householdId)
       .where('dueDate', '==', today)
       .get(),
+    liveAnimalIds(householdId),
   ]);
 
   const completed = new Set(completions.docs.map((doc) => String(doc.data().reminderId)));
   const due = reminders.docs
     .filter((doc) => doc.data().deletedAt == null)
     .map((doc) => ({ id: doc.id, data: doc.data() as ReminderDoc }))
+    .filter(({ data }) => liveAnimals.has(String(data.animalId)))
     .filter(({ data }) => data.nextDueAt instanceof Timestamp)
     .filter(
       ({ data }) =>
@@ -253,11 +315,11 @@ export async function handleLineEvent(
   const commandId = event.webhookEventId ? botCommandId(event.webhookEventId) : randomUUID();
 
   // Command writes leave a `commands/{commandId}` record, so a redelivery is
-  // skipped here. Read-only replies write nothing: a duplicate delivery of one
-  // of those is only stopped by LINE's single-use reply token, which is why no
-  // extra marker collection is introduced this round.
+  // skipped here. Read-only replies leave `lineEvents/{webhookEventId}` at the
+  // moment they reply, which makes a duplicate read-only delivery silent too.
   const processed = await db.collection('commands').doc(commandId).get();
   if (processed.exists) return;
+  if (await readOnlyEventHandled(event.webhookEventId)) return;
 
   const mapping = await db.collection('lineUsers').doc(lineUserId).get();
   const mappingData = mapping.data() as { uid?: string; status?: string } | undefined;
@@ -265,14 +327,14 @@ export async function handleLineEvent(
   // A revoked mapping (unlink / account deletion) keeps its UID for audit, so
   // the status decides whether this LINE account may still act.
   if (!uid || (mappingData?.status ?? 'active') !== 'active') {
-    await reply(gateway, event, `請先透過 LIFF 登入苔間：${liffUrl('/')}`);
+    await replyOnce(gateway, event, `請先透過 LIFF 登入苔間：${liffUrl('/')}`);
     return;
   }
 
   const userSnap = await db.collection('users').doc(uid).get();
   const user = userSnap.data() as UserDoc | undefined;
   if (user?.deletedAt != null) {
-    await reply(gateway, event, '這個帳號已刪除，請重新註冊。');
+    await replyOnce(gateway, event, '這個帳號已刪除，請重新註冊。');
     return;
   }
 
@@ -280,13 +342,13 @@ export async function handleLineEvent(
   // resolution so that early-exit replies ("no household", "not a member",
   // "animal not found", ambiguous names, unknown tasks) are metered too.
   if (await botBudgetExceeded(uid)) {
-    await reply(gateway, event, RATE_LIMITED_TEXT);
+    await replyOnce(gateway, event, RATE_LIMITED_TEXT);
     return;
   }
 
   const householdId = user?.defaultHouseholdId ?? user?.householdIds?.[0];
   if (!householdId) {
-    await reply(gateway, event, `請先建立家庭：${liffUrl('/settings')}`);
+    await replyOnce(gateway, event, `請先建立家庭：${liffUrl('/settings')}`);
     return;
   }
 
@@ -294,7 +356,11 @@ export async function handleLineEvent(
   // stale `defaultHouseholdId` must not expose a household the user left.
   const membership = await db.doc(`households/${householdId}/members/${uid}`).get();
   if (!membership.exists) {
-    await reply(gateway, event, `你已不在這個家庭，請到 LIFF 重新選擇：${liffUrl('/settings')}`);
+    await replyOnce(
+      gateway,
+      event,
+      `你已不在這個家庭，請到 LIFF 重新選擇：${liffUrl('/settings')}`,
+    );
     return;
   }
 
@@ -307,13 +373,13 @@ export async function handleLineEvent(
   const command = parseBotCommand(event.message.text ?? '');
 
   if (command.kind === 'help' || command.kind === 'unknown') {
-    await reply(gateway, event, HELP_TEXT);
+    await replyOnce(gateway, event, HELP_TEXT);
     return;
   }
 
   if (command.kind === 'today') {
     const summary = await taskSummary(householdId, householdTimezone);
-    await reply(
+    await replyOnce(
       gateway,
       event,
       summary.total === 0
@@ -330,7 +396,7 @@ export async function handleLineEvent(
       .filter((animal) => animal.deletedAt == null && animal.status === 'active')
       .map((animal) => animal.name)
       .filter((name): name is string => Boolean(name));
-    await reply(
+    await replyOnce(
       gateway,
       event,
       names.length > 0
@@ -346,7 +412,7 @@ export async function handleLineEvent(
       expiresInDays: 7,
     });
     if (!result.ok) {
-      await reply(
+      await replyOnce(
         gateway,
         event,
         result.code === 'FORBIDDEN' ? '只有家庭擁有者可以邀請成員。' : failureText(result),
@@ -354,7 +420,7 @@ export async function handleLineEvent(
       return;
     }
     const token = (result.data as { token?: string }).token;
-    await reply(
+    await replyOnce(
       gateway,
       event,
       token
@@ -368,7 +434,10 @@ export async function handleLineEvent(
   // occurrence that is actually due today in the household timezone.
   if (command.kind === 'complete') {
     const today = localDateKey(new Date(), householdTimezone);
-    const snap = await db.collection('reminders').where('householdId', '==', householdId).get();
+    const [snap, liveAnimals] = await Promise.all([
+      db.collection('reminders').where('householdId', '==', householdId).get(),
+      liveAnimalIds(householdId),
+    ]);
     const query = command.taskName.trim().toLowerCase();
     const reminders = snap.docs
       .map((doc) => ({ id: doc.id, data: doc.data() as ReminderDoc }))
@@ -376,6 +445,9 @@ export async function handleLineEvent(
         ({ data }) =>
           data.enabled === true && data.deletedAt == null && data.nextDueAt instanceof Timestamp,
       )
+      // A reminder whose animal is archived or deleted is not completable here:
+      // it is invisible in 今日 as well, so completing it would be surprising.
+      .filter(({ data }) => liveAnimals.has(String(data.animalId)))
       .filter(
         ({ data }) =>
           localDateKey(
@@ -391,11 +463,11 @@ export async function handleLineEvent(
         : reminders.filter((reminder) => reminder.title.toLowerCase().includes(query));
 
     if (matches.length === 0) {
-      await reply(gateway, event, `找不到任務「${command.taskName}」。`);
+      await replyOnce(gateway, event, `找不到任務「${command.taskName}」。`);
       return;
     }
     if (matches.length > 1) {
-      await reply(
+      await replyOnce(
         gateway,
         event,
         `有多個任務符合「${command.taskName}」，請到 LIFF 完成：${liffUrl('/')}`,
@@ -409,12 +481,12 @@ export async function handleLineEvent(
       dueDate: today,
     });
     if (!result.ok) {
-      await reply(gateway, event, failureText(result));
+      await replyOnce(gateway, event, failureText(result));
       return;
     }
     const alreadyCompleted = (result.data as { alreadyCompleted?: boolean }).alreadyCompleted;
     const title = task.data.title ?? command.taskName;
-    await reply(
+    await replyOnce(
       gateway,
       event,
       alreadyCompleted ? `「${title}」今天已經完成了。` : `已完成「${title}」。`,
@@ -424,11 +496,11 @@ export async function handleLineEvent(
 
   const animal = await resolveAnimal(householdId, command.animalName);
   if (animal === 'none') {
-    await reply(gateway, event, `找不到居民「${command.animalName}」。`);
+    await replyOnce(gateway, event, `找不到居民「${command.animalName}」。`);
     return;
   }
   if (animal === 'many') {
-    await reply(
+    await replyOnce(
       gateway,
       event,
       `有多位居民符合「${command.animalName}」，請到 LIFF 選擇：${liffUrl('/animals')}`,
@@ -448,7 +520,7 @@ export async function handleLineEvent(
         };
 
   const result = await runBotCommand(uid, commandId, 'record.create', householdId, payload);
-  await reply(
+  await replyOnce(
     gateway,
     event,
     result.ok

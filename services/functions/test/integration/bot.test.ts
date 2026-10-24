@@ -58,11 +58,12 @@ function send(
   uid: string,
   type: string,
   payload: unknown,
-  householdId?: string,
+  household?: string | { householdId?: string; baseRevision?: number },
 ): Promise<CommandResult> {
+  const options = typeof household === 'string' ? { householdId: household } : (household ?? {});
   return runCommand({
     uid,
-    envelope: envelope(type, payload, householdId ? { householdId } : {}),
+    envelope: envelope(type, payload, options),
     source: 'test',
     handlers: commandHandlers,
   });
@@ -532,5 +533,57 @@ describe('handleLineEvent rate limits', () => {
     await handleLineEvent(messageEvent('居民'), gateway);
     expect(replies.at(-1)).toBe('操作太頻繁，請稍後再試。');
     expect(await readLimitCount(OWNER, 'bot')).toBe(30);
+  });
+});
+
+describe('handleLineEvent live-animal join', () => {
+  it.each(['archived', 'deleted'] as const)(
+    'hides today tasks and completion for a %s animal',
+    async (state) => {
+      const { householdId, animalId } = await setup();
+      if (state === 'archived') {
+        success(
+          await send(OWNER, 'animal.archive', { animalId }, { householdId, baseRevision: 0 }),
+          'animal.archive',
+        );
+      } else {
+        success(
+          await send(OWNER, 'animal.delete', { animalId }, { householdId, baseRevision: 0 }),
+          'animal.delete',
+        );
+      }
+
+      // Simulate the `cleanupPending` tail: the delete cascade is bounded, so a
+      // reminder may stay enabled and un-deleted after its animal is gone.
+      const reminder = (
+        await adminDb.collection('reminders').where('householdId', '==', householdId).get()
+      ).docs[0];
+      expect(reminder).toBeDefined();
+      await reminder!.ref.set({ enabled: true, deletedAt: null }, { merge: true });
+
+      const { replies, gateway } = recorder();
+      await handleLineEvent(messageEvent('今日'), gateway);
+      await handleLineEvent(messageEvent('完成 餵食'), gateway);
+
+      expect(replies[0]).toContain('今天沒有任務');
+      expect(replies[1]).toBe('找不到任務「餵食」。');
+      expect((await adminDb.collection('taskCompletions').get()).empty).toBe(true);
+    },
+  );
+});
+
+describe('handleLineEvent read-only dedupe', () => {
+  it('replies once for the same read-only delivery', async () => {
+    await setup();
+    const { replies, gateway } = recorder();
+    const event = messageEvent('居民');
+
+    await handleLineEvent(event, gateway);
+    await handleLineEvent(event, gateway);
+
+    expect(replies).toEqual(['居民：阿肥']);
+    const marker = await adminDb.collection('lineEvents').doc(String(event.webhookEventId)).get();
+    expect(marker.exists).toBe(true);
+    expect((marker.data()?.expiresAt as Timestamp).toMillis()).toBeGreaterThan(Date.now());
   });
 });

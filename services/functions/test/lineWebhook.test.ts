@@ -72,22 +72,27 @@ describe('handleWebhookRequest', () => {
     expect(dispatch).not.toHaveBeenCalled();
   });
 
-  it('still returns 200 when one event fails, so LINE does not retry the batch', async () => {
-    const rawBody = JSON.stringify({ events: [messageEvent('e1'), messageEvent('e2')] });
+  it('returns 500 when any event in a mixed batch fails', async () => {
+    const rawBody = JSON.stringify({
+      events: [messageEvent('e1'), messageEvent('e2'), messageEvent('e3')],
+    });
     const dispatch = vi
       .fn()
+      .mockResolvedValueOnce(undefined)
       .mockRejectedValueOnce(new Error('boom'))
       .mockResolvedValueOnce(undefined);
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const result = await handleWebhookRequest(Buffer.from(rawBody), signed(rawBody), dispatch);
 
-    expect(result.status).toBe(200);
-    expect(dispatch).toHaveBeenCalledTimes(2);
+    // A partial failure must be redelivered; the succeeded events are no-ops on
+    // retry through their command/lineEvents markers.
+    expect(result.status).toBe(500);
+    expect(dispatch).toHaveBeenCalledTimes(3);
     // Only the event id and the failure are logged; message text never is.
     expect(error).toHaveBeenCalledWith(
       'line webhook event failed',
-      expect.objectContaining({ webhookEventId: 'e1' }),
+      expect.objectContaining({ webhookEventId: 'e2' }),
     );
     expect(JSON.stringify(error.mock.calls)).not.toContain('今日');
     error.mockRestore();
