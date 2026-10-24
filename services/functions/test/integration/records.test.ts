@@ -211,6 +211,35 @@ describe('record commands', () => {
       (first.data as { recordId: string }).recordId,
     );
     expect(await recordsFor(householdId)).toHaveLength(1);
+    // A replay does not create anything, so it leaves no second audit entry.
+    const createAudits = (await auditActions(householdId)).filter(
+      (action) => action === 'record.create',
+    );
+    expect(createAudits).toHaveLength(1);
+  });
+
+  it('rejects reusing the id of a soft-deleted record', async () => {
+    const { householdId, animalId } = await setupAnimal();
+    const occurredAt = new Date().toISOString();
+    const recordId = newCommandId();
+    const payload = { recordId, animalId, type: 'weight', occurredAt, value: 68, unit: 'g' };
+
+    success(await send(OWNER, 'record.create', payload, { householdId }), 'record.create');
+    success(
+      await send(OWNER, 'record.delete', { recordId }, { householdId, baseRevision: 0 }),
+      'record.delete',
+    );
+
+    // The same id and payload, under a new commandId, must not resurrect the
+    // record that was deleted: the id still belongs to it.
+    await expect(send(OWNER, 'record.create', payload, { householdId })).rejects.toMatchObject({
+      code: 'DUPLICATE_ID',
+    });
+
+    expect(await recordsFor(householdId)).toHaveLength(1);
+    const doc = await recordDoc(recordId);
+    expect(doc).toMatchObject({ value: 68, revision: 1 });
+    expect(doc?.deletedAt).not.toBeNull();
   });
 
   it('increments the revision on update and rejects a stale update', async () => {

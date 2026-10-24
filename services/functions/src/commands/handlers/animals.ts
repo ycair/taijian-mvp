@@ -160,6 +160,13 @@ export async function deleteAnimal(ctx: HandlerContext): Promise<CommandResult> 
   assertRevision(data, ctx.envelope.baseRevision);
 
   // All reads must finish before the first cascade write below.
+  //
+  // LAUNCH PREREQUISITE: the cascade is bounded (CASCADE_RECORD_LIMIT /
+  // CASCADE_REMINDER_LIMIT). Children beyond those bounds keep `deletedAt: null`
+  // and stay live until the purge job finishes the sweep; `cleanupPending` marks
+  // the animal for it. Until that job lands (Task 14), every read path (LIFF
+  // queries in Task 12, rules/indexes in Task 10) must join against the animal's
+  // `deletedAt`/`status` instead of trusting the record's own `deletedAt`.
   const cascade = await cascadeAnimalChildren(ctx, householdId, payload.animalId);
 
   ctx.tx.set(
@@ -169,7 +176,7 @@ export async function deleteAnimal(ctx: HandlerContext): Promise<CommandResult> 
       status: 'archived',
       cleanupPending: cascade.cleanupPending,
       revision: data.revision + 1,
-      lastChangedFields: ['deletedAt', 'status'],
+      lastChangedFields: ['deletedAt', 'status', 'cleanupPending'],
       updatedBy: ctx.uid,
       updatedAt: FieldValue.serverTimestamp(),
       updatedFrom: ctx.source,
@@ -249,7 +256,7 @@ async function cascadeAnimalChildren(
         deletedAt: FieldValue.serverTimestamp(),
         deletedWithAnimal: animalId,
         revision: ((doc.data().revision as number | undefined) ?? 0) + 1,
-        lastChangedFields: ['deletedAt'],
+        lastChangedFields: ['deletedAt', 'deletedWithAnimal'],
         updatedBy: ctx.uid,
         updatedAt: FieldValue.serverTimestamp(),
         updatedFrom: ctx.source,

@@ -294,6 +294,7 @@ describe('animal commands', () => {
       status: 'archived',
       revision: 1,
       cleanupPending: false,
+      lastChangedFields: ['deletedAt', 'status', 'cleanupPending'],
     });
     expect((await animalDoc(animalId))?.deletedAt).not.toBeNull();
 
@@ -303,6 +304,7 @@ describe('animal commands', () => {
     for (const record of records) {
       expect(record.deletedAt).not.toBeNull();
       expect(record.deletedWithAnimal).toBe(animalId);
+      expect(record.lastChangedFields).toEqual(['deletedAt', 'deletedWithAnimal']);
     }
 
     // Writes against a deleted animal are refused, so nothing can reappear.

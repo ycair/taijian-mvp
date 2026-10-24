@@ -68,20 +68,16 @@ export async function createRecord(ctx: HandlerContext): Promise<CommandResult> 
   const existing = await ctx.tx.get(ref);
   if (existing.exists) {
     const data = existing.data() as RecordDoc;
+    // A deleted record still owns its id: recreating it would either resurrect
+    // hidden data or silently return a record the UI no longer shows.
+    if (data.deletedAt != null) {
+      throw new AppError('DUPLICATE_ID', 'record id belongs to a deleted record');
+    }
     if (data.createdBy !== ctx.uid || data.payloadHash !== payloadHash) {
       throw new AppError('DUPLICATE_ID', 'record id already used');
     }
-    writeAudit(ctx.tx, {
-      householdId,
-      actorUid: ctx.uid,
-      actorType: actorTypeFor(ctx),
-      action: 'record.create',
-      targetType: 'record',
-      targetId: recordId,
-      after: { recordId, alreadyExists: true },
-      commandId: ctx.envelope.commandId,
-      source: ctx.source,
-    });
+    // A replay of the same write did not create anything, so it writes no audit
+    // entry. Retrying the same `commandId` never reaches here anyway.
     return success(ctx, { recordId, alreadyExists: true }, data.revision);
   }
 
