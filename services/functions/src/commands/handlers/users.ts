@@ -18,9 +18,9 @@ type ProfilePatch = {
  * document: membership display names are snapshots and are not rewritten, so a
  * rename cannot fan out to an unbounded number of member documents.
  *
- * The profile is read first (`ensureUserDoc`) so this works for an account that
- * exists only in Firebase Auth, and so the transaction never writes before it
- * reads.
+ * The profile is read before any profile write (`ensureUserDoc`) so this works
+ * for an account that exists only in Firebase Auth, and so the transaction never
+ * writes before it reads.
  *
  * `defaultHouseholdId` is a client preference, not an authorization grant: the
  * member document is checked first so a forged or stale id cannot make the app
