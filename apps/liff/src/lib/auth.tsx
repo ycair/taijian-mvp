@@ -1,5 +1,10 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { onAuthStateChanged, signInWithCustomToken, type User } from 'firebase/auth';
+import {
+  onAuthStateChanged,
+  signInWithCustomToken,
+  signOut,
+  type User,
+} from 'firebase/auth';
 import { auth } from './firebase';
 import { getLineIdToken, initLiff } from './liff';
 import { callLogin } from './api';
@@ -33,13 +38,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const { redirecting } = await initLiff();
         if (cancelled || redirecting) return;
-        // An existing Firebase session (warm reload) needs no LINE exchange.
+
         const existing = auth.currentUser;
         if (existing) {
           exchangeSettled = true;
-          setState({ user: existing, loading: false, error: null });
+          // A warm Firebase session may belong to a different LINE account
+          // (LINE's account switch, or a shared device). Ask the current LINE
+          // token who it is; no token (mock/offline) means keep the session.
+          let idToken: string;
+          try {
+            idToken = await getLineIdToken();
+          } catch {
+            if (!cancelled) setState({ user: existing, loading: false, error: null });
+            return;
+          }
+
+          const { token, uid } = await callLogin(idToken);
+          if (uid === existing.uid) {
+            if (!cancelled) setState({ user: existing, loading: false, error: null });
+            return;
+          }
+
+          // Sign out first: the old UID's Firestore listeners and selected
+          // household must be torn down before the new identity mounts.
+          await signOut(auth);
+          await signInWithCustomToken(auth, token);
           return;
         }
+
         const idToken = await getLineIdToken();
         const { token } = await callLogin(idToken);
         await signInWithCustomToken(auth, token);
@@ -47,7 +73,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         if (cancelled) return;
         exchangeSettled = true;
-        setState({ user: null, loading: false, error: (error as Error).message });
+        // If a session survived (the LINE exchange failed before sign-out),
+        // keep it; otherwise surface the failure and let the Gate offer re-login.
+        const current = auth.currentUser;
+        setState({
+          user: current,
+          loading: false,
+          error: current ? null : (error as Error).message,
+        });
       }
     })();
 
