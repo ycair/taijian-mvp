@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { buildTodayTasks, shiftDateKey, taskCompletionWindow } from '../lib/today';
 
-const animal = { id: 'a1', name: '阿肥', avatarColor: '#7C9A76', species: '豹紋守宮' };
+const animal = {
+  id: 'a1',
+  name: '阿肥',
+  avatarColor: '#7C9A76',
+  species: '豹紋守宮',
+  status: 'active',
+  deletedAt: null,
+};
 
 describe('buildTodayTasks', () => {
   it('marks an overdue reminder and attaches completion', () => {
@@ -100,6 +107,119 @@ describe('buildTodayTasks', () => {
     );
 
     expect(tasks.map((task) => task.reminderId)).toEqual(['live']);
+  });
+
+  it('drops tasks whose animal is archived or soft-deleted', () => {
+    const now = new Date('2026-10-24T02:00:00.000Z');
+    const due = new Date('2026-10-24T04:00:00.000Z');
+    const reminders = [
+      {
+        id: 'archived',
+        animalId: 'a-archived',
+        title: '餵食',
+        timezone: 'Asia/Taipei',
+        nextDueAt: due,
+        enabled: true,
+      },
+      {
+        id: 'deleted',
+        animalId: 'a-deleted',
+        title: '換水',
+        timezone: 'Asia/Taipei',
+        nextDueAt: due,
+        enabled: true,
+      },
+      {
+        id: 'orphan',
+        animalId: 'a-missing',
+        title: '體重',
+        timezone: 'Asia/Taipei',
+        nextDueAt: due,
+        enabled: true,
+      },
+      {
+        id: 'live',
+        animalId: 'a1',
+        title: '餵食',
+        timezone: 'Asia/Taipei',
+        nextDueAt: due,
+        enabled: true,
+      },
+    ];
+
+    const tasks = buildTodayTasks(
+      reminders,
+      [],
+      [
+        animal,
+        { ...animal, id: 'a-archived', name: '已封存', status: 'archived' },
+        { ...animal, id: 'a-deleted', name: '已刪除', deletedAt: new Date() },
+      ],
+      now,
+    );
+
+    expect(tasks.map((task) => task.reminderId)).toEqual(['live']);
+    expect(tasks[0]?.animalName).toBe('阿肥');
+  });
+
+  it('projects a reminder created by the LiFF editor onto its due day', () => {
+    const now = new Date('2026-10-24T02:00:00.000Z'); // 10:00 Taipei
+    const tasks = buildTodayTasks(
+      [
+        {
+          id: 'created',
+          animalId: 'a1',
+          title: '每週換水',
+          // Extra schedule/type fields from the reminder document are ignored
+          // by the projection; only the due instant and timezone matter.
+          timezone: 'Asia/Taipei',
+          nextDueAt: new Date('2026-10-24T12:00:00.000Z'), // 20:00
+          enabled: true,
+          deletedAt: null,
+        },
+      ],
+      [],
+      [animal],
+      now,
+    );
+
+    expect(tasks).toHaveLength(1);
+    expect(tasks[0]).toMatchObject({
+      reminderId: 'created',
+      animalName: '阿肥',
+      title: '每週換水',
+      dueDate: '2026-10-24',
+      overdue: false,
+    });
+  });
+
+  it('carries the completion display-name snapshot', () => {
+    const now = new Date('2026-10-24T02:00:00.000Z');
+    const tasks = buildTodayTasks(
+      [
+        {
+          id: 'r1',
+          animalId: 'a1',
+          title: '餵食',
+          timezone: 'Asia/Taipei',
+          nextDueAt: new Date('2026-10-24T04:00:00.000Z'),
+          enabled: true,
+        },
+      ],
+      [
+        {
+          reminderId: 'r1',
+          dueDate: '2026-10-24',
+          completedBy: 'uid_01HZX8R4K7Y9Q2M3N5P6R7S8T9',
+          completedByName: '小苔',
+        },
+      ],
+      [animal],
+      now,
+    );
+
+    expect(tasks[0]?.completedByName).toBe('小苔');
+    expect(tasks[0]?.completedBy).toBe('uid_01HZX8R4K7Y9Q2M3N5P6R7S8T9');
   });
 });
 

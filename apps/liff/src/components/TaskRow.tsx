@@ -55,7 +55,7 @@ export function TaskRow({
             minute: '2-digit',
             timeZone: task.timezone,
           })}
-          {done ? ` · 已完成 by ${task.completedBy}` : ''}
+          {done ? ` · 已完成 by ${task.completedByName ?? '已刪除成員'}` : ''}
         </span>
       </span>
       {!done && task.overdue && (

@@ -13,12 +13,16 @@ export type CompletionLike = {
   reminderId: string;
   dueDate: string;
   completedBy?: string;
+  /** Display-name snapshot written by `task.complete`; absent on old rows. */
+  completedByName?: string | null;
 };
 export type AnimalLike = {
   id: string;
   name: string;
   avatarColor: string;
   species: string;
+  status?: string;
+  deletedAt?: unknown;
 };
 export type TodayTask = {
   reminderId: string;
@@ -30,6 +34,7 @@ export type TodayTask = {
   dueAt: Date;
   overdue: boolean;
   completedBy?: string;
+  completedByName?: string;
 };
 
 function toDate(value: ReminderLike['nextDueAt']): Date {
@@ -74,22 +79,31 @@ export function buildTodayTasks(
   return reminders
     .filter((reminder) => reminder.enabled && !reminder.deletedAt)
     .map((reminder) => {
+      // A bounded cascade can leave a live reminder behind after its animal was
+      // archived or soft-deleted. Such a task must disappear from Today rather
+      // than show an orphan "未命名居民" row.
+      const animal = animalById.get(reminder.animalId);
+      if (!animal || animal.status !== 'active' || animal.deletedAt != null) return null;
+
       const dueAt = toDate(reminder.nextDueAt);
       const dueDate = localDateKey(dueAt, reminder.timezone);
       const today = localDateKey(now, reminder.timezone);
       if (dueDate !== today) return null;
-      const animal = animalById.get(reminder.animalId);
+
       const completion = completionByKey.get(`${reminder.id}:${dueDate}`);
       return {
         reminderId: reminder.id,
         animalId: reminder.animalId,
-        animalName: animal?.name ?? '未命名居民',
+        animalName: animal.name,
         title: reminder.title,
         timezone: reminder.timezone,
         dueDate,
         dueAt,
         overdue: dueAt.getTime() < now.getTime(),
         ...(completion?.completedBy ? { completedBy: completion.completedBy } : {}),
+        ...(completion?.completedByName
+          ? { completedByName: completion.completedByName }
+          : {}),
       } satisfies TodayTask;
     })
     .filter((task): task is TodayTask => task !== null)
