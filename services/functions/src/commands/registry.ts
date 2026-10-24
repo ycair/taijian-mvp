@@ -7,6 +7,7 @@ import { linkLine, unlinkLine } from './handlers/line';
 import { createRecord, deleteRecord, updateRecord } from './handlers/records';
 import { createReminder, deleteReminder, updateReminder } from './handlers/reminders';
 import { completeTask, uncompleteTask } from './handlers/tasks';
+import { updateProfile } from './handlers/users';
 
 export const commandHandlers: HandlerMap = {
   'household.create': createHousehold,
@@ -30,6 +31,7 @@ export const commandHandlers: HandlerMap = {
   'reminder.delete': deleteReminder,
   'task.complete': completeTask,
   'task.uncomplete': uncompleteTask,
+  'user.updateProfile': updateProfile,
   'line.link': linkLine,
   'line.unlink': unlinkLine,
 };
