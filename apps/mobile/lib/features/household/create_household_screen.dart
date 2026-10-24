@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/providers.dart';
 import '../../core/models/command_result.dart';
 import '../../core/theme/app_theme.dart';
+import '../../data/command/command_attempt.dart';
 import 'household_repository.dart';
 
 class CreateHouseholdScreen extends ConsumerStatefulWidget {
@@ -20,6 +21,7 @@ class _CreateHouseholdScreenState extends ConsumerState<CreateHouseholdScreen> {
   String _timezone = 'Asia/Taipei';
   bool _busy = false;
   String? _error;
+  final _attempt = CommandAttempt();
 
   @override
   void dispose() {
@@ -34,13 +36,19 @@ class _CreateHouseholdScreenState extends ConsumerState<CreateHouseholdScreen> {
       _error = null;
     });
     try {
+      final name = _nameController.text.trim();
+      final commandId = _attempt.commandIdFor(
+        'household.create',
+        {'name': name, 'timezone': _timezone},
+      );
       final result = await ref
           .read(householdRepositoryProvider)
-          .create(name: _nameController.text.trim(), timezone: _timezone);
+          .create(name: name, timezone: _timezone, commandId: commandId);
       if (!result.ok) {
-        setState(() => _error = commandErrorMessage(result));
+        if (mounted) setState(() => _error = commandErrorMessage(result));
         return;
       }
+      _attempt.reset();
       // The profile stream updates householdIds; give it a moment, then go home.
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

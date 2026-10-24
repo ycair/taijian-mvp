@@ -7,6 +7,7 @@ import '../../app/providers.dart';
 import '../../core/models/models.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/common.dart';
+import '../../data/command/command_attempt.dart';
 import '../../data/outbox/outbox_database.dart';
 import '../household/household_repository.dart';
 
@@ -19,6 +20,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _busy = false;
+  final _inviteAttempt = CommandAttempt();
 
   @override
   Widget build(BuildContext context) {
@@ -215,7 +217,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   if (conflicts > 0 || failed > 0) ...[
                     const SizedBox(height: 8),
                     const Text(
-                      '有變更需要處理：衝突可以選擇保留最新或你的版本；失敗可重試。',
+                      '有變更需要處理：衝突可以選擇保留最新或你的版本；失敗可重試或刪除。',
                       style: TextStyle(fontSize: 12, color: AppTokens.muted, height: 1.4),
                     ),
                   ],
@@ -237,7 +239,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   _SettingRow(
                     icon: Icons.info_outline,
                     title: '版本',
-                    value: '1.0.0 · ${config.useMock ? 'mock' : 'firebase'}',
+                    value: '${ref.watch(appVersionProvider)} · '
+                        '${config.useMock ? 'mock' : 'firebase'}',
                   ),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
@@ -303,7 +306,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _createInvite() async {
     setState(() => _busy = true);
     try {
-      final invite = await ref.read(householdRepositoryProvider).createInvite();
+      const payload = {'role': 'caretaker', 'expiresInDays': 7};
+      final commandId = _inviteAttempt.commandIdFor('member.invite', payload);
+      final invite = await ref
+          .read(householdRepositoryProvider)
+          .createInvite(commandId: commandId);
+      _inviteAttempt.reset();
       if (!mounted) return;
       final config = ref.read(appConfigProvider);
       final url = config.inviteUrl(invite.token);
@@ -390,7 +398,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('登出苔間？'),
-        content: const Text('離線佇列中的變更會保留，下次登入同一帳號時繼續同步。'),
+        content: const Text(
+          '登出會清除這台裝置上尚未同步的變更，以及前一個帳號的 Firestore 快取。'
+          '未送出的內容不會保留到下一次登入。',
+        ),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('取消')),
           FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('登出')),
@@ -398,6 +409,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
     );
     if (confirmed != true) return;
+    final uid = ref.read(currentUserProvider)?.uid;
+    if (uid != null) {
+      // Rows are already UID-scoped, but deleting them avoids leaving care
+      // notes in plaintext SQLite for a later account on the same device.
+      try {
+        await ref.read(outboxProvider).purgeForUid(uid);
+      } catch (_) {
+        // A local purge failure must not trap the user in a signed-in state;
+        // the rows remain scoped to this UID.
+      }
+    }
     await ref.read(authServiceProvider).signOut();
   }
 

@@ -23,8 +23,12 @@ class FirebaseBootstrap {
         );
       } catch (error) {
         // A simulator/dev build without App Attest must still be able to boot;
-        // the server decides whether App Check is enforced.
-        developer.log('App Check activation skipped: $error', name: 'taijian.appcheck');
+        // the server decides whether App Check is enforced. Log only the type:
+        // SDK errors can carry project/device details we do not want in logs.
+        developer.log(
+          'App Check activation skipped (${error.runtimeType})',
+          name: 'taijian.appcheck',
+        );
       }
     }
 
@@ -60,25 +64,33 @@ class PushService {
         sound: true,
       );
       messaging.onRegistered.listen((value) {
+        // The registration identifier is a push credential: keep it in memory
+        // for the future device-register command, never in logs.
         token = value;
-        developer.log('FCM registration refreshed: $value', name: 'taijian.push');
+        developer.log('FCM registration updated', name: 'taijian.push');
       });
-      FirebaseMessaging.onMessage.listen((message) {
-        developer.log(
-          'FCM foreground message: ${message.messageId}',
-          name: 'taijian.push',
-        );
+      FirebaseMessaging.onMessage.listen((_) {
+        developer.log('FCM foreground message received', name: 'taijian.push');
       });
       await messaging.register();
       developer.log('FCM registration requested', name: 'taijian.push');
       try {
         apnsToken = await messaging.getAPNSToken();
-        developer.log('APNs token: $apnsToken', name: 'taijian.push');
-      } catch (error) {
-        developer.log('APNs token unavailable (simulator or missing capability): $error', name: 'taijian.push');
+        developer.log(
+          apnsToken == null ? 'APNs token unavailable' : 'APNs token available',
+          name: 'taijian.push',
+        );
+      } catch (_) {
+        developer.log(
+          'APNs token unavailable (simulator or missing capability)',
+          name: 'taijian.push',
+        );
       }
     } catch (error) {
-      developer.log('FCM initialization skipped: $error', name: 'taijian.push');
+      developer.log(
+        'FCM initialization skipped (${error.runtimeType})',
+        name: 'taijian.push',
+      );
     }
   }
 }

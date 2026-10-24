@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme/app_theme.dart';
+import 'outbox_sync.dart';
 import 'router.dart';
 
 class TaijianApp extends ConsumerWidget {
@@ -11,18 +12,20 @@ class TaijianApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
-    return MaterialApp.router(
-      title: '苔間',
-      debugShowCheckedModeBanner: false,
-      theme: buildAppTheme(),
-      routerConfig: router,
-      locale: const Locale('zh', 'TW'),
-      supportedLocales: const [Locale('zh', 'TW'), Locale('en')],
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
+    return OutboxAutoSync(
+      child: MaterialApp.router(
+        title: '苔間',
+        debugShowCheckedModeBanner: false,
+        theme: buildAppTheme(),
+        routerConfig: router,
+        locale: const Locale('zh', 'TW'),
+        supportedLocales: const [Locale('zh', 'TW'), Locale('en')],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+      ),
     );
   }
 }

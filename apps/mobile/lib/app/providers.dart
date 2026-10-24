@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -20,6 +21,9 @@ final appDependenciesProvider = Provider<AppDependencies>(
 );
 
 final appConfigProvider = Provider<AppConfig>((ref) => ref.watch(appDependenciesProvider).config);
+final appVersionProvider = Provider<String>(
+  (ref) => ref.watch(appDependenciesProvider).appVersion,
+);
 final authServiceProvider = Provider<AuthService>((ref) => ref.watch(appDependenciesProvider).auth);
 final readStoreProvider = Provider<ReadStore>((ref) => ref.watch(appDependenciesProvider).readStore);
 final commandApiProvider = Provider<CommandApi>((ref) => ref.watch(appDependenciesProvider).commandApi);
@@ -140,6 +144,7 @@ final todayTasksProvider = Provider<AsyncValue<List<TodayTask>>>((ref) {
   final reminders = ref.watch(remindersProvider);
   final animals = ref.watch(animalsProvider);
   final completions = ref.watch(todayCompletionsProvider);
+  final pendingCompletions = ref.watch(pendingTaskCompletionKeysProvider);
 
   if (reminders.isLoading || animals.isLoading || completions.isLoading) {
     return const AsyncLoading();
@@ -158,9 +163,43 @@ final todayTasksProvider = Provider<AsyncValue<List<TodayTask>>>((ref) {
       completions: completions.value ?? const [],
       now: DateTime.now(),
       householdTimezone: ref.watch(householdTimezoneProvider),
+      pendingCompletionKeys: pendingCompletions,
     ),
   );
 });
+
+/// `reminderId:dueDate` keys for task completions still waiting in the outbox.
+/// Today renders these as "已完成 · 同步中…" while offline.
+final pendingTaskCompletionKeysProvider = Provider<Set<String>>((ref) {
+  final user = ref.watch(currentUserProvider);
+  if (user == null) return const {};
+  return pendingTaskCompletionKeysFrom(
+    ref.watch(outboxEntriesProvider).value ?? const <OutboxEntry>[],
+  );
+});
+
+/// Extracts `reminderId:dueDate` from pending/sending `task.complete` rows.
+Set<String> pendingTaskCompletionKeysFrom(Iterable<OutboxEntry> entries) {
+  final keys = <String>{};
+  for (final entry in entries) {
+    if (entry.type != 'task.complete') continue;
+    if (entry.status != OutboxStatus.pending && entry.status != OutboxStatus.sending) {
+      continue;
+    }
+    try {
+      final payload = jsonDecode(entry.payloadJson);
+      if (payload is! Map) continue;
+      final reminderId = payload['reminderId'];
+      final dueDate = payload['dueDate'];
+      if (reminderId is String && dueDate is String && reminderId.isNotEmpty && dueDate.isNotEmpty) {
+        keys.add('$reminderId:$dueDate');
+      }
+    } catch (_) {
+      // A malformed row is handled by the outbox's own failure path.
+    }
+  }
+  return keys;
+}
 
 final outboxEntriesProvider = StreamProvider<List<OutboxEntry>>((ref) {
   // The query is scoped by UID, so rebuild when the signed-in account changes.
@@ -174,10 +213,13 @@ final conflictsProvider = StreamProvider<List<OutboxEntry>>((ref) {
 });
 
 class CommandService {
-  CommandService({required this.outbox, required this.api});
+  CommandService({required this.outbox, required this.api, this.autoFlush = true});
 
   final Outbox outbox;
   final CommandApi api;
+
+  /// Disabled by contract tests that inspect queued rows before flushing.
+  final bool autoFlush;
 
   /// Queues a mutation and flushes in the background.
   Future<QueuedCommand> submit(
@@ -194,22 +236,26 @@ class CommandService {
       baseRevision: baseRevision,
       targetId: targetId,
     );
-    unawaited(outbox.flush());
+    if (autoFlush) unawaited(outbox.flush());
     return command;
   }
 
   /// For writes whose response is needed immediately (invite token, new
-  /// household). These are online-only; the UI surfaces a clear error if not.
+  /// household). These are online-only.
+  ///
+  /// `commandId` must come from a `CommandAttempt` owned by the screen and be
+  /// reused while the same logical request is retried.
   Future<CommandResult> runNow(
     String type,
     Map<String, dynamic> payload, {
+    required String commandId,
     String? householdId,
     int? baseRevision,
   }) {
     return api.executeCommand(
       type,
       payload,
-      commandId: newCommandId(),
+      commandId: commandId,
       householdId: householdId,
       baseRevision: baseRevision,
     );

@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/models/command_result.dart';
-import '../auth/auth_service.dart';
 
 class InviteResult {
   const InviteResult({required this.token, this.expiresAt});
@@ -14,16 +13,22 @@ class InviteResult {
 class HouseholdRepository {
   HouseholdRepository({
     required this.commands,
-    required this.auth,
     required this.householdId,
   });
 
   final CommandService commands;
-  final AuthService auth;
   final String? householdId;
 
-  Future<CommandResult> create({required String name, required String timezone}) {
-    return commands.runNow('household.create', {'name': name, 'timezone': timezone});
+  Future<CommandResult> create({
+    required String name,
+    required String timezone,
+    required String commandId,
+  }) {
+    return commands.runNow(
+      'household.create',
+      {'name': name, 'timezone': timezone},
+      commandId: commandId,
+    );
   }
 
   Future<void> updateName({required String name, required int revision}) async {
@@ -48,12 +53,13 @@ class HouseholdRepository {
     );
   }
 
-  Future<InviteResult> createInvite() async {
+  Future<InviteResult> createInvite({required String commandId}) async {
     final id = householdId;
     if (id == null) throw StateError('No household');
     final result = await commands.runNow(
       'member.invite',
       {'role': 'caretaker', 'expiresInDays': 7},
+      commandId: commandId,
       householdId: id,
     );
     if (!result.ok) {
@@ -99,7 +105,6 @@ class CommandException implements Exception {
 final householdRepositoryProvider = Provider<HouseholdRepository>((ref) {
   return HouseholdRepository(
     commands: ref.watch(commandServiceProvider),
-    auth: ref.watch(authServiceProvider),
     householdId: ref.watch(householdIdProvider),
   );
 });

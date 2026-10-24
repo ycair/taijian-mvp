@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -22,7 +23,7 @@ Future<void> main() async {
       ),
     );
   } catch (error, stack) {
-    debugPrint('Bootstrap failed: $error\n$stack');
+    if (!kReleaseMode) debugPrint('Bootstrap failed: $error\n$stack');
     runApp(BootstrapFailureApp(config: config, error: error));
   }
 }
@@ -65,7 +66,9 @@ class BootstrapFailureApp extends StatelessWidget {
                   border: Border.all(color: AppTokens.line),
                 ),
                 child: SelectableText(
-                  '$error',
+                  kReleaseMode
+                      ? '詳細錯誤已隱藏。請查看裝置記錄或 Xcode 主控台。'
+                      : '$error',
                   style: const TextStyle(fontSize: 12, height: 1.5),
                 ),
               ),

@@ -27,8 +27,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     try {
       await action();
     } on AuthException catch (error) {
+      if (!mounted) return;
       if (error.code != 'CANCELLED') setState(() => _error = error.message);
     } catch (error) {
+      if (!mounted) return;
       setState(() => _error = '登入失敗：$error');
     } finally {
       if (mounted) setState(() => _busy = false);

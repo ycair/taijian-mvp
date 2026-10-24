@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:math';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -115,6 +117,26 @@ class FirebaseAuthService implements AuthService {
       // A user who signed in with Apple has no Google session; ignore.
     }
     await _auth.signOut();
+
+    // Firestore's on-disk cache is per app, not per account. Terminate the
+    // client (which also drops its memory cache) and clear persistence so the
+    // next account cannot read the previous account's cached documents.
+    //
+    // iOS limitation: clearPersistence() must run with no active Firestore
+    // client; terminate() satisfies that, but if another Firebase component
+    // re-opened it concurrently the clear can fail. Sign-out still proceeds;
+    // every read query is membership-scoped by the server rules, and the next
+    // sign-in replaces the auth token.
+    try {
+      await FirebaseFirestore.instance.terminate();
+      await FirebaseFirestore.instance.clearPersistence();
+      developer.log('Firestore local cache cleared on sign-out', name: 'taijian.auth');
+    } catch (error) {
+      developer.log(
+        'Firestore cache clear failed (${error.runtimeType})',
+        name: 'taijian.auth',
+      );
+    }
   }
 
   @override

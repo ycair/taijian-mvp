@@ -11,24 +11,33 @@ import '../features/records/records_screen.dart';
 import '../features/reminders/reminder_form_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/today/today_screen.dart';
+import 'auth_refresh.dart';
 import 'providers.dart';
 import 'shell.dart';
 
+/// Stable for the app's lifetime; the router is created once and auth changes
+/// are delivered through [AuthRouteRefresh] instead of rebuilding it.
+final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
+
 final routerProvider = Provider<GoRouter>((ref) {
-  final auth = ref.watch(authStateProvider);
-  final user = auth.value;
-  final rootNavigatorKey = GlobalKey<NavigatorState>();
+  final auth = ref.watch(authServiceProvider);
+  final refresh = AuthRouteRefresh(
+    changes: auth.authStateChanges(),
+    initialUser: auth.currentUser,
+  );
+  ref.onDispose(refresh.dispose);
 
   return GoRouter(
-    navigatorKey: rootNavigatorKey,
+    navigatorKey: _rootNavigatorKey,
     initialLocation: '/',
     debugLogDiagnostics: false,
+    refreshListenable: refresh,
     redirect: (context, state) {
       final location = state.matchedLocation;
-      if (auth.isLoading && user == null) {
+      if (refresh.loading) {
         return location == '/splash' ? null : '/splash';
       }
-      if (user == null) {
+      if (refresh.user == null) {
         return location == '/signin' ? null : '/signin';
       }
       if (location == '/signin' || location == '/splash') return '/';
@@ -45,19 +54,19 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/household/new',
-        parentNavigatorKey: rootNavigatorKey,
+        parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const CreateHouseholdScreen(),
       ),
       GoRoute(
         path: '/reminders/new',
-        parentNavigatorKey: rootNavigatorKey,
+        parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => ReminderFormScreen(
           animalId: state.uri.queryParameters['animalId'],
         ),
       ),
       GoRoute(
         path: '/reminders/:reminderId',
-        parentNavigatorKey: rootNavigatorKey,
+        parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => ReminderFormScreen(
           reminderId: state.pathParameters['reminderId'],
           animalId: state.uri.queryParameters['animalId'],

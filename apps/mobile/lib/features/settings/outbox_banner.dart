@@ -100,12 +100,11 @@ class OutboxFailedStrip extends ConsumerWidget {
         borderRadius: BorderRadius.circular(AppTokens.radiusMd),
         child: InkWell(
           borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-          onTap: () async {
-            for (final entry in failed) {
-              await ref.read(outboxProvider).retryFailed(entry.commandId);
-            }
-            await ref.read(outboxProvider).flush();
-          },
+          onTap: () => showModalBottomSheet<void>(
+            context: context,
+            useSafeArea: true,
+            builder: (context) => const _FailedOutboxSheet(),
+          ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
@@ -126,4 +125,103 @@ class OutboxFailedStrip extends ConsumerWidget {
       ),
     );
   }
+}
+
+
+class _FailedOutboxSheet extends ConsumerWidget {
+  const _FailedOutboxSheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final entries = ref.watch(outboxEntriesProvider).value ?? const <OutboxEntry>[];
+    final failed = entries.where((entry) => entry.status == OutboxStatus.failed).toList();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('同步失敗的變更', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 4),
+          Text(
+            '重試會重新送出同一個 commandId；若資料本身無法通過驗證，可以刪除這筆變更。',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 12),
+          if (failed.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(child: Text('沒有失敗的變更。')),
+            )
+          else
+            ...failed.map(
+              (entry) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.error_outline, color: AppTokens.overdue),
+                title: Text(_commandLabel(entry.type)),
+                subtitle: Text(
+                  entry.lastError ?? '未知錯誤',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing: Wrap(
+                  spacing: 4,
+                  children: [
+                    TextButton(
+                      onPressed: () async {
+                        await ref.read(outboxProvider).retryFailed(entry.commandId);
+                        await ref.read(outboxProvider).flush();
+                      },
+                      child: const Text('重試'),
+                    ),
+                    TextButton(
+                      onPressed: () => _discard(context, ref, entry),
+                      style: TextButton.styleFrom(foregroundColor: AppTokens.overdue),
+                      child: const Text('刪除'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _discard(BuildContext context, WidgetRef ref, OutboxEntry entry) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('刪除這筆變更？'),
+        content: Text('「${_commandLabel(entry.type)}」不會再送出，本機內容會永久移除。'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('取消')),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: AppTokens.overdue),
+            child: const Text('刪除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await ref.read(outboxProvider).discard(entry.commandId);
+    }
+  }
+
+  static String _commandLabel(String type) => switch (type) {
+    'animal.create' => '新增居民',
+    'animal.update' => '更新居民',
+    'animal.archive' => '封存居民',
+    'animal.delete' => '刪除居民',
+    'record.create' => '新增照護紀錄',
+    'reminder.create' => '新增提醒',
+    'reminder.update' => '更新提醒',
+    'reminder.delete' => '刪除提醒',
+    'task.complete' => '完成任務',
+    'task.uncomplete' => '取消完成',
+    'household.update' => '更新家庭',
+    'user.updateProfile' => '更新個人資料',
+    _ => type,
+  };
 }
