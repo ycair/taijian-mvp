@@ -1,7 +1,9 @@
 import { initializeApp } from 'firebase/app';
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 import { connectFunctionsEmulator, getFunctions } from 'firebase/functions';
+import { appCheckSettings } from './appCheck';
 
 const app = initializeApp({
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -9,6 +11,26 @@ const app = initializeApp({
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 });
+
+// App Check is opt-in by configuration: production sets
+// VITE_RECAPTCHA_ENTERPRISE_KEY, local/E2E runs leave it empty and skip setup so
+// the emulator needs no App Check debug token.
+const appCheck = appCheckSettings({
+  siteKey: import.meta.env.VITE_RECAPTCHA_ENTERPRISE_KEY,
+  debugToken: import.meta.env.VITE_APP_CHECK_DEBUG_TOKEN,
+  dev: import.meta.env.DEV,
+});
+if (appCheck.enabled) {
+  if (appCheck.debugToken) {
+    // Firebase reads this global before the first token exchange.
+    (globalThis as { FIREBASE_APPCHECK_DEBUG_TOKEN?: string }).FIREBASE_APPCHECK_DEBUG_TOKEN =
+      appCheck.debugToken;
+  }
+  initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider(appCheck.siteKey),
+    isTokenAutoRefreshEnabled: true,
+  });
+}
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
