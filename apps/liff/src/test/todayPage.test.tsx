@@ -81,6 +81,10 @@ describe('TodayPage', () => {
 
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
     expect(screen.getByText('還沒有家庭')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '建立家庭' })).toHaveAttribute(
+      'href',
+      '/household/new',
+    );
     expect(h.onSnapshot).not.toHaveBeenCalled();
   });
 

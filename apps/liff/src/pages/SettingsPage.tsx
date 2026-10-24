@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { httpsCallable } from 'firebase/functions';
@@ -102,6 +103,20 @@ export function SettingsPage() {
       <section className="card" style={{ marginTop: 16 }}>
         <h2 style={{ fontSize: 16, marginTop: 0 }}>家庭</h2>
         <p className="muted">{household?.name ?? '尚未加入家庭'}</p>
+        {!household && (
+          <Link
+            to="/household/new"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              minHeight: 44,
+              color: 'var(--primary-strong)',
+              fontWeight: 800,
+            }}
+          >
+            建立家庭
+          </Link>
+        )}
         {household && !roleLoaded && (
           <p className="muted" role="status">
             讀取家庭角色…

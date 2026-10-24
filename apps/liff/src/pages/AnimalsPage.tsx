@@ -71,7 +71,20 @@ export function AnimalsPage() {
         </p>
       )}
       {!household ? (
-        <EmptyState title="還沒有家庭" body="先在設定裡建立一個家庭，或接受家人的邀請。" />
+        <EmptyState title="還沒有家庭" body="先建立一個家庭，或接受家人的邀請。">
+          <Link
+            to="/household/new"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              minHeight: 44,
+              color: 'var(--primary-strong)',
+              fontWeight: 800,
+            }}
+          >
+            建立家庭
+          </Link>
+        </EmptyState>
       ) : animals.length === 0 ? (
         <EmptyState title="還沒有居民" body="新增第一隻爬寵，開始記錄牠的日常生活。" />
       ) : (

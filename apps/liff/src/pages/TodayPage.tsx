@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../lib/auth';
@@ -85,13 +86,13 @@ export function TodayPage() {
     const unsubAnimals = onSnapshot(
       query(collection(db, 'animals'), where('householdId', '==', householdId)),
       (snap) => {
+        // Keep every row: `buildTodayTasks` owns the lifecycle filter so the
+        // archived / soft-deleted rules are tested in one place.
         setAnimals(
-          snap.docs
-            .map((doc): Record<string, unknown> & { id: string } => ({
-              id: doc.id,
-              ...doc.data(),
-            }))
-            .filter((animal) => animal.status === 'active'),
+          snap.docs.map((doc): Record<string, unknown> & { id: string } => ({
+            id: doc.id,
+            ...doc.data(),
+          })),
         );
         markRead('animals', null);
       },
@@ -149,7 +150,20 @@ export function TodayPage() {
             {error}
           </p>
         )}
-        <EmptyState title="還沒有家庭" body="先在設定裡建立一個家庭，或接受家人的邀請。" />
+        <EmptyState title="還沒有家庭" body="先建立一個家庭，或接受家人的邀請。">
+          <Link
+            to="/household/new"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              minHeight: 44,
+              color: 'var(--primary-strong)',
+              fontWeight: 800,
+            }}
+          >
+            建立家庭
+          </Link>
+        </EmptyState>
       </AppShell>
     );
   }
