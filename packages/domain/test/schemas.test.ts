@@ -123,6 +123,14 @@ describe('reminder schedule times', () => {
     timezone: 'Asia/Taipei',
   });
 
+  const payloadWithSchedule = (schedule: unknown) => ({
+    animalId: 'a1',
+    title: '餵食',
+    type: 'feeding',
+    schedule,
+    timezone: 'Asia/Taipei',
+  });
+
   it('rejects impossible clock times', () => {
     expect(commandSchemas['reminder.create'].safeParse(reminderWithTimes(['99:99'])).success).toBe(
       false,
@@ -136,6 +144,23 @@ describe('reminder schedule times', () => {
     expect(commandSchemas['reminder.create'].safeParse(reminderWithTimes(['08:30'])).success).toBe(
       true,
     );
+  });
+
+  it('rejects more than one time per day in v1', () => {
+    // v1 keys notifications and completions by due date, so a second time of
+    // day would be silently merged into the first.
+    const times = ['08:30', '20:00'];
+    const schedules = [
+      { kind: 'daily', times },
+      { kind: 'weekly', times, weekdays: [1] },
+      { kind: 'interval', times, everyNDays: 2, startDate: '2026-10-24' },
+    ];
+
+    for (const schedule of schedules) {
+      expect(
+        commandSchemas['reminder.create'].safeParse(payloadWithSchedule(schedule)).success,
+      ).toBe(false);
+    }
   });
 });
 

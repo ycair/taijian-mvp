@@ -77,9 +77,10 @@ function minutesOfClock(clock: string | undefined): number | undefined {
 
 /**
  * Quiet hours are local wall-clock times in the household timezone and may wrap
- * past midnight (22:00–07:00). A malformed or zero-length window never
- * suppresses a notification: staying silent is the safer failure for a care
- * reminder.
+ * past midnight (22:00–07:00). When the window matches, the caller leaves
+ * `nextDueAt` untouched so the reminder is delivered as soon as the window
+ * closes. A malformed or zero-length window never suppresses a notification:
+ * sending is the safer failure for a care reminder.
  */
 export function isWithinQuietHours(quietHours: QuietHours, now: Date, timezone: string): boolean {
   const start = minutesOfClock(quietHours?.start);
@@ -150,7 +151,9 @@ async function activeLineRecipients(householdId: string): Promise<string[]> {
 
     const mappings = await db.collection('lineUsers').where('uid', '==', member.id).get();
     for (const mapping of mappings.docs) {
-      if ((mapping.data() as { status?: string }).status !== 'active') continue;
+      // Mappings created before the tombstone field existed have no status and
+      // are live, matching `auth/users.ts` and the bot.
+      if (((mapping.data() as { status?: string }).status ?? 'active') !== 'active') continue;
       recipients.add(mapping.id);
     }
   }
@@ -345,7 +348,14 @@ export async function runReminderScheduler(
 }
 
 export const reminderScheduler = onSchedule(
-  { region: 'asia-east1', schedule: 'every 5 minutes', timeZone: 'Asia/Taipei' },
+  {
+    region: 'asia-east1',
+    schedule: 'every 5 minutes',
+    timeZone: 'Asia/Taipei',
+    // A full 100-reminder batch can exceed the 60s default when LINE is slow;
+    // a longer timeout lets the run finish instead of being killed mid-batch.
+    timeoutSeconds: 120,
+  },
   async () => {
     await runReminderScheduler();
   },

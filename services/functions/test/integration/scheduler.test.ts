@@ -114,6 +114,21 @@ describe('runReminderScheduler', () => {
     });
   });
 
+  it('treats a legacy mapping without status as active', async () => {
+    await seedHousehold();
+    await seedAnimal();
+    await seedReminder();
+    await adminDb.collection('lineUsers').doc('line-legacy').set({ uid: 'u1' });
+
+    const { pushes, gateway } = fakeGateway();
+    const summary = await runReminderScheduler({ now: NOW, gateway });
+
+    expect(summary).toEqual({ due: 1, notified: 1, skipped: 0, retired: 0 });
+    expect(pushes).toHaveLength(1);
+    expect(pushes[0]?.to).toBe('line-legacy');
+    expect(await notificationLog()).toMatchObject({ status: 'sent', delivered: 1 });
+  });
+
   it('keeps delivery history for 30 days', async () => {
     await seedHousehold();
     await seedAnimal();
