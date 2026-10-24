@@ -1,0 +1,25 @@
+:root {
+  --bg: #fff8ee;
+  --ink: #3b2f2a;
+  --primary: #7c9a76;
+  --primary-strong: #4f6b4b;
+  --accent: #e8a87c;
+  --butter: #f4d9b0;
+  --success-bg: #eef4e8;
+  --overdue: #c96f4a;
+  --card: #ffffff;
+  --muted: #8a7e73;
+  --line: #eadccb;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --font-body: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Nunito', 'Noto Sans TC', -apple-system, sans-serif;
+  --shadow-card: 0 10px 26px rgba(120, 96, 70, 0.1);
+}
