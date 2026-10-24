@@ -90,7 +90,7 @@ Future<AppDependencies> bootstrap(AppConfig config) async {
 
   // Drain anything left over from a previous launch, without blocking startup.
   unawaited(outbox.flush().catchError((Object error) {
-    debugPrint('Outbox startup flush failed: $error');
+    debugPrint('Outbox startup flush failed (${error.runtimeType})');
     return const OutboxFlushResult();
   }));
 
