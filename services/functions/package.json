@@ -4,13 +4,16 @@
   "version": "0.0.0",
   "type": "commonjs",
   "main": "dist/index.js",
-  "engines": { "node": "22" },
+  "engines": {
+    "node": "22"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --exclude '**/integration/**'",
-    "test:integration": "firebase emulators:exec --config ../../firebase.json --only firestore,auth --project demo-taijian \"vitest run test/integration --no-file-parallelism\""
+    "test": "vitest run --exclude '**/integration/**' --exclude '**/rules.test.ts'",
+    "test:integration": "firebase emulators:exec --config ../../firebase.json --only firestore,auth --project demo-taijian \"vitest run test/integration --no-file-parallelism\"",
+    "test:rules": "firebase emulators:exec --config ../../firebase.json --only firestore --project demo-taijian \"vitest run test/rules.test.ts\""
   },
   "dependencies": {
     "@taijian/domain": "workspace:*",
@@ -20,8 +23,10 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^6.0.0",
     "@types/luxon": "^3.4.0",
     "@types/node": "^22.0.0",
+    "firebase": "^13.1.0",
     "tsup": "^8.0.0",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
