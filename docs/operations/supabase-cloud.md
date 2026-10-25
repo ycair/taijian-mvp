@@ -85,6 +85,33 @@ or Taiwan with local subsidiary approval). If the account is not eligible,
 continue with a normal LIFF app under the LINE Login channel; existing and new
 LIFF apps remain supported.
 
+## LINE Bot setup
+
+The Bot needs a separate **Messaging API** channel under the same provider;
+do not put the Bot token on the LINE Login channel.
+
+1. Create a Messaging API channel named `苔間 Bot`.
+2. Add these Edge Function secrets:
+   - `LINE_MESSAGING_CHANNEL_SECRET`
+   - `LINE_CHANNEL_ACCESS_TOKEN`
+3. Set the Messaging API webhook URL to:
+   `https://bqezqvhdmqanxgzfvdag.supabase.co/functions/v1/line-webhook`
+4. Enable **Use webhook** in the Messaging API channel.
+5. Add the Bot as a friend (QR code in the channel) and test.
+
+Supported text commands:
+
+- `今日` / `今天`
+- `居民` / `動物`
+- `餵食 <居民> [備註]`
+- `體重 <居民> <克數>`
+- `完成 <任務>`
+- `邀請` (owner only; creates a 7-day single-use LIFF invite)
+- `說明`
+
+A `follow` event sends a welcome message with the LIFF link. Dates for
+`今日` and `完成` use `Asia/Taipei` rather than the database UTC date.
+
 ## LIFF app
 
 - LINE Login Channel ID: `2012198098` (public)
