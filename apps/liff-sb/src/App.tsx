@@ -68,7 +68,7 @@ function LoginPage() {
       }
       localStorage.setItem('sb_token', result.token);
       localStorage.setItem('sb_user', result.userId);
-      window.location.href = '/';
+      window.location.href = window.location.pathname + window.location.search;
     } catch (e) {
       const message = e instanceof Error ? e.message : '登入失敗';
       if (message !== 'redirecting') setError(message);
