@@ -5,6 +5,7 @@ import { signUserToken } from '../_shared/jwt.ts';
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const lineChannelId = Deno.env.get('LINE_LOGIN_CHANNEL_ID') ?? 'test-login-channel';
+const allowMockLine = Deno.env.get('ALLOW_MOCK_LINE') === 'true';
 
 const admin = createClient(supabaseUrl, serviceRoleKey, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -14,6 +15,7 @@ type LineProfile = { sub: string; name?: string; picture?: string };
 
 async function verifyLineToken(idToken: string): Promise<LineProfile> {
   if (idToken.startsWith('mock:')) {
+    if (!allowMockLine) throw new Error('mock LINE login is disabled');
     const sub = idToken.slice('mock:'.length);
     return { sub, name: `Mock ${sub}`, picture: '' };
   }

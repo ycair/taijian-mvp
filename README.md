@@ -66,7 +66,8 @@ and reminder; 設定 → owner creates an invite link. The invite can be accepte
 3. Deploy functions: `pnpm exec supabase functions deploy line-login execute-command line-webhook`.
 4. Set function secrets (never commit them):
    `JWT_SECRET` = project JWT secret, `LINE_LOGIN_CHANNEL_ID`, `LINE_MESSAGING_CHANNEL_SECRET`,
-   `LINE_CHANNEL_ACCESS_TOKEN`, `LIFF_ID`.
+   `LINE_CHANNEL_ACCESS_TOKEN`, `LIFF_ID`. Do **not** set `ALLOW_MOCK_LINE` in production;
+   only the local demo enables it.
 5. Build the LIFF with `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_LIFF_ID`, and
    `VITE_USE_MOCK_LINE=false`; host it on any free HTTPS static host (Cloudflare Pages,
    Netlify, GitHub Pages). Point the LINE LIFF endpoint URL at that host.

@@ -1,8 +1,9 @@
 import { jwtVerify, SignJWT } from 'npm:jose@6';
 
-const secretValue =
-  Deno.env.get('JWT_SECRET') ??
-  'super-secret-jwt-token-with-at-least-32-characters-long';
+const secretValue = Deno.env.get('JWT_SECRET');
+if (!secretValue) {
+  throw new Error('JWT_SECRET is required');
+}
 const secret = new TextEncoder().encode(secretValue);
 
 export async function signUserToken(userId: string): Promise<string> {

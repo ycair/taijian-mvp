@@ -1,7 +1,7 @@
 import { sql } from '../_shared/db.ts';
 
-const channelSecret = Deno.env.get('LINE_MESSAGING_CHANNEL_SECRET') ?? 'test-messaging-secret';
-const accessToken = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN') ?? 'test-access-token';
+const channelSecret = Deno.env.get('LINE_MESSAGING_CHANNEL_SECRET') ?? '';
+const accessToken = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN') ?? '';
 const liffId = Deno.env.get('LIFF_ID') ?? 'test-liff';
 
 async function verifySignature(rawBody: string, signature: string): Promise<boolean> {
@@ -38,8 +38,11 @@ function liffUrl(path: string): string {
 Deno.serve(async (request) => {
   const raw = await request.text();
   const signature = request.headers.get('x-line-signature') ?? '';
-  if (!(await verifySignature(raw, signature))) {
+  if (!channelSecret || !signature || !(await verifySignature(raw, signature))) {
     return new Response('invalid signature', { status: 401 });
+  }
+  if (!accessToken) {
+    return new Response('LINE access token not configured', { status: 500 });
   }
 
   let body: { events?: any[] };
