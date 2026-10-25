@@ -124,7 +124,6 @@ function AppProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('sb_user');
       })
       .finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function refresh(token: string, userId: string) {

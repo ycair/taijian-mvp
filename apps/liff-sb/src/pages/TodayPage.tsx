@@ -38,7 +38,6 @@ export function TodayPage() {
     load();
     const timer = setInterval(load, 15000);
     return () => clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [householdId]);
 
   const tasks = buildTodayTasks(reminders, completions, animals, new Date(), profile.timezone);

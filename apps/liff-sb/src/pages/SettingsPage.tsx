@@ -3,9 +3,20 @@ import { useApp } from '../App';
 import { callCommand, newCommandId } from '../lib/api';
 import { makeClient } from '../lib/supabase';
 
+type MemberRow = {
+  user_id: string;
+  role: string;
+  profiles?: { display_name: string } | Array<{ display_name: string }> | null;
+};
+
+function memberName(member: MemberRow): string {
+  const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles;
+  return profile?.display_name ?? `${member.user_id.slice(0, 8)}…`;
+}
+
 export function SettingsPage() {
   const { token, householdId, households, profile, refresh, logout } = useApp();
-  const [members, setMembers] = useState<Array<{ user_id: string; role: string }>>([]);
+  const [members, setMembers] = useState<MemberRow[]>([]);
   const [householdName, setHouseholdName] = useState('');
   const [inviteToken, setInviteToken] = useState('');
   const [error, setError] = useState('');
@@ -15,11 +26,11 @@ export function SettingsPage() {
     if (!householdId) return;
     makeClient(token)
       .from('household_members')
-      .select('user_id, role')
+      .select('user_id, role, profiles(display_name)')
       .eq('household_id', householdId)
       .then(({ data, error: loadError }) => {
         if (loadError) setError(loadError.message);
-        else setMembers(data ?? []);
+        else setMembers((data ?? []) as MemberRow[]);
       });
   }, [token, householdId]);
 
@@ -71,7 +82,7 @@ export function SettingsPage() {
             <div className="muted">你的角色：{current.role === 'owner' ? '屋主' : '代管人'}</div>
             {members.map((member) => (
               <div key={member.user_id} className="between">
-                <span className="muted">{member.user_id.slice(0, 8)}…</span>
+                <span className="muted">{memberName(member)}</span>
                 <span className="badge">{member.role === 'owner' ? '屋主' : '代管'}</span>
               </div>
             ))}

@@ -75,11 +75,6 @@ Deno.serve(async (request) => {
         continue;
       }
 
-      const [animalCount] = await sql`
-        select count(*)::int as count from animals
-        where household_id = ${householdId} and deleted_at is null and status = 'active'
-      `;
-
       if (/^(今日|今天|today)$/i.test(text)) {
         const rows = await sql`
           select r.title, a.name, c.completed_by_name

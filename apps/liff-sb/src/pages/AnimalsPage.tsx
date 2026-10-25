@@ -14,7 +14,7 @@ const SPECIES = [
 ];
 
 export function AnimalsPage() {
-  const { token, householdId, profile } = useApp();
+  const { token, householdId } = useApp();
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [name, setName] = useState('');
   const [species, setSpecies] = useState('leopard-gecko');
@@ -36,7 +36,6 @@ export function AnimalsPage() {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [householdId]);
 
   async function addAnimal() {
