@@ -3,9 +3,9 @@
 > LINE-first, conflict-safe care log for reptiles and exotic pets.  
 > 把每一次照顧，留在同一個家。
 
-**Status:** v1 design spec approved — Phase 0 (foundation) in progress.  
+**Status:** Supabase demo running locally — no billing account required.  
 **Working name:** 苔間（商標／網域尚未檢索）  
-**Target:** iOS first; LINE LIFF + LINE Bot as the primary test surface.
+**Target:** LINE-first demo on Supabase; Flutter iOS client remains a mock-mode prototype.
 
 ---
 
@@ -17,6 +17,61 @@
 - **LINE Bot**：今日摘要、快速指令、提醒通知、圖文選單。
 - **Flutter iOS**：完整編輯、圖表、離線 outbox、推播。
 - **同一個 Firebase UID、同一份 Firestore 資料、同一套權限。**
+
+## Supabase demo (current)
+
+The demo backend runs on the **Supabase free tier** and does not require a credit card.
+It replaces the paused Firebase staging path for the demo:
+
+- **Postgres + RLS** — household members can read their own data; clients cannot write directly.
+- **Edge Functions** — `line-login`, `execute-command`, `line-webhook`.
+- **Custom LINE JWT** — LINE ID token is verified server-side; the function returns a short-lived
+  Supabase-compatible JWT. PostgREST RLS uses its `sub` as `auth.uid()`.
+- **Conflict safety** — client-generated `commandId` + idempotency table, per-row `revision`,
+  and server-side commands for writes.
+- **Single-use invites** — hashed token, expiry, used count, and membership transaction.
+
+### Run locally (Docker, no cloud account)
+
+```bash
+pnpm install
+pnpm supabase:start
+pnpm supabase:reset
+cp supabase/functions/.env.example supabase/functions/.env
+```
+
+Then run these in two terminals:
+
+```bash
+pnpm supabase:functions   # Edge Functions on http://127.0.0.1:54321/functions/v1
+pnpm dev:liff-sb          # LIFF demo on http://localhost:5174
+```
+
+Open `http://localhost:5174/?mock=UtestA` and press **以 LINE 登入**. The seed includes:
+
+- `UtestA` — owner of「苔間測試家庭」with resident「阿肥」and a daily feeding reminder.
+- `UtestB` — caretaker in the same household.
+
+Core demo flows: Today → complete a task; 居民 → add a resident; resident detail → quick record
+and reminder; 設定 → owner creates an invite link. The invite can be accepted by opening
+`/invite?token=...` as `UtestB`.
+
+### Deploy to a free Supabase project
+
+1. Create a free project at `supabase.com` (no card required).
+2. `pnpm exec supabase link --project-ref <ref>` and `pnpm exec supabase db push`.
+3. Deploy functions: `pnpm exec supabase functions deploy line-login execute-command line-webhook`.
+4. Set function secrets (never commit them):
+   `JWT_SECRET` = project JWT secret, `LINE_LOGIN_CHANNEL_ID`, `LINE_MESSAGING_CHANNEL_SECRET`,
+   `LINE_CHANNEL_ACCESS_TOKEN`, `LIFF_ID`.
+5. Build the LIFF with `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_LIFF_ID`, and
+   `VITE_USE_MOCK_LINE=false`; host it on any free HTTPS static host (Cloudflare Pages,
+   Netlify, GitHub Pages). Point the LINE LIFF endpoint URL at that host.
+6. Set the LINE Messaging webhook to
+   `https://<project-ref>.supabase.co/functions/v1/line-webhook`.
+
+`.env.local`, `supabase/functions/.env`, LINE secrets, and the Supabase secret key must stay
+out of git. The Flutter app still runs in mock mode; wiring it to this API is a follow-up.
 
 ## Why this exists
 
@@ -66,7 +121,7 @@
 | v1.2 | 繁殖、血統、族譜 | 未開始 |
 | v1.3 | 商城、點數、訂閱 | 未開始 |
 
-## Architecture
+## Architecture (Firebase Phase 1 reference; Supabase demo above)
 
 ```text
 ┌──────────────────────┐      ┌──────────────────────┐
@@ -97,10 +152,14 @@
 
 ```text
 apps/
-  liff/                 React + Vite + TypeScript + CSS Modules（Phase 1）
-  mobile/               Flutter iOS（Phase 2）
+  liff/                 React + Vite + TypeScript + CSS Modules（Firebase Phase 1 reference）
+  liff-sb/              React + Vite + Supabase demo（current）
+  mobile/               Flutter iOS（Phase 2, mock mode）
 services/
-  functions/            Node 22 + TypeScript + Firebase Functions v2
+  functions/            Node 22 + TypeScript + Firebase Functions v2（paused）
+supabase/
+  migrations/           Postgres schema, RLS, seed
+  functions/            line-login / execute-command / line-webhook
 packages/
   domain/               Zod schemas、command types、permissions
   design-tokens/        Direction B tokens（JSON + CSS variables）
@@ -270,4 +329,4 @@ Proprietary. All rights reserved. Not open source.
 
 ---
 
-**Next step:** review the v1 spec. Once approved, the first implementation plan covers Phase 0 (foundation) and Phase 1 (LINE-first MVP).
+**Next step:** run the local Supabase demo, then decide whether to deploy a free Supabase project and connect a real LINE LIFF channel. Flutter real-data mode remains a follow-up.
