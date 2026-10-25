@@ -197,7 +197,8 @@ Committed placeholders: `ios/Runner/GoogleService-Info.plist.example` and
 ## Known Phase 2 limits
 
 - No native LINE SDK, no Apple/Google credentials in the repo.
-- FCM token registration is log-only until a backend command exists.
+- FCM token registration is not implemented yet; token values are never logged.
+  A backend device-register command is still required before server push can work.
 - Account deletion is a Phase 3 item (App Store submission needs it).
 - `drift_flutter` stores the outbox in application documents; a cleared app
   removes unsent offline commands. Explicit sign-out purges the account's rows.

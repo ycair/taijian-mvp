@@ -40,6 +40,7 @@ class ReminderRepository {
     bool? enabled,
   }) async {
     if (householdId == null) throw StateError('No household');
+    final enabledChange = enabled == null || enabled == reminder.enabled ? null : enabled;
     await commands.submit(
       'reminder.update',
       {
@@ -47,7 +48,7 @@ class ReminderRepository {
         if (title != null) 'title': title.trim(),
         'type': ?type,
         if (schedule != null) 'schedule': schedule.toJson(),
-        'enabled': ?enabled,
+        'enabled': ?enabledChange,
       },
       householdId: householdId,
       baseRevision: reminder.revision,

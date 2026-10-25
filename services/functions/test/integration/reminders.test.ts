@@ -281,6 +281,31 @@ describe('reminder commands', () => {
     expect(await reminderDoc(reminderId)).toMatchObject({ revision: 1 });
   });
 
+  it('does not mark enabled as changed when a title edit keeps the same value', async () => {
+    const { householdId, animalId } = await setupAnimal();
+    const reminderId = await createReminder(householdId, animalId);
+    const before = await reminderDoc(reminderId);
+    const beforeDueAt = (before?.nextDueAt as Timestamp).toMillis();
+
+    success(
+      await send(
+        OWNER,
+        'reminder.update',
+        { reminderId, title: '換標題', enabled: true },
+        { householdId, baseRevision: 0 },
+      ),
+      'reminder.update title',
+    );
+
+    const after = await reminderDoc(reminderId);
+    expect(after?.title).toBe('換標題');
+    expect(after?.enabled).toBe(true);
+    expect((after?.nextDueAt as Timestamp).toMillis()).toBe(beforeDueAt);
+    expect(after?.lastChangedFields).toContain('title');
+    expect(after?.lastChangedFields).not.toContain('enabled');
+    expect(after?.enabledChangedAt).toBeUndefined();
+  });
+
   it('ignores client-supplied derived fields and refuses a moving animal', async () => {
     const { householdId, animalId } = await setupAnimal();
     const otherAnimalId = await createAnimal(householdId);

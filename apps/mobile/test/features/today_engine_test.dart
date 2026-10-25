@@ -39,6 +39,7 @@ void main() {
     bool enabled = true,
     DateTime? createdAt,
     DateTime? updatedAt,
+    DateTime? enabledChangedAt,
     List<String> lastChangedFields = const [],
   }) {
     return Reminder(
@@ -59,6 +60,7 @@ void main() {
       revision: 0,
       createdAt: createdAt,
       updatedAt: updatedAt,
+      enabledChangedAt: enabledChangedAt,
       lastChangedFields: lastChangedFields,
     );
   }
@@ -121,7 +123,7 @@ void main() {
     expect(tasks.single.overdue, isFalse);
   });
 
-  test('re-enabling a reminder uses the re-enable time as the floor', () {
+  test('re-enabling a reminder uses the explicit re-enable time as the floor', () {
     final tasks = TodayEngine.build(
       reminders: [
         reminder(
@@ -130,7 +132,8 @@ void main() {
           kind: 'daily',
           createdAt: DateTime.utc(2026, 10, 1),
           updatedAt: DateTime.utc(2026, 10, 25, 4), // 12:00 Taipei
-          lastChangedFields: const ['enabled', 'nextDueAt'],
+          enabledChangedAt: DateTime.utc(2026, 10, 25, 4),
+          lastChangedFields: const ['enabled', 'nextDueAt', 'enabledChangedAt'],
         ),
         reminder(
           id: '晚上',
@@ -138,7 +141,8 @@ void main() {
           kind: 'daily',
           createdAt: DateTime.utc(2026, 10, 1),
           updatedAt: DateTime.utc(2026, 10, 25, 4),
-          lastChangedFields: const ['enabled', 'nextDueAt'],
+          enabledChangedAt: DateTime.utc(2026, 10, 25, 4),
+          lastChangedFields: const ['enabled', 'nextDueAt', 'enabledChangedAt'],
         ),
       ],
       animals: const [animal],
@@ -148,6 +152,48 @@ void main() {
     );
 
     expect(tasks.map((task) => task.title), ['晚上']);
+  });
+
+  test('a title edit at 14:00 does not hide the 08:30 occurrence', () {
+    // 14:00 Taipei. The old client sent enabled unchanged; the old engine
+    // treated any 'enabled' in lastChangedFields as a re-enable floor.
+    final editTime = DateTime.utc(2026, 10, 25, 6);
+    final tasks = TodayEngine.build(
+      reminders: [
+        reminder(
+          id: '未完成的早餐',
+          time: '08:30',
+          kind: 'daily',
+          createdAt: DateTime.utc(2026, 10, 1),
+          updatedAt: editTime,
+          lastChangedFields: const ['title', 'enabled', 'nextDueAt'],
+        ),
+        reminder(
+          id: '已完成的早餐',
+          time: '08:30',
+          kind: 'daily',
+          createdAt: DateTime.utc(2026, 10, 1),
+          updatedAt: editTime,
+          lastChangedFields: const ['title', 'enabled', 'nextDueAt'],
+        ),
+      ],
+      animals: const [animal],
+      completions: const [
+        Completion(
+          reminderId: '已完成的早餐',
+          dueDate: '2026-10-25',
+          completedBy: 'caretaker',
+          completedByName: '阿川',
+        ),
+      ],
+      now: editTime,
+      householdTimezone: timezone,
+    );
+
+    expect(tasks.map((task) => task.title), ['未完成的早餐', '已完成的早餐']);
+    expect(tasks.first.overdue, isTrue);
+    expect(tasks.last.completed, isTrue);
+    expect(tasks.last.completedLabel, '已完成 · 阿川');
   });
 
   test('a reminder created on a previous day still shows today', () {

@@ -123,7 +123,9 @@ class _ReminderFormScreenState extends ConsumerState<ReminderFormScreen> {
           title: _titleController.text,
           type: _type,
           schedule: schedule,
-          enabled: _enabled,
+          // Omit enabled when unchanged: the server would otherwise mark it in
+          // `lastChangedFields` and hide today's earlier occurrence.
+          enabled: _enabled == editing.enabled ? null : _enabled,
         );
       } else {
         final animals = ref.read(activeAnimalsProvider);

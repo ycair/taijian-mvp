@@ -119,12 +119,12 @@ class TodayEngine {
 
   /// The earliest instant this reminder may produce a task.
   ///
-  /// `updatedAt` is used only when the last write was a re-enable, which the
-  /// backend marks with `enabled` in `lastChangedFields`. Other edits (title,
-  /// schedule) keep `createdAt` as the floor.
+  /// Only an explicit server-recorded enable transition moves the floor.
+  /// Reading `lastChangedFields` here was wrong: a full-form edit could carry an
+  /// unchanged `enabled` key and hide that day's earlier occurrence.
   static DateTime? _notBefore(Reminder reminder) {
-    if (reminder.enabled && reminder.lastChangedFields.contains('enabled')) {
-      return reminder.updatedAt ?? reminder.createdAt;
+    if (reminder.enabled && reminder.enabledChangedAt != null) {
+      return reminder.enabledChangedAt;
     }
     return reminder.createdAt;
   }

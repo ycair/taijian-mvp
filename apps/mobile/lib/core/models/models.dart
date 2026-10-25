@@ -412,6 +412,7 @@ class Reminder {
     this.nextDueAt,
     this.createdAt,
     this.updatedAt,
+    this.enabledChangedAt,
     this.lastChangedFields = const [],
   });
 
@@ -429,6 +430,7 @@ class Reminder {
       nextDueAt: readDate(map, 'nextDueAt'),
       createdAt: readDate(map, 'createdAt'),
       updatedAt: readDate(map, 'updatedAt'),
+      enabledChangedAt: readDate(map, 'enabledChangedAt'),
       lastChangedFields: readStringList(map, 'lastChangedFields'),
     );
   }
@@ -445,6 +447,10 @@ class Reminder {
   final DateTime? nextDueAt;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+
+  /// Set by the server only when `enabled` actually transitions. Today uses
+  /// this as the floor for a re-enabled reminder.
+  final DateTime? enabledChangedAt;
   final List<String> lastChangedFields;
 
   Reminder copyWith({
@@ -457,6 +463,7 @@ class Reminder {
     DateTime? nextDueAt,
     DateTime? createdAt,
     DateTime? updatedAt,
+    DateTime? enabledChangedAt,
     List<String>? lastChangedFields,
   }) {
     return Reminder(
@@ -472,6 +479,7 @@ class Reminder {
       nextDueAt: nextDueAt ?? this.nextDueAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      enabledChangedAt: enabledChangedAt ?? this.enabledChangedAt,
       lastChangedFields: lastChangedFields ?? this.lastChangedFields,
     );
   }

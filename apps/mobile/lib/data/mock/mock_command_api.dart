@@ -495,7 +495,8 @@ class MockCommandApi implements CommandApi {
         : ReminderSchedule.fromMap(_map(payload['schedule']));
     final timezone = payload['timezone'] as String?;
     final enabled = payload['enabled'] is bool ? payload['enabled'] as bool : null;
-    final reenabled = enabled == true && !reminder.enabled;
+    final enabledChanged = enabled != null && enabled != reminder.enabled;
+    final reenabled = enabledChanged && enabled == true;
     final rescheduled = schedule != null || timezone != null || reenabled;
     final now = DateTime.now().toUtc();
     final changed = <String>[
@@ -503,8 +504,9 @@ class MockCommandApi implements CommandApi {
       if (payload['type'] != null) 'type',
       if (schedule != null) 'schedule',
       if (timezone != null) 'timezone',
-      if (enabled != null) 'enabled',
+      if (enabledChanged) 'enabled',
       if (rescheduled) 'nextDueAt',
+      if (enabledChanged) 'enabledChangedAt',
     ];
     final nextSchedule = schedule ?? reminder.schedule;
     final nextTimezone = timezone ?? reminder.timezone;
@@ -523,6 +525,7 @@ class MockCommandApi implements CommandApi {
           : reminder.nextDueAt,
       createdAt: reminder.createdAt,
       updatedAt: now,
+      enabledChangedAt: enabledChanged ? now : reminder.enabledChangedAt,
       lastChangedFields: changed,
     );
     store.mutate(() => store.reminders[next.id] = next);
@@ -712,6 +715,7 @@ class MockCommandApi implements CommandApi {
     'schedule': reminder.schedule.toJson(),
     'timezone': reminder.timezone,
     'enabled': reminder.enabled,
+    'enabledChangedAt': reminder.enabledChangedAt?.toIso8601String(),
     'revision': reminder.revision,
   };
 

@@ -127,6 +127,19 @@ export async function updateReminder(ctx: HandlerContext): Promise<CommandResult
   delete patch.deletedAt;
   delete patch.householdId;
 
+  // Clients often send the whole form, including values that did not change.
+  // `bump` derives `lastChangedFields` from the patch keys, and the Flutter
+  // Today view treats an `enabled` change as a re-enable boundary. Keeping an
+  // unchanged `enabled` would hide that day's earlier occurrence, so drop it.
+  if (patch.enabled !== undefined && patch.enabled === data.enabled) {
+    delete patch.enabled;
+  }
+  // Record the real transition explicitly; `lastChangedFields` alone is not a
+  // reliable signal after an unrelated edit in the same request.
+  if (patch.enabled !== undefined) {
+    patch.enabledChangedAt = ctx.now;
+  }
+
   if (patch.animalId !== undefined) {
     await assertAnimalInHousehold(ctx, householdId, patch.animalId as string);
   }

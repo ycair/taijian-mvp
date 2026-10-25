@@ -82,6 +82,43 @@ void main() {
     expect(store.records.where((record) => record.id == '018f4f7e-0000-7000-8000-000000000020'), isEmpty);
   });
 
+  test('an unchanged enabled value is not marked as a change', () async {
+    final before = store.reminders['rem_afa_feed']!;
+    final result = await api.executeCommand(
+      'reminder.update',
+      {
+        'reminderId': before.id,
+        'title': '新的餵食',
+        'enabled': true,
+      },
+      commandId: '018f4f7e-0000-7000-8000-000000000028',
+      householdId: MockSeed.householdId,
+      baseRevision: before.revision,
+    );
+
+    expect(result.ok, isTrue);
+    final after = store.reminders[before.id]!;
+    expect(after.title, '新的餵食');
+    expect(after.enabled, isTrue);
+    expect(after.nextDueAt, before.nextDueAt);
+    expect(after.lastChangedFields, contains('title'));
+    expect(after.lastChangedFields, isNot(contains('enabled')));
+    expect(after.enabledChangedAt, isNull);
+
+    final disabled = await api.executeCommand(
+      'reminder.update',
+      {'reminderId': before.id, 'enabled': false},
+      commandId: '018f4f7e-0000-7000-8000-000000000029',
+      householdId: MockSeed.householdId,
+      baseRevision: after.revision,
+    );
+    expect(disabled.ok, isTrue);
+    final off = store.reminders[before.id]!;
+    expect(off.enabled, isFalse);
+    expect(off.lastChangedFields, contains('enabled'));
+    expect(off.enabledChangedAt, isNotNull);
+  });
+
   test('caretaker cannot archive or delete an animal', () async {
     final caretakerApi = MockCommandApi(
       store: store,
