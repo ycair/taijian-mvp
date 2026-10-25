@@ -38,6 +38,9 @@ pnpm install
 pnpm supabase:start
 pnpm supabase:reset
 cp supabase/functions/.env.example supabase/functions/.env
+pnpm exec supabase status   # copy the Publishable key
+cp apps/liff-sb/.env.example apps/liff-sb/.env.local
+# edit apps/liff-sb/.env.local: VITE_SUPABASE_ANON_KEY=<Publishable key>
 ```
 
 Then run these in two terminals:
