@@ -85,12 +85,55 @@ or Taiwan with local subsidiary approval). If the account is not eligible,
 continue with a normal LIFF app under the LINE Login channel; existing and new
 LIFF apps remain supported.
 
+## LIFF app
+
+- LINE Login Channel ID: `2012198098` (public)
+- LIFF ID: `2012198098-yDGNuYOH` (public)
+- LIFF URL: `https://liff.line.me/2012198098-yDGNuYOH`
+
+The LIFF app is under the LINE Login channel. Its Endpoint URL must be updated
+to the deployed HTTPS site after the first static deploy; do not leave it as
+`https://example.com`.
+
+Required public Edge Function secrets:
+
+| Name | Value |
+|---|---|
+| `LINE_LOGIN_CHANNEL_ID` | `2012198098` |
+| `LIFF_ID` | `2012198098-yDGNuYOH` |
+
+`JWT_SECRET` is configured and `line-login` no longer returns a worker error.
+Do not set `ALLOW_MOCK_LINE` on the cloud project.
+
+## Static deploy (Netlify Drop)
+
+Build with the production env file:
+
+```bash
+cd apps/liff-sb
+cp .env.production.example .env.production.local
+# fill VITE_LIFF_ID and confirm the cloud URL/publishable key
+pnpm build
+```
+
+The build includes `public/_redirects` (`/* /index.html 200`) so LIFF invite
+links and client-side routes work on Netlify/Cloudflare Pages.
+
+Upload the `dist` folder (or its zip) at `https://app.netlify.com/drop`, then:
+
+1. Copy the generated `https://<name>.netlify.app` URL.
+2. Update the LIFF app Endpoint URL in LINE Developers to that URL.
+3. Open `https://liff.line.me/2012198098-yDGNuYOH` in LINE.
+
+For a custom/stable host later, Cloudflare Pages or GitHub Pages can use the
+same `dist` and `_redirects` output.
+
 ## Client environment for cloud
 
 ```text
 VITE_SUPABASE_URL=https://bqezqvhdmqanxgzfvdag.supabase.co
 VITE_SUPABASE_ANON_KEY=sb_publishable_JokBny3AnM8sCs75W3RsCA_TBN24fWl
-VITE_LIFF_ID=<LIFF ID>
+VITE_LIFF_ID=2012198098-yDGNuYOH
 VITE_USE_MOCK_LINE=false
 ```
 
