@@ -177,6 +177,7 @@ docs/
 ## Documentation
 
 - [v1 Design Spec](docs/superpowers/specs/2026-10-23-taijian-mvp-design.md)
+- [Supabase cloud demo](docs/operations/supabase-cloud.md)
 - [Visual Directions](docs/design/visual-directions.html)
 - Reverse-engineering notes (private): `ycair/paapajiu-re`
 

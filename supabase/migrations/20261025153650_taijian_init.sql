@@ -1,7 +1,7 @@
 -- 苔間 demo schema for Supabase
 -- Custom JWT auth: profiles.id = JWT sub, role = authenticated.
 
-create extension if not exists pgcrypto;
+create extension if not exists pgcrypto with schema extensions;
 
 -- ---------------------------------------------------------------------------
 -- Tables
@@ -116,6 +116,8 @@ create table if not exists public.reminders (
 
 create index if not exists reminders_due_idx
   on public.reminders(enabled, next_due_at);
+create index if not exists reminders_household_idx
+  on public.reminders(household_id, enabled) where deleted_at is null;
 
 create table if not exists public.task_completions (
   id text primary key,
@@ -222,7 +224,7 @@ as $$
     from public.household_members m
     join public.households h on h.id = m.household_id
     where m.household_id = hid
-      and m.user_id = auth.uid()
+      and m.user_id = (select auth.uid())
       and h.deleted_at is null
   );
 $$;
@@ -239,7 +241,7 @@ as $$
     from public.household_members m
     join public.households h on h.id = m.household_id
     where m.household_id = hid
-      and m.user_id = auth.uid()
+      and m.user_id = (select auth.uid())
       and m.role = 'owner'
       and h.deleted_at is null
   );
@@ -295,31 +297,43 @@ alter table public.line_events enable row level security;
 
 drop policy if exists profiles_select_self on public.profiles;
 create policy profiles_select_self on public.profiles
-  for select using (id = auth.uid());
+  for select to authenticated
+  using ((select auth.uid()) = id);
 
 drop policy if exists households_select_member on public.households;
 create policy households_select_member on public.households
-  for select using (public.is_household_member(id));
+  for select to authenticated
+  using (public.is_household_member(id));
 
 drop policy if exists members_select_member on public.household_members;
 create policy members_select_member on public.household_members
-  for select using (public.is_household_member(household_id));
+  for select to authenticated
+  using (public.is_household_member(household_id));
 
 drop policy if exists animals_select_member on public.animals;
 create policy animals_select_member on public.animals
-  for select using (public.is_household_member(household_id));
+  for select to authenticated
+  using (public.is_household_member(household_id));
 
 drop policy if exists records_select_member on public.records;
 create policy records_select_member on public.records
-  for select using (public.is_household_member(household_id));
+  for select to authenticated
+  using (public.is_household_member(household_id));
 
 drop policy if exists reminders_select_member on public.reminders;
 create policy reminders_select_member on public.reminders
-  for select using (public.is_household_member(household_id));
+  for select to authenticated
+  using (public.is_household_member(household_id));
 
 drop policy if exists completions_select_member on public.task_completions;
 create policy completions_select_member on public.task_completions
-  for select using (public.is_household_member(household_id));
+  for select to authenticated
+  using (public.is_household_member(household_id));
+
+-- Data API access is explicit; RLS still decides which rows are visible.
+grant select on public.profiles, public.households, public.household_members,
+  public.animals, public.records, public.reminders, public.task_completions
+  to authenticated;
 
 -- All writes go through Edge Functions using the service role.
 -- invites/audit/line_users/commands/rate_limits/notification_log/line_events
