@@ -613,6 +613,210 @@ Deno.serve(async (request) => {
           break;
         }
 
+        case 'transfer.create': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          const member = await requireMember(tx, householdId, userId);
+          if (member.role !== 'owner') throw Object.assign(new Error('owner only'), { code: 'FORBIDDEN' });
+          const transferType = String(payload.transferType ?? '');
+          if (transferType !== 'own' && transferType !== 'other') {
+            throw Object.assign(new Error('invalid transfer type'), { code: 'VALIDATION_ERROR' });
+          }
+          const rawIds = Array.isArray(payload.animalIds) ? payload.animalIds.map(String) : [];
+          const animalIds = [...new Set(rawIds)];
+          if (!animalIds.length || animalIds.length > 20) {
+            throw Object.assign(new Error('select 1-20 residents'), { code: 'VALIDATION_ERROR' });
+          }
+          await tx`update animal_transfers set status = 'expired', responded_at = now()
+                   where status = 'pending' and expires_at <= now()`;
+          const [overlap] = await tx`
+            select id from animal_transfers
+            where status = 'pending' and animal_ids && ${animalIds}::uuid[] limit 1
+          `;
+          if (overlap) throw Object.assign(new Error('resident already has a pending transfer'), { code: 'TRANSFER_PENDING' });
+          const animals = await tx`
+            select id, revision, status, household_id from animals
+            where id = any(${animalIds}::uuid[]) and deleted_at is null
+            order by id for update
+          `;
+          if (animals.length !== animalIds.length) {
+            throw Object.assign(new Error('animal not found'), { code: 'NOT_FOUND' });
+          }
+          if (animals.some((animal: any) => animal.household_id !== householdId)) {
+            throw Object.assign(new Error('animal does not belong to this household'), { code: 'FORBIDDEN' });
+          }
+          if (animals.some((animal: any) => animal.status !== 'active')) {
+            throw Object.assign(new Error('only active residents can be transferred'), { code: 'INVALID_STATE' });
+          }
+
+          const transferId = crypto.randomUUID();
+          if (transferType === 'own') {
+            const targetHouseholdId = String(payload.targetHouseholdId ?? '');
+            if (!targetHouseholdId || targetHouseholdId === householdId) {
+              throw Object.assign(new Error('choose a different target household'), { code: 'VALIDATION_ERROR' });
+            }
+            const [target] = await tx`
+              select h.id from households h
+              join household_members m on m.household_id = h.id
+              where h.id = ${targetHouseholdId} and h.deleted_at is null
+                and m.user_id = ${userId} and m.role = 'owner'
+              for update of h
+            `;
+            if (!target) throw Object.assign(new Error('target household not owned by you'), { code: 'FORBIDDEN' });
+            await tx`insert into animal_transfers
+                     (id, source_household_id, target_household_id, animal_ids, transfer_type, status, created_by, responded_at, expires_at)
+                     values (${transferId}, ${householdId}, ${targetHouseholdId}, ${animalIds}, 'own', 'accepted',
+                     ${userId}, now(), now())`;
+            await tx`update animals set household_id = ${targetHouseholdId}, revision = revision + 1,
+                       last_changed_fields = array['householdId'], updated_by = ${userId}, updated_at = now()
+                     where id = any(${animalIds}::uuid[])`;
+            await tx`update records set household_id = ${targetHouseholdId}, updated_by = ${userId}, updated_at = now()
+                     where animal_id = any(${animalIds}::uuid[]) and household_id = ${householdId}`;
+            await tx`update reminders set household_id = ${targetHouseholdId}, updated_by = ${userId}, updated_at = now()
+                     where animal_id = any(${animalIds}::uuid[]) and household_id = ${householdId}`;
+            await tx`update task_completions set household_id = ${targetHouseholdId}
+                     where animal_id = any(${animalIds}::uuid[]) and household_id = ${householdId}`;
+            await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, after, command_id, source)
+                     values (${householdId}, ${userId}, 'transfer.own', 'animal_transfer', ${transferId},
+                     ${tx.json({ animalIds, targetHouseholdId })}, ${envelope.commandId}, 'liff')`;
+            await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, after, command_id, source)
+                     values (${targetHouseholdId}, ${userId}, 'transfer.receive', 'animal_transfer', ${transferId},
+                     ${tx.json({ animalIds, sourceHouseholdId: householdId })}, ${envelope.commandId}, 'liff')`;
+            response = ok(envelope.commandId, {
+              transferId,
+              status: 'accepted',
+              movedCount: animalIds.length,
+            });
+            break;
+          }
+
+          const targetUserId = String(payload.targetUserId ?? '');
+          if (!targetUserId || targetUserId === userId) {
+            throw Object.assign(new Error('choose another user'), { code: 'VALIDATION_ERROR' });
+          }
+          const [targetProfile] = await tx`
+            select id from profiles where id = ${targetUserId} and deleted_at is null
+          `;
+          if (!targetProfile) throw Object.assign(new Error('target user not found'), { code: 'NOT_FOUND' });
+          const expiresAt = new Date(Date.now() + 7 * 86400_000).toISOString();
+          const note = payload.note == null ? null : String(payload.note).trim().slice(0, 500) || null;
+          await tx`insert into animal_transfers
+                   (id, source_household_id, target_user_id, animal_ids, transfer_type, status, note, created_by, expires_at)
+                   values (${transferId}, ${householdId}, ${targetUserId}, ${animalIds}, 'other', 'pending',
+                   ${note}, ${userId}, ${expiresAt})`;
+          await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, after, command_id, source)
+                   values (${householdId}, ${userId}, 'transfer.create', 'animal_transfer', ${transferId},
+                   ${tx.json({ animalIds, targetUserId })}, ${envelope.commandId}, 'liff')`;
+          response = ok(envelope.commandId, {
+            transferId,
+            status: 'pending',
+            expiresAt,
+          });
+          break;
+        }
+
+        case 'transfer.accept': {
+          const transferId = String(payload.transferId ?? '');
+          const targetHouseholdId = String(payload.targetHouseholdId ?? '');
+          if (!targetHouseholdId) throw Object.assign(new Error('target household required'), { code: 'VALIDATION_ERROR' });
+          const [transfer] = await tx`
+            select * from animal_transfers where id = ${transferId} for update
+          `;
+          if (!transfer) throw Object.assign(new Error('transfer not found'), { code: 'NOT_FOUND' });
+          if (transfer.target_user_id !== userId) {
+            throw Object.assign(new Error('this transfer is not for you'), { code: 'FORBIDDEN' });
+          }
+          if (transfer.status !== 'pending') {
+            throw Object.assign(new Error('transfer is no longer pending'), { code: 'INVALID_STATE' });
+          }
+          if (targetHouseholdId === transfer.source_household_id) {
+            throw Object.assign(new Error('target household must be different'), { code: 'VALIDATION_ERROR' });
+          }
+          if (new Date(transfer.expires_at).getTime() <= Date.now()) {
+            await tx`update animal_transfers set status = 'expired', responded_at = now() where id = ${transferId}`;
+            throw Object.assign(new Error('transfer expired'), { code: 'TRANSFER_EXPIRED' });
+          }
+          const [target] = await tx`
+            select h.id from households h
+            join household_members m on m.household_id = h.id
+            where h.id = ${targetHouseholdId} and h.deleted_at is null
+              and m.user_id = ${userId} and m.role = 'owner'
+            for update of h
+          `;
+          if (!target) throw Object.assign(new Error('target household not owned by you'), { code: 'FORBIDDEN' });
+          const animalIds = transfer.animal_ids as string[];
+          const animals = await tx`
+            select id, status, household_id from animals
+            where id = any(${animalIds}::uuid[]) and deleted_at is null
+            order by id for update
+          `;
+          if (animals.length !== animalIds.length) {
+            throw Object.assign(new Error('resident no longer available'), { code: 'NOT_FOUND' });
+          }
+          if (animals.some((animal: any) => animal.household_id !== transfer.source_household_id || animal.status !== 'active')) {
+            throw Object.assign(new Error('resident is no longer transferable'), { code: 'INVALID_STATE' });
+          }
+          await tx`update animals set household_id = ${targetHouseholdId}, revision = revision + 1,
+                     last_changed_fields = array['householdId'], updated_by = ${userId}, updated_at = now()
+                   where id = any(${animalIds}::uuid[])`;
+          await tx`update records set household_id = ${targetHouseholdId}, updated_by = ${userId}, updated_at = now()
+                   where animal_id = any(${animalIds}::uuid[]) and household_id = ${transfer.source_household_id}`;
+          await tx`update reminders set household_id = ${targetHouseholdId}, updated_by = ${userId}, updated_at = now()
+                   where animal_id = any(${animalIds}::uuid[]) and household_id = ${transfer.source_household_id}`;
+          await tx`update task_completions set household_id = ${targetHouseholdId}
+                   where animal_id = any(${animalIds}::uuid[]) and household_id = ${transfer.source_household_id}`;
+          await tx`update animal_transfers set status = 'accepted', target_household_id = ${targetHouseholdId},
+                     responded_at = now() where id = ${transferId}`;
+          await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, after, command_id, source)
+                   values (${transfer.source_household_id}, ${transfer.created_by}, 'transfer.accepted', 'animal_transfer', ${transferId},
+                   ${tx.json({ targetHouseholdId, animalIds })}, ${envelope.commandId}, 'liff')`;
+          await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, after, command_id, source)
+                   values (${targetHouseholdId}, ${userId}, 'transfer.receive', 'animal_transfer', ${transferId},
+                   ${tx.json({ sourceHouseholdId: transfer.source_household_id, animalIds })}, ${envelope.commandId}, 'liff')`;
+          response = ok(envelope.commandId, {
+            transferId,
+            status: 'accepted',
+            movedCount: animalIds.length,
+          });
+          break;
+        }
+
+        case 'transfer.decline': {
+          const transferId = String(payload.transferId ?? '');
+          const [transfer] = await tx`
+            select * from animal_transfers where id = ${transferId} for update
+          `;
+          if (!transfer) throw Object.assign(new Error('transfer not found'), { code: 'NOT_FOUND' });
+          if (transfer.target_user_id !== userId) {
+            throw Object.assign(new Error('this transfer is not for you'), { code: 'FORBIDDEN' });
+          }
+          if (transfer.status !== 'pending') {
+            throw Object.assign(new Error('transfer is no longer pending'), { code: 'INVALID_STATE' });
+          }
+          await tx`update animal_transfers set status = 'declined', responded_at = now() where id = ${transferId}`;
+          response = ok(envelope.commandId, { transferId, status: 'declined' });
+          break;
+        }
+
+        case 'transfer.cancel': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          const member = await requireMember(tx, householdId, userId);
+          if (member.role !== 'owner') throw Object.assign(new Error('owner only'), { code: 'FORBIDDEN' });
+          const transferId = String(payload.transferId ?? '');
+          const [transfer] = await tx`
+            select * from animal_transfers where id = ${transferId} for update
+          `;
+          if (!transfer) throw Object.assign(new Error('transfer not found'), { code: 'NOT_FOUND' });
+          if (transfer.source_household_id !== householdId) {
+            throw Object.assign(new Error('transfer does not belong to this household'), { code: 'FORBIDDEN' });
+          }
+          if (transfer.status !== 'pending') {
+            throw Object.assign(new Error('transfer is no longer pending'), { code: 'INVALID_STATE' });
+          }
+          await tx`update animal_transfers set status = 'cancelled', responded_at = now() where id = ${transferId}`;
+          response = ok(envelope.commandId, { transferId, status: 'cancelled' });
+          break;
+        }
+
         case 'record.create': {
           if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
           await requireMember(tx, householdId, userId);

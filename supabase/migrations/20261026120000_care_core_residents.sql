@@ -45,7 +45,7 @@ create table if not exists public.animal_lineage (
   id uuid primary key default gen_random_uuid(),
   parent_id uuid not null references public.animals(id) on delete cascade,
   child_id uuid not null references public.animals(id) on delete cascade,
-  created_by uuid not null references public.profiles(id),
+  created_by uuid references public.profiles(id) on delete set null,
   created_at timestamptz not null default now(),
   unique (parent_id, child_id),
   check (parent_id <> child_id)
@@ -55,15 +55,15 @@ create index if not exists animal_lineage_child_idx on public.animal_lineage(chi
 
 create table if not exists public.animal_transfers (
   id uuid primary key default gen_random_uuid(),
-  source_household_id uuid not null references public.households(id),
-  target_user_id uuid references public.profiles(id),
-  target_household_id uuid references public.households(id),
+  source_household_id uuid not null references public.households(id) on delete cascade,
+  target_user_id uuid references public.profiles(id) on delete cascade,
+  target_household_id uuid references public.households(id) on delete cascade,
   animal_ids uuid[] not null,
   transfer_type text not null check (transfer_type in ('own', 'other')),
   status text not null default 'pending'
     check (status in ('pending', 'accepted', 'declined', 'cancelled', 'expired')),
   note text,
-  created_by uuid not null references public.profiles(id),
+  created_by uuid not null references public.profiles(id) on delete cascade,
   created_at timestamptz not null default now(),
   responded_at timestamptz,
   expires_at timestamptz not null,
