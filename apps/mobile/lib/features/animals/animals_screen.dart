@@ -15,6 +15,7 @@ class AnimalsScreen extends ConsumerWidget {
     final householdId = ref.watch(householdIdProvider);
     final animals = ref.watch(animalsProvider);
     final active = ref.watch(activeAnimalsProvider);
+    final memorial = ref.watch(memorialAnimalsProvider);
 
     if (householdId == null) {
       return SafeArea(
@@ -77,6 +78,27 @@ class AnimalsScreen extends ConsumerWidget {
                   child: _AnimalCard(animal: animal),
                 ),
               ),
+            if (memorial.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+                child: Row(
+                  children: [
+                    const Icon(Icons.local_florist_outlined, size: 18, color: AppTokens.muted),
+                    const SizedBox(width: 6),
+                    Text(
+                      '紀念',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ],
+                ),
+              ),
+              ...memorial.map(
+                (animal) => Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                  child: _AnimalCard(animal: animal),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -111,6 +133,7 @@ class _AnimalCard extends StatelessWidget {
                   [
                     animal.displaySpecies,
                     if (animal.morph != null && animal.morph!.isNotEmpty) animal.morph!,
+                    if (animal.isMemorial) '紀念',
                   ].join(' · '),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),

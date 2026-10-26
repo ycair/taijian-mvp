@@ -570,12 +570,58 @@ Deno.serve(async (request) => {
           break;
         }
 
+        case 'animal.memorialize': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          const member = await requireMember(tx, householdId, userId);
+          if (member.role !== 'owner') throw Object.assign(new Error('owner only'), { code: 'FORBIDDEN' });
+          const animalId = String(payload.animalId ?? '');
+          const [animal] = await tx`
+            select id, revision, status from animals
+            where id = ${animalId} and household_id = ${householdId} and deleted_at is null
+            for update
+          `;
+          if (!animal) throw Object.assign(new Error('animal not found'), { code: 'NOT_FOUND' });
+          if (animal.status === 'memorial') {
+            response = ok(envelope.commandId, { animalId, alreadyMemorial: true });
+            break;
+          }
+          if (animal.status !== 'active') {
+            throw Object.assign(new Error('only active residents can be memorialized'), { code: 'INVALID_STATE' });
+          }
+          if (envelope.baseRevision !== undefined && envelope.baseRevision !== animal.revision) {
+            throw Object.assign(new Error('revision conflict'), {
+              code: 'CONFLICT',
+              currentRevision: animal.revision,
+            });
+          }
+          const note = payload.note == null ? null : String(payload.note).trim().slice(0, 2000) || null;
+          await tx`update animals set
+                     status = 'memorial',
+                     memorial_at = now(),
+                     memorial_note = ${note},
+                     revision = revision + 1,
+                     last_changed_fields = array['status','memorialAt','memorialNote'],
+                     updated_by = ${userId},
+                     updated_at = now()
+                   where id = ${animalId}`;
+          await tx`update reminders set enabled = false, updated_at = now()
+                   where animal_id = ${animalId} and household_id = ${householdId} and deleted_at is null`;
+          await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, after, command_id, source)
+                   values (${householdId}, ${userId}, 'animal.memorialize', 'animal', ${animalId},
+                   ${tx.json({ note })}, ${envelope.commandId}, 'liff')`;
+          response = ok(envelope.commandId, { animalId, revision: animal.revision + 1 }, animal.revision + 1);
+          break;
+        }
+
         case 'record.create': {
           if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
           await requireMember(tx, householdId, userId);
           const animalId = String(payload.animalId ?? '');
-          const [animal] = await tx`select 1 from animals where id = ${animalId} and household_id = ${householdId} and deleted_at is null`;
+          const [animal] = await tx`select status from animals where id = ${animalId} and household_id = ${householdId} and deleted_at is null`;
           if (!animal) throw Object.assign(new Error('animal not found'), { code: 'NOT_FOUND' });
+          if (animal.status !== 'active') {
+            throw Object.assign(new Error('animal is not accepting records'), { code: 'INVALID_STATE' });
+          }
           const id = String(payload.recordId ?? crypto.randomUUID());
           const [existing] = await tx`select id from records where id = ${id}`;
           if (existing) {
@@ -595,9 +641,15 @@ Deno.serve(async (request) => {
         case 'reminder.create': {
           if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
           await requireMember(tx, householdId, userId);
+          const animalId = String(payload.animalId ?? '');
+          const [animal] = await tx`select status from animals where id = ${animalId} and household_id = ${householdId} and deleted_at is null`;
+          if (!animal) throw Object.assign(new Error('animal not found'), { code: 'NOT_FOUND' });
+          if (animal.status !== 'active') {
+            throw Object.assign(new Error('animal is not accepting reminders'), { code: 'INVALID_STATE' });
+          }
           const id = crypto.randomUUID();
           await tx`insert into reminders (id, household_id, animal_id, title, type, schedule, timezone, enabled, next_due_at, created_by, updated_by)
-                   values (${id}, ${householdId}, ${String(payload.animalId)}, ${String(payload.title)},
+                   values (${id}, ${householdId}, ${animalId}, ${String(payload.title)},
                    ${String(payload.type ?? 'feeding')}, ${tx.json(payload.schedule)}, ${String(payload.timezone ?? 'Asia/Taipei')},
                    ${payload.enabled ?? true}, now(), ${userId}, ${userId})`;
           response = ok(envelope.commandId, { reminderId: id }, 0);

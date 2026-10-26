@@ -61,16 +61,19 @@ class AnimalDetailScreen extends ConsumerWidget {
           icon: const Icon(Icons.arrow_back),
         ),
         actions: [
-          IconButton(
-            tooltip: '編輯居民',
-            onPressed: () => _editAnimal(context, ref, animal),
-            icon: const Icon(Icons.edit_outlined),
-          ),
-          if (isOwner)
+          if (!animal.isMemorial)
+            IconButton(
+              tooltip: '編輯居民',
+              onPressed: () => _editAnimal(context, ref, animal),
+              icon: const Icon(Icons.edit_outlined),
+            ),
+          if (isOwner && !animal.isMemorial)
             PopupMenuButton<_AnimalAdminAction>(
               tooltip: '居民管理',
               onSelected: (action) {
                 switch (action) {
+                  case _AnimalAdminAction.memorialize:
+                    _memorializeAnimal(context, ref, animal);
                   case _AnimalAdminAction.archive:
                     _archiveAnimal(context, ref, animal);
                   case _AnimalAdminAction.delete:
@@ -78,6 +81,10 @@ class AnimalDetailScreen extends ConsumerWidget {
                 }
               },
               itemBuilder: (context) => const [
+                PopupMenuItem(
+                  value: _AnimalAdminAction.memorialize,
+                  child: Text('設為紀念'),
+                ),
                 PopupMenuItem(
                   value: _AnimalAdminAction.archive,
                   child: Text('封存居民'),
@@ -124,6 +131,41 @@ class AnimalDetailScreen extends ConsumerWidget {
               ],
             ),
           ),
+          if (animal.isMemorial) ...[
+            const SizedBox(height: 12),
+            MossCard(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.local_florist_outlined, color: AppTokens.primaryStrong),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('已成為了苔間的回憶。', style: TextStyle(fontWeight: FontWeight.w700)),
+                        if (animal.memorialAt != null)
+                          Text(
+                            formatDateTime(animal.memorialAt!, timezone),
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        if (animal.memorialNote != null && animal.memorialNote!.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(animal.memorialNote!),
+                          ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '紀錄保留，提醒與新增照護已停止。',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (animal.notes != null && animal.notes!.isNotEmpty) ...[
             const SizedBox(height: 12),
             MossCard(
@@ -132,6 +174,7 @@ class AnimalDetailScreen extends ConsumerWidget {
           ],
           const SizedBox(height: 22),
           _LineageSection(animal: animal, isOwner: isOwner, lineage: lineageAsync),
+          if (!animal.isMemorial) ...[
           const SizedBox(height: 22),
           const _SectionTitle(title: '快速紀錄'),
           const SizedBox(height: 10),
@@ -174,12 +217,15 @@ class AnimalDetailScreen extends ConsumerWidget {
               ],
             ),
           ),
+          ],
           const SizedBox(height: 26),
           Row(
             children: [
               const Expanded(child: _SectionTitle(title: '提醒')),
               TextButton.icon(
-                onPressed: () => context.push('/reminders/new?animalId=${animal.id}'),
+                onPressed: animal.isMemorial
+                    ? null
+                    : () => context.push('/reminders/new?animalId=${animal.id}'),
                 icon: const Icon(Icons.add, size: 18),
                 label: const Text('新增'),
               ),
@@ -252,6 +298,64 @@ class AnimalDetailScreen extends ConsumerWidget {
         const SnackBar(content: Text('居民資料已更新，會自動同步。')),
       );
     }
+  }
+
+  static Future<void> _memorializeAnimal(
+    BuildContext context,
+    WidgetRef ref,
+    Animal animal,
+  ) async {
+    final controller = TextEditingController();
+    final note = await showDialog<String?>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('設為紀念？'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('「${animal.name}」會移到紀念區；提醒會停用，之後不能再新增照護紀錄。這個動作無法復原。'),
+            const SizedBox(height: 14),
+            TextField(
+              controller: controller,
+              maxLines: 3,
+              maxLength: 500,
+              decoration: const InputDecoration(
+                labelText: '想留下的話（選填）',
+                alignLabelWithHint: true,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(null),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('設為紀念'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (note == null) return;
+    try {
+      await ref.read(animalRepositoryProvider).memorialize(animal, note: note);
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('設定失敗：$error')),
+        );
+      }
+      return;
+    }
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('已設為紀念，會自動同步。')),
+    );
+    context.go('/animals');
   }
 
   static Future<void> _archiveAnimal(
@@ -605,7 +709,7 @@ class _LineageRow extends StatelessWidget {
   }
 }
 
-enum _AnimalAdminAction { archive, delete }
+enum _AnimalAdminAction { memorialize, archive, delete }
 
 class _AnimalEditSheet extends ConsumerStatefulWidget {
   const _AnimalEditSheet({required this.animal});

@@ -101,6 +101,20 @@ class AnimalRepository {
       targetId: 'animal:${animal.id}',
     );
   }
+
+  Future<void> memorialize(Animal animal, {String? note}) async {
+    if (householdId == null) throw StateError('No household');
+    await commands.submit(
+      'animal.memorialize',
+      {
+        'animalId': animal.id,
+        if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+      },
+      householdId: householdId,
+      baseRevision: animal.revision,
+      targetId: 'animal:${animal.id}',
+    );
+  }
 }
 
 final animalRepositoryProvider = Provider<AnimalRepository>((ref) {

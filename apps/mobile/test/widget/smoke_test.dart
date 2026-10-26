@@ -81,6 +81,33 @@ void main() {
     await _finish(tester, harness);
   });
 
+  testWidgets('Memorial residents are separated and read-only', (tester) async {
+    final harness = await createTestHarness();
+    addTearDown(harness.dispose);
+    final slow = harness.store.animals['animal_slow']!;
+    harness.store.animals['animal_slow'] = slow.copyWith(
+      status: 'memorial',
+      memorialAt: DateTime.utc(2026, 10, 20),
+      memorialNote: '謝謝慢慢。',
+    );
+
+    await tester.pumpWidget(wrapScreen(harness, const AnimalsScreen()));
+    await tester.pumpAndSettle();
+    expect(find.text('紀念'), findsOneWidget);
+    expect(find.textContaining('慢慢'), findsOneWidget);
+
+    await tester.pumpWidget(
+      wrapScreen(harness, const AnimalDetailScreen(animalId: 'animal_slow')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('已成為了苔間的回憶。', findRichText: true), findsOneWidget);
+    expect(find.text('謝謝慢慢。'), findsOneWidget);
+    expect(find.byTooltip('編輯居民'), findsNothing);
+    expect(find.byTooltip('居民管理'), findsNothing);
+
+    await _finish(tester, harness);
+  });
+
   testWidgets('Animals shows every seeded resident', (tester) async {
     final harness = await createTestHarness();
     addTearDown(harness.dispose);
