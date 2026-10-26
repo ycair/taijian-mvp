@@ -34,8 +34,8 @@ and Widgets deferred:
 
 ## Verification
 
-- Flutter analyzer clean; planner/weekly widget tests.
-- iOS Profile build and physical-device launch.
+- Flutter analyzer clean; 86 tests, including notification planner and weekly overview.
+- iOS Profile build, install, and launch verified on the physical iPhone.
 - Existing Deno/Supabase tests are unaffected.
 
 ## Deferred
