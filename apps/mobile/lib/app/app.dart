@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme/app_theme.dart';
+import 'notification_sync.dart';
 import 'outbox_sync.dart';
 import 'router.dart';
 
@@ -12,7 +13,8 @@ class TaijianApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
-    return OutboxAutoSync(
+    return LocalNotificationSync(
+      child: OutboxAutoSync(
       child: MaterialApp.router(
         title: '苔間',
         debugShowCheckedModeBanner: false,
@@ -25,6 +27,7 @@ class TaijianApp extends ConsumerWidget {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
+      ),
       ),
     );
   }

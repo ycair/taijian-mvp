@@ -155,6 +155,26 @@ final todayCompletionsProvider = StreamProvider<List<Completion>>((ref) {
       .watchCompletions(id, from: window.from, to: window.to);
 });
 
+class WeekWindow {
+  const WeekWindow({required this.from, required this.to});
+
+  final String from;
+  final String to;
+
+  @override
+  bool operator ==(Object other) =>
+      other is WeekWindow && other.from == from && other.to == to;
+
+  @override
+  int get hashCode => Object.hash(from, to);
+}
+
+final weekCompletionsProvider = StreamProvider.family<List<Completion>, WeekWindow>((ref, window) {
+  final id = ref.watch(householdIdProvider);
+  if (id == null) return Stream<List<Completion>>.value(const []);
+  return ref.watch(readStoreProvider).watchCompletions(id, from: window.from, to: window.to);
+});
+
 final todayTasksProvider = Provider<AsyncValue<List<TodayTask>>>((ref) {
   final reminders = ref.watch(remindersProvider);
   final animals = ref.watch(animalsProvider);
