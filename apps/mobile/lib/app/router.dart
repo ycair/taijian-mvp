@@ -13,6 +13,7 @@ import '../features/records/animal_analytics_screen.dart';
 import '../features/records/household_analytics_screen.dart';
 import '../features/journal/journal_detail_screen.dart';
 import '../features/map/map_screen.dart';
+import '../features/proposals/proposals_screen.dart';
 import '../features/journal/journal_editor_screen.dart';
 import '../features/journal/journal_screen.dart';
 import '../features/records/records_screen.dart';
@@ -81,6 +82,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/journal/:entryId',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => JournalDetailScreen(entryId: state.pathParameters['entryId']!),
+      ),
+      GoRoute(
+        path: '/proposals',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ProposalsScreen(),
       ),
       GoRoute(
         path: '/map',

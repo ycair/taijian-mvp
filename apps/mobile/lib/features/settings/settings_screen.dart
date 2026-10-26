@@ -321,6 +321,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             child: MossCard(
               child: Column(
                 children: [
+                  _SettingRow(
+                    icon: Icons.campaign_outlined,
+                    title: '提案與附議',
+                    value: '一起決定苔間接下來要做什麼',
+                    onTap: () => context.push('/proposals'),
+                  ),
                   const _SettingRow(
                     icon: Icons.eco_outlined,
                     title: '苔間',
