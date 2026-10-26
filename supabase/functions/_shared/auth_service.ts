@@ -217,6 +217,13 @@ export async function refreshSession(refreshToken: string): Promise<AuthLoginRes
   });
 }
 
+export async function listIdentities(profileId: string): Promise<string[]> {
+  const rows = await sql`
+    select provider from public.auth_identities where profile_id = ${profileId} order by provider
+  `;
+  return rows.map((row: any) => row.provider as string);
+}
+
 export async function linkIdentity(
   profileId: string,
   provider: LinkProvider,

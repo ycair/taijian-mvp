@@ -1,6 +1,6 @@
 import { corsHeaders, json } from './http.ts';
 import { AuthProviderError, verifyGoogleToken, verifyLineToken } from './auth_providers.ts';
-import { AuthServiceError, deleteAccount, linkIdentity, loginAsGuest, loginWithProvider, logout, refreshSession, unlinkIdentity } from './auth_service.ts';
+import { AuthServiceError, deleteAccount, linkIdentity, listIdentities, loginAsGuest, loginWithProvider, logout, refreshSession, unlinkIdentity } from './auth_service.ts';
 import { verifyAccessTokenFromRequest } from './auth_tokens.ts';
 import { sql } from './db.ts';
 
@@ -151,6 +151,12 @@ export async function handleAuth(request: Request): Promise<Response> {
         }
         await unlinkIdentity(claims.profileId, provider);
         return json({ ok: true });
+      }
+
+      case 'identities': {
+        const claims = await verifyAccessTokenFromRequest(request);
+        if (!claims) return json({ ok: false, code: 'UNAUTHENTICATED', message: 'UNAUTHENTICATED' });
+        return json({ ok: true, providers: await listIdentities(claims.profileId) });
       }
 
       case 'logout': {
