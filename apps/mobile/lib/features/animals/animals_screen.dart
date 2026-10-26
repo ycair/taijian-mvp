@@ -260,6 +260,11 @@ class _AnimalsScreenState extends ConsumerState<AnimalsScreen> {
                       child: const Text('查看'),
                     ),
                     IconButton(
+                      tooltip: '苔間地圖',
+                      onPressed: () => context.push('/map'),
+                      icon: const Icon(Icons.map_outlined, size: 19),
+                    ),
+                    IconButton(
                       tooltip: '家庭分析',
                       onPressed: () => context.push('/records/analytics'),
                       icon: const Icon(Icons.insights_outlined, size: 19),

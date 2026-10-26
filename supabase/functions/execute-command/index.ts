@@ -1242,6 +1242,136 @@ Deno.serve(async (request) => {
           break;
         }
 
+        case 'map.ensureDefaults': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          await requireMember(tx, householdId, userId);
+          const [existing] = await tx`
+            select count(*)::int as count from map_zones
+            where household_id = ${householdId} and deleted_at is null
+          `;
+          if (existing.count === 0) {
+            const defaults = [
+              ['苔庭', 0.06, 0.08, 0.38, 0.34, '#EEF4E8'],
+              ['水盆', 0.55, 0.09, 0.36, 0.3, '#DDEAF0'],
+              ['躲藏', 0.1, 0.55, 0.34, 0.34, '#F4E5C8'],
+              ['曬台', 0.55, 0.5, 0.35, 0.36, '#F7DFC8'],
+            ];
+            for (let index = 0; index < defaults.length; index++) {
+              const [name, x, y, w, h, color] = defaults[index];
+              await tx`insert into map_zones
+                       (household_id, name, x, y, w, h, color, sort_order, created_by, updated_by)
+                       values (${householdId}, ${name}, ${x}, ${y}, ${w}, ${h}, ${color}, ${index * 10}, ${userId}, ${userId})`;
+            }
+          }
+          response = ok(envelope.commandId, { seeded: existing.count === 0 });
+          break;
+        }
+
+        case 'map.zone.create': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          await requireMember(tx, householdId, userId);
+          const name = String(payload.name ?? '').trim().slice(0, 40);
+          const number = (key: string, fallback: number) => Number(payload[key] ?? fallback);
+          const x = number('x', 0.5);
+          const y = number('y', 0.5);
+          const w = number('w', 0.25);
+          const h = number('h', 0.25);
+          if (!name || x < 0 || x > 1 || y < 0 || y > 1 || w <= 0 || w > 1 || h <= 0 || h > 1) {
+            throw Object.assign(new Error('invalid map zone'), { code: 'VALIDATION_ERROR' });
+          }
+          const id = crypto.randomUUID();
+          const color = String(payload.color ?? '#EEF4E8').slice(0, 20);
+          await tx`insert into map_zones
+                   (id, household_id, name, x, y, w, h, color, created_by, updated_by)
+                   values (${id}, ${householdId}, ${name}, ${x}, ${y}, ${w}, ${h}, ${color}, ${userId}, ${userId})`;
+          await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, after, command_id, source)
+                   values (${householdId}, ${userId}, 'map.zone.create', 'map_zone', ${id},
+                   ${tx.json({ name, x, y, w, h })}, ${envelope.commandId}, 'ios')`;
+          response = ok(envelope.commandId, { zoneId: id }, 0);
+          break;
+        }
+
+        case 'map.zone.update': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          await requireMember(tx, householdId, userId);
+          const zoneId = String(payload.zoneId ?? '');
+          const [zone] = await tx`
+            select * from map_zones
+            where id = ${zoneId} and household_id = ${householdId} and deleted_at is null
+            for update
+          `;
+          if (!zone) throw Object.assign(new Error('zone not found'), { code: 'NOT_FOUND' });
+          if (envelope.baseRevision !== undefined && envelope.baseRevision !== zone.revision) {
+            throw Object.assign(new Error('revision conflict'), { code: 'CONFLICT', currentRevision: zone.revision });
+          }
+          const number = (key: string, fallback: number) => Number(payload[key] ?? fallback);
+          const name = payload.name == null ? zone.name : String(payload.name).trim().slice(0, 40);
+          const x = number('x', Number(zone.x));
+          const y = number('y', Number(zone.y));
+          const w = number('w', Number(zone.w));
+          const h = number('h', Number(zone.h));
+          if (!name || x < 0 || x > 1 || y < 0 || y > 1 || w <= 0 || w > 1 || h <= 0 || h > 1) {
+            throw Object.assign(new Error('invalid map zone'), { code: 'VALIDATION_ERROR' });
+          }
+          const color = payload.color == null ? zone.color : String(payload.color).slice(0, 20);
+          await tx`update map_zones set
+                     name = ${name}, x = ${x}, y = ${y}, w = ${w}, h = ${h}, color = ${color},
+                     revision = revision + 1, updated_by = ${userId}, updated_at = now()
+                   where id = ${zoneId}`;
+          await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, after, command_id, source)
+                   values (${householdId}, ${userId}, 'map.zone.update', 'map_zone', ${zoneId},
+                   ${tx.json({ name, x, y, w, h, color })}, ${envelope.commandId}, 'ios')`;
+          response = ok(envelope.commandId, { zoneId, revision: zone.revision + 1 }, zone.revision + 1);
+          break;
+        }
+
+        case 'map.zone.delete': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          await requireMember(tx, householdId, userId);
+          const zoneId = String(payload.zoneId ?? '');
+          const [zone] = await tx`
+            select revision from map_zones
+            where id = ${zoneId} and household_id = ${householdId} and deleted_at is null
+            for update
+          `;
+          if (!zone) throw Object.assign(new Error('zone not found'), { code: 'NOT_FOUND' });
+          if (envelope.baseRevision !== undefined && envelope.baseRevision !== zone.revision) {
+            throw Object.assign(new Error('revision conflict'), { code: 'CONFLICT', currentRevision: zone.revision });
+          }
+          await tx`update map_zones set deleted_at = now(), revision = revision + 1, updated_by = ${userId}, updated_at = now()
+                   where id = ${zoneId}`;
+          await tx`update animal_positions set zone_id = null where zone_id = ${zoneId} and household_id = ${householdId}`;
+          await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, command_id, source)
+                   values (${householdId}, ${userId}, 'map.zone.delete', 'map_zone', ${zoneId}, ${envelope.commandId}, 'ios')`;
+          response = ok(envelope.commandId, { zoneId, revision: zone.revision + 1 }, zone.revision + 1);
+          break;
+        }
+
+        case 'map.move': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          await requireMember(tx, householdId, userId);
+          const animalId = String(payload.animalId ?? '');
+          const [animal] = await tx`
+            select status from animals
+            where id = ${animalId} and household_id = ${householdId} and deleted_at is null
+          `;
+          if (!animal || animal.status !== 'active') {
+            throw Object.assign(new Error('active animal not found'), { code: 'NOT_FOUND' });
+          }
+          const x = Number(payload.x ?? 0.5);
+          const y = Number(payload.y ?? 0.5);
+          if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || x > 1 || y < 0 || y > 1) {
+            throw Object.assign(new Error('invalid map position'), { code: 'VALIDATION_ERROR' });
+          }
+          await tx`insert into animal_positions (animal_id, household_id, x, y, updated_by, updated_at)
+                   values (${animalId}, ${householdId}, ${x}, ${y}, ${userId}, now())
+                   on conflict (animal_id) do update set
+                     household_id = excluded.household_id, x = excluded.x, y = excluded.y,
+                     updated_by = excluded.updated_by, updated_at = now()`;
+          response = ok(envelope.commandId, { animalId, x, y });
+          break;
+        }
+
         case 'points.checkIn': {
           if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
           await requireMember(tx, householdId, userId);
