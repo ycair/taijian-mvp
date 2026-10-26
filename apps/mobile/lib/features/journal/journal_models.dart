@@ -29,6 +29,9 @@ class JournalEntry {
     required this.revision,
     required this.createdBy,
     required this.createdAt,
+    this.visibility = 'household',
+    this.shareToken,
+    this.publishedAt,
   });
 
   factory JournalEntry.fromMap(Map<String, dynamic> map) {
@@ -52,6 +55,9 @@ class JournalEntry {
       revision: readInt(map, 'revision'),
       createdBy: readString(map, 'createdBy'),
       createdAt: readDate(map, 'createdAt') ?? DateTime.now().toUtc(),
+      visibility: readString(map, 'visibility', 'household'),
+      shareToken: readString(map, 'shareToken').isEmpty ? null : readString(map, 'shareToken'),
+      publishedAt: readDate(map, 'publishedAt'),
     );
   }
 
@@ -66,6 +72,9 @@ class JournalEntry {
   final int revision;
   final String createdBy;
   final DateTime createdAt;
+  final String visibility;
+  final String? shareToken;
+  final DateTime? publishedAt;
 
   String? get effectiveCoverPath {
     if (coverPath != null && photos.any((photo) => photo.path == coverPath)) return coverPath;
@@ -80,6 +89,8 @@ class JournalEntry {
     List<JournalPhoto>? photos,
     String? coverPath,
     int? revision,
+    String? visibility,
+    String? shareToken,
   }) {
     return JournalEntry(
       id: id,
@@ -91,8 +102,24 @@ class JournalEntry {
       photos: photos ?? this.photos,
       coverPath: coverPath ?? this.coverPath,
       revision: revision ?? this.revision,
+      visibility: visibility ?? this.visibility,
+      shareToken: shareToken ?? this.shareToken,
       createdBy: createdBy,
       createdAt: createdAt,
+      publishedAt: publishedAt,
     );
   }
+}
+
+
+extension JournalVisibility on JournalEntry {
+  String get visibilityLabel => switch (visibility) {
+    'link' => '僅連結可見',
+    'public' => '公開',
+    _ => '家庭可見',
+  };
+
+  String? get publicUrl => shareToken == null
+      ? null
+      : 'https://heartfelt-sherbet-c689e3.netlify.app/s/$shareToken';
 }

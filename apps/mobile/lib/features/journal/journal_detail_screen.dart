@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
@@ -43,6 +44,12 @@ class JournalDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('旅程'),
         actions: [
+          if (entry.publicUrl != null)
+            IconButton(
+              tooltip: '複製分享連結',
+              onPressed: () => _copyLink(context, entry),
+              icon: const Icon(Icons.link),
+            ),
           IconButton(
             tooltip: '分享旅程',
             onPressed: () => _share(entry),
@@ -86,7 +93,13 @@ class JournalDetailScreen extends ConsumerWidget {
               child: const AspectRatio(aspectRatio: 4 / 3, child: _LargePlaceholder()),
             ),
           const SizedBox(height: 18),
-          Text(entry.journalDate, style: Theme.of(context).textTheme.bodySmall),
+          Row(
+            children: [
+              Text(entry.journalDate, style: Theme.of(context).textTheme.bodySmall),
+              const SizedBox(width: 8),
+              _VisibilityBadge(label: entry.visibilityLabel),
+            ],
+          ),
           const SizedBox(height: 3),
           Text(entry.title, style: Theme.of(context).textTheme.headlineSmall),
           if (entry.animalIds.isNotEmpty) ...[
@@ -146,12 +159,30 @@ class JournalDetailScreen extends ConsumerWidget {
     try {
       await SharePlus.instance.share(
         ShareParams(
-          text: '苔間旅程 · ${entry.title}\n${entry.journalDate}\n\n${entry.body}',
+          text: [
+            '苔間旅程 · ${entry.title}',
+            entry.journalDate,
+            '',
+            entry.body,
+            if (entry.publicUrl != null) '',
+            if (entry.publicUrl != null) entry.publicUrl!,
+          ].join('\n'),
           subject: entry.title,
         ),
       );
     } catch (_) {
       // The system share sheet can be unavailable on simulators.
+    }
+  }
+
+  Future<void> _copyLink(BuildContext context, JournalEntry entry) async {
+    final url = entry.publicUrl;
+    if (url == null) return;
+    await Clipboard.setData(ClipboardData(text: url));
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('分享連結已複製。')),
+      );
     }
   }
 
@@ -204,6 +235,28 @@ class _LargePlaceholder extends StatelessWidget {
       ),
       child: const Center(
         child: Icon(Icons.menu_book_outlined, size: 56, color: AppTokens.primaryStrong),
+      ),
+    );
+  }
+}
+
+
+class _VisibilityBadge extends StatelessWidget {
+  const _VisibilityBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppTokens.successBg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTokens.primaryStrong),
       ),
     );
   }

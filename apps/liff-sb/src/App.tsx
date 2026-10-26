@@ -9,6 +9,7 @@ import { AnimalsPage } from './pages/AnimalsPage';
 import { AnimalDetailPage } from './pages/AnimalDetailPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { InvitePage } from './pages/InvitePage';
+import { PublicJournalFeedPage, PublicJournalPage } from './pages/PublicJournalPage';
 
 type AppState = {
   token: string;
@@ -268,9 +269,18 @@ function Shell() {
 export function App() {
   return (
     <BrowserRouter>
-      <AppProvider>
-        <Shell />
-      </AppProvider>
+      <Routes>
+        <Route path="/s/:token" element={<PublicJournalPage />} />
+        <Route path="/feed" element={<PublicJournalFeedPage />} />
+        <Route
+          path="*"
+          element={
+            <AppProvider>
+              <Shell />
+            </AppProvider>
+          }
+        />
+      </Routes>
     </BrowserRouter>
   );
 }

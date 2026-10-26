@@ -30,6 +30,7 @@ class _JournalEditorScreenState extends ConsumerState<JournalEditorScreen> {
   final _selectedAnimalIds = <String>{};
   DateTime _date = DateTime.now();
   String? _coverToken;
+  String _visibility = 'household';
   bool _hydrated = false;
   bool _busy = false;
 
@@ -61,6 +62,7 @@ class _JournalEditorScreenState extends ConsumerState<JournalEditorScreen> {
           ..clear()
           ..addAll(entry.photos.map((photo) => _PhotoDraft.existing(photo)));
         _coverToken = entry.coverPath ?? (entry.photos.isEmpty ? null : entry.photos.first.path);
+        _visibility = entry.visibility;
       });
     });
   }
@@ -148,6 +150,7 @@ class _JournalEditorScreenState extends ConsumerState<JournalEditorScreen> {
           animalIds: _selectedAnimalIds.toList(growable: false),
           photos: photos,
           coverPath: coverPath,
+          visibility: _visibility,
         );
       } else {
         await repository.update(
@@ -158,6 +161,7 @@ class _JournalEditorScreenState extends ConsumerState<JournalEditorScreen> {
           animalIds: _selectedAnimalIds.toList(growable: false),
           photos: photos,
           coverPath: coverPath,
+          visibility: _visibility,
         );
         for (final path in initialPaths) {
           if (!photos.any((photo) => photo.path == path)) await repository.deletePhoto(path);
@@ -263,6 +267,27 @@ class _JournalEditorScreenState extends ConsumerState<JournalEditorScreen> {
                             }),
                           ),
                       ],
+                    ),
+                    const SizedBox(height: 20),
+                    Text('誰可以看到', style: Theme.of(context).textTheme.labelLarge),
+                    const SizedBox(height: 8),
+                    SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(value: 'household', label: Text('家庭')),
+                        ButtonSegment(value: 'link', label: Text('連結')),
+                        ButtonSegment(value: 'public', label: Text('公開')),
+                      ],
+                      selected: {_visibility},
+                      onSelectionChanged: (value) => setState(() => _visibility = value.first),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      switch (_visibility) {
+                        'link' => '只有拿到連結的人可以讀取，不會出現在公開 feed。',
+                        'public' => '會出現在公開旅程 feed；發布前請確認照片與文字可以公開。',
+                        _ => '只有家庭成員可以讀取。',
+                      },
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 20),
                     Row(
