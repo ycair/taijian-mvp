@@ -48,9 +48,16 @@ class SupabaseAuthService implements AuthService {
   AppUser? get currentUser => _current;
 
   @override
-  Stream<AppUser?> authStateChanges() async* {
-    yield _current;
-    yield* _controller.stream;
+  Stream<AppUser?> authStateChanges() {
+    return Stream<AppUser?>.multi((controller) {
+      final subscription = _controller.stream.listen(
+        controller.add,
+        onError: controller.addError,
+        onDone: controller.close,
+      );
+      controller.add(_current);
+      controller.onCancel = subscription.cancel;
+    });
   }
 
   Future<void> initialize() async {

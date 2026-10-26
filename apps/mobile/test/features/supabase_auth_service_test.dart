@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mobile/core/config/app_config.dart';
+import 'package:mobile/core/models/models.dart';
 import 'package:mobile/data/supabase/google_sdk_adapter.dart';
 import 'package:mobile/data/supabase/line_sdk_adapter.dart';
 import 'package:mobile/data/supabase/secure_token_store.dart';
@@ -251,6 +252,38 @@ void main() {
     expect(google.iosClientId, 'ios-client');
     expect(google.serverClientId, 'server-client');
     expect(store.refreshToken, 'google-refresh');
+  });
+
+  test('auth state stream receives a login after its initial null', () async {
+    final store = MemoryTokenStore();
+    final service = auth(
+      line: FakeLineSdk(),
+      store: store,
+      handler: (_) async => jsonResponse({
+        'ok': true,
+        'accessToken': 'access',
+        'refreshToken': 'refresh',
+        'sessionId': 'session',
+        'userId': 'u1',
+        'profile': {
+          'id': 'u1',
+          'displayName': '苔間使用者',
+          'avatarUrl': null,
+          'timezone': 'Asia/Taipei',
+          'defaultHouseholdId': null,
+        },
+      }),
+    );
+    final events = <AppUser?>[];
+    final subscription = service.authStateChanges().listen(events.add);
+    addTearDown(subscription.cancel);
+    await Future<void>.delayed(Duration.zero);
+
+    await service.signInAsGuest();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(events.first, isNull);
+    expect(events.last?.uid, 'u1');
   });
 
   test('missing native ID token does not store a token', () async {
