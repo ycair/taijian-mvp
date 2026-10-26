@@ -36,8 +36,9 @@ line3rdp.app.taijian.mobile
 5. `SupabaseReadStore` polls PostgREST; writes use `execute-command`.
 6. The existing outbox keeps writes idempotent and retryable.
 
-The custom JWT currently expires after 2 hours; a production build should add a
-refresh path or move to Supabase Auth.
+The custom JWT currently expires after 2 hours; Spec 1
+(`2026-10-26-taijian-foundation-identity-design.md`) replaces this with a
+refresh-token session.
 
 ## Build
 
@@ -56,10 +57,12 @@ Do **not** put the Supabase secret key or `JWT_SECRET` in the app.
 
 ### Personal-team local installs
 
-Release/Profile keep the Sign in with Apple entitlement for App Store builds.
-A personal Apple team cannot provision that capability. For a local Profile
-install, temporarily point the Profile build at `RunnerDebug.entitlements`,
-build, then revert the Xcode project change:
+Apple sign-in, TestFlight, App Store distribution, APNs remote push, and real
+StoreKit/IAP are **deferred**; current iOS delivery is a local Profile install
+only. The Xcode project still carries the legacy Sign in with Apple entitlement
+while the Firebase path exists. A personal Apple team cannot provision that
+capability, so for a local Profile install temporarily point the Profile build
+at `RunnerDebug.entitlements`, build, then revert the Xcode project change:
 
 ```bash
 # local-only; do not commit

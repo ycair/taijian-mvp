@@ -15,7 +15,7 @@ journal, map, proposals, shop, subscription, or points.
 
 ## 2. Decisions
 
-- iOS supports **LINE, Apple, Google, and guest** sign-in.
+- iOS supports **LINE, Google, and guest** sign-in. Apple sign-in is deferred.
 - An external identity that already belongs to another profile is **rejected**,
   never auto-merged. The user must sign into the original account first.
 - The existing custom-JWT + Postgres RLS model stays. Supabase Auth is not the
@@ -26,14 +26,17 @@ journal, map, proposals, shop, subscription, or points.
 - UI continues the original 苔間 warm hand-drawn direction. No original pixel art,
   sprites, screenshots, copy, or branding is copied.
 - Commerce/subscription are sandbox/manual for the demo; not in this spec.
-- Apple sign-in code can be written now, but physical-device verification and
-  TestFlight require a paid Apple Developer team.
+- Apple sign-in, TestFlight, App Store distribution, APNs remote push, and real
+  StoreKit/IAP are deferred until a paid Apple Developer Program membership exists.
+  Current iOS work is local Profile installation only.
 
 ## 3. Non-goals
 
 - Merging two existing profiles or two households automatically.
 - Admin console for account moderation.
-- Push notification delivery, Widgets, Share Extension.
+- Apple sign-in, TestFlight, App Store distribution, APNs remote push.
+- Real StoreKit/IAP and App Store subscription verification.
+- Widgets, Share Extension.
 - Journal/media, map, proposals, shop, points, subscriptions.
 - Android.
 
@@ -50,6 +53,7 @@ create table auth_identities (
   id uuid primary key default gen_random_uuid(),
   profile_id uuid not null references profiles(id) on delete cascade,
   provider text not null check (provider in ('line','apple','google','guest')),
+  -- apple is reserved for future re-enablement; no Apple flow is exposed now.
   subject text not null,
   created_at timestamptz not null default now(),
   last_used_at timestamptz,
@@ -58,8 +62,8 @@ create table auth_identities (
 create index auth_identities_profile_idx on auth_identities(profile_id);
 ```
 
-- `subject` is the provider's stable subject: LINE `sub`, Apple `sub`, Google `sub`,
-  or a server-generated guest UUID.
+- `subject` is the provider's stable subject: LINE `sub`, Google `sub`, or a
+  server-generated guest UUID. Apple is reserved for future re-enablement.
 - `profiles.line_sub` and `line_users` stay during migration for Bot compatibility.
   New code treats `auth_identities` as the source of truth.
 
@@ -107,7 +111,7 @@ create index auth_sessions_profile_idx on auth_sessions(profile_id);
 - `/auth/link` with an identity already linked to another profile returns
   `IDENTITY_ALREADY_LINKED`; no data is moved.
 - Cannot unlink the last usable login method.
-- A guest can link LINE/Apple/Google and keep the same profile.
+- A guest can link LINE or Google and keep the same profile.
 - A user can link multiple identities to one profile; deleting one identity does
   not delete the profile unless it is the last identity and deletion is requested.
 - Signing in with any linked identity returns the same `profile.id`.
@@ -124,7 +128,6 @@ release; it delegates to `auth` with `action=line`.
 |---|---|
 | `JWT_SECRET` | HS256 signing/verification for access JWTs |
 | `LINE_LOGIN_CHANNEL_ID` | LINE ID-token audience |
-| `APPLE_BUNDLE_ID` | Apple ID-token audience (`app.taijian.mobile`) |
 | `GOOGLE_IOS_CLIENT_ID` | Google ID-token audience |
 | `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` | server-side user/session writes |
 | `SUPABASE_DB_URL` | transactions for sessions/identities |
@@ -137,7 +140,6 @@ provider requires it; LINE ID-token verification uses the public channel ID.
 | Action | Input | Output |
 |---|---|---|
 | `line` | `idToken`, `platform` | access/refresh tokens + profile |
-| `apple` | `identityToken`, `nonce`, `platform` | access/refresh tokens + profile |
 | `google` | `idToken`, `platform` | access/refresh tokens + profile |
 | `guest` | `platform` | access/refresh tokens + new guest profile |
 | `refresh` | `refreshToken` | rotated access/refresh tokens |
@@ -150,8 +152,6 @@ provider requires it; LINE ID-token verification uses the public channel ID.
 
 - **LINE:** `POST https://api.line.me/oauth2/v2.1/verify` with
   `LINE_LOGIN_CHANNEL_ID`; check `aud`, `sub`, `exp`.
-- **Apple:** verify RS256 against Apple JWKS; check
-  `iss=https://appleid.apple.com`, `aud=app.taijian.mobile`, `exp`, and nonce hash.
 - **Google:** verify against Google JWKS; check `aud` equals the configured iOS
   OAuth client ID and `exp`.
 - **Guest:** server creates a profile + `guest` identity and a session.
@@ -208,7 +208,6 @@ Rules:
   `deleteAccount`, and `refreshSession`.
 - Provider adapters:
   - LINE: existing `flutter_line_sdk`.
-  - Apple: existing `sign_in_with_apple`.
   - Google: existing `google_sign_in`.
 - `SupabaseAuthService`:
   - stores access + refresh tokens in Keychain;
@@ -247,7 +246,6 @@ Rules:
 - Use constant-time comparison for refresh hashes where applicable.
 - Rate-limit auth endpoints; return generic errors for unknown identities.
 - Account deletion revokes all sessions and schedules data purge.
-- Apple nonce validation is mandatory.
 - Google audience must be the iOS OAuth client ID, not a web client.
 
 ## 9. Migration
@@ -265,7 +263,7 @@ Rules:
 
 - Each provider creates a session and returns the same profile on repeat sign-in.
 - Duplicate identity link returns `IDENTITY_ALREADY_LINKED` without moving data.
-- Guest → LINE/Apple/Google link works.
+- Guest → LINE/Google link works.
 - Last identity cannot be unlinked.
 - Refresh rotates and rejects the old refresh token.
 - Revoked/disabled session cannot refresh or execute sensitive commands.
@@ -284,14 +282,13 @@ Rules:
 ### Device
 
 - LINE, Google, guest on personal team.
-- Apple sign-in only after paid Apple Developer team and capability provisioning.
+- Apple sign-in is out of scope; do not add its capability or test path.
 - Verify token refresh by shortening access lifetime in a test build.
 - Verify LIFF compatibility with existing user.
 
 ## 11. Acceptance criteria
 
-- All four iOS login options are present; Apple is code-complete but device-blocked
-  until the paid team exists.
+- LINE, Google, and guest login options are present; Apple is not exposed.
 - A user signing in with any linked provider lands on the same profile, household,
   and animals.
 - Signing in with a provider already linked to another profile is rejected with a
@@ -304,8 +301,7 @@ Rules:
 
 ## 12. Risks / open items
 
-- **Apple capability:** Sign in with Apple requires a paid team; test device work
-  is blocked until then.
+- **Apple/App Store:** deferred; no paid-team dependency for the current scope.
 - **Google client configuration:** need a real iOS OAuth client ID and URL scheme;
   the current Info.plist has a placeholder.
 - **Refresh token security:** custom auth is sensitive; the implementation must not
@@ -314,7 +310,8 @@ Rules:
   can design an explicit data-merge flow as a separate spec.
 - **LIFF localStorage:** XSS would expose refresh tokens; keep the LIFF surface
   minimal and revisit a BFF/secure cookie if needed.
-- **Remote push/TestFlight:** separate paid-team blocker.
+- **Remote push/TestFlight/App Store:** deferred. Local notifications only; iOS
+  installs are local Profile builds. Real StoreKit/IAP is deferred too.
 
 ## 13. Program roadmap
 
