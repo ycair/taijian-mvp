@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { BrowserRouter, Navigate, NavLink, Route, Routes } from 'react-router-dom';
 import { makeClient } from './lib/supabase';
-import { loginWithLine } from './lib/api';
+import { loginWithLine, logoutSession, refreshSessionToken, tokenExpiryMs } from './lib/api';
 import { getLineIdToken } from './lib/liff';
 import type { Household, Profile } from './lib/types';
 import { TodayPage } from './pages/TodayPage';
@@ -22,10 +22,32 @@ type AppState = {
 
 const AppContext = createContext<AppState | null>(null);
 
+const ACCESS_KEY = 'sb_access';
+const REFRESH_KEY = 'sb_refresh';
+const USER_KEY = 'sb_user';
+
 export function useApp(): AppState {
   const value = useContext(AppContext);
   if (!value) throw new Error('AppContext missing');
   return value;
+}
+
+function saveSession(accessToken: string, refreshToken: string, userId: string): void {
+  localStorage.setItem(ACCESS_KEY, accessToken);
+  localStorage.setItem(REFRESH_KEY, refreshToken);
+  localStorage.setItem(USER_KEY, userId);
+  localStorage.removeItem('sb_token');
+}
+
+function storedAccessToken(): string | null {
+  return localStorage.getItem(ACCESS_KEY) ?? localStorage.getItem('sb_token');
+}
+
+function clearStoredSession(): void {
+  localStorage.removeItem(ACCESS_KEY);
+  localStorage.removeItem(REFRESH_KEY);
+  localStorage.removeItem(USER_KEY);
+  localStorage.removeItem('sb_token');
 }
 
 async function loadProfileAndHouseholds(token: string, userId: string) {
@@ -52,6 +74,24 @@ async function loadProfileAndHouseholds(token: string, userId: string) {
   return { profile: profile as Profile, households, householdId };
 }
 
+async function loadWithRefresh(accessToken: string, refreshToken: string | null, userId: string) {
+  try {
+    return { accessToken, ...(await loadProfileAndHouseholds(accessToken, userId)) };
+  } catch (error) {
+    if (!refreshToken) throw error;
+    const refreshed = await refreshSessionToken(refreshToken);
+    if (!refreshed.ok || !refreshed.accessToken || !refreshed.refreshToken) {
+      throw new Error(refreshed.message ?? '登入已過期');
+    }
+    const nextUserId = refreshed.userId ?? userId;
+    saveSession(refreshed.accessToken, refreshed.refreshToken, nextUserId);
+    return {
+      accessToken: refreshed.accessToken,
+      ...(await loadProfileAndHouseholds(refreshed.accessToken, nextUserId)),
+    };
+  }
+}
+
 function LoginPage() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -62,12 +102,12 @@ function LoginPage() {
     try {
       const idToken = await getLineIdToken();
       const result = await loginWithLine(idToken);
-      if (!result.ok || !result.token || !result.userId) {
+      const accessToken = result.accessToken ?? result.token;
+      if (!result.ok || !accessToken || !result.refreshToken || !result.userId) {
         setError(result.message ?? '登入失敗');
         return;
       }
-      localStorage.setItem('sb_token', result.token);
-      localStorage.setItem('sb_user', result.userId);
+      saveSession(accessToken, result.refreshToken, result.userId);
       window.location.href = window.location.pathname + window.location.search;
     } catch (e) {
       const message = e instanceof Error ? e.message : '登入失敗';
@@ -97,34 +137,53 @@ function AppProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('sb_token');
-    const userId = localStorage.getItem('sb_user');
-    if (!token || !userId) {
+    const accessToken = storedAccessToken();
+    const refreshToken = localStorage.getItem(REFRESH_KEY);
+    const userId = localStorage.getItem(USER_KEY);
+    if (!accessToken || !userId) {
       setLoading(false);
       return;
     }
-    loadProfileAndHouseholds(token, userId)
-      .then(({ profile, households, householdId }) => {
+    loadWithRefresh(accessToken, refreshToken, userId)
+      .then(({ accessToken: nextToken, profile, households, householdId }) => {
+        const currentUserId = localStorage.getItem(USER_KEY) ?? userId;
         setState({
-          token,
-          userId,
+          token: nextToken,
+          userId: currentUserId,
           profile,
           households,
           householdId,
-          refresh: () => refresh(token, userId),
-          logout: () => {
-            localStorage.removeItem('sb_token');
-            localStorage.removeItem('sb_user');
-            window.location.href = '/';
-          },
+          refresh: () => refresh(nextToken, currentUserId),
+          logout: () => logout(nextToken),
         });
       })
       .catch(() => {
-        localStorage.removeItem('sb_token');
-        localStorage.removeItem('sb_user');
+        clearStoredSession();
       })
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!state) return;
+    const expiry = tokenExpiryMs(state.token);
+    if (!expiry) return;
+    const delay = Math.max(0, expiry - Date.now() - 4 * 60 * 1000);
+    const timer = window.setTimeout(async () => {
+      const refreshToken = localStorage.getItem(REFRESH_KEY);
+      if (!refreshToken) {
+        logout(state.token);
+        return;
+      }
+      const refreshed = await refreshSessionToken(refreshToken);
+      if (!refreshed.ok || !refreshed.accessToken || !refreshed.refreshToken) {
+        logout(state.token);
+        return;
+      }
+      saveSession(refreshed.accessToken, refreshed.refreshToken, refreshed.userId ?? state.userId);
+      window.location.reload();
+    }, delay);
+    return () => window.clearTimeout(timer);
+  }, [state?.token]);
 
   async function refresh(token: string, userId: string) {
     const { profile, households, householdId } = await loadProfileAndHouseholds(token, userId);
@@ -138,13 +197,15 @@ function AppProvider({ children }: { children: ReactNode }) {
             households,
             householdId,
             refresh: () => refresh(token, userId),
-            logout: () => {
-              localStorage.removeItem('sb_token');
-              localStorage.removeItem('sb_user');
-              window.location.href = '/';
-            },
+            logout: () => logout(token),
           },
     );
+  }
+
+  function logout(token: string) {
+    void logoutSession(token).catch(() => undefined);
+    clearStoredSession();
+    window.location.href = '/';
   }
 
   if (loading) return <div className="app">載入中…</div>;
@@ -155,7 +216,9 @@ function AppProvider({ children }: { children: ReactNode }) {
 function BottomNav() {
   return (
     <nav className="nav">
-      <NavLink to="/" end>今日</NavLink>
+      <NavLink to="/" end>
+        今日
+      </NavLink>
       <NavLink to="/animals">居民</NavLink>
       <NavLink to="/settings">設定</NavLink>
     </nav>

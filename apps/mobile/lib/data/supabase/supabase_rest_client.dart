@@ -25,6 +25,7 @@ class SupabaseRestClient {
     required this.baseUrl,
     required this.apiKey,
     required this.tokenProvider,
+    this.onUnauthorized,
     http.Client? httpClient,
     this.timeout = const Duration(seconds: 15),
   }) : _http = httpClient ?? http.Client(),
@@ -35,6 +36,7 @@ class SupabaseRestClient {
   final String baseUrl;
   final String apiKey;
   final String? Function() tokenProvider;
+  final Future<String?> Function()? onUnauthorized;
   final Duration timeout;
   final http.Client _http;
   final String _baseUrl;
@@ -46,7 +48,9 @@ class SupabaseRestClient {
     final uri = Uri.parse(
       '$_baseUrl/rest/v1/$table${query == null || query.isEmpty ? '' : '?$query'}',
     );
-    final response = await _send(() => _http.get(uri, headers: _headers()));
+    final response = await _authorized(
+      () => _http.get(uri, headers: _headers()),
+    );
     final decoded = _decode(response);
     if (decoded is! List) {
       throw const SupabaseApiException(
@@ -66,13 +70,21 @@ class SupabaseRestClient {
     Map<String, dynamic> body, {
     bool authenticated = true,
   }) async {
-    final response = await _send(
-      () => _http.post(
-        Uri.parse('$_baseUrl/functions/v1/$name'),
-        headers: _headers(authenticated: authenticated, json: true),
-        body: jsonEncode(body),
-      ),
-    );
+    final response = await (authenticated
+        ? _authorized(
+            () => _http.post(
+              Uri.parse('$_baseUrl/functions/v1/$name'),
+              headers: _headers(authenticated: authenticated, json: true),
+              body: jsonEncode(body),
+            ),
+          )
+        : _send(
+            () => _http.post(
+              Uri.parse('$_baseUrl/functions/v1/$name'),
+              headers: _headers(authenticated: authenticated, json: true),
+              body: jsonEncode(body),
+            ),
+          ));
     final decoded = _decode(response);
     if (decoded is! Map) {
       throw const SupabaseApiException(
@@ -92,6 +104,22 @@ class SupabaseRestClient {
       if (json) 'content-type': 'application/json',
       if (token != null && token.isNotEmpty) 'authorization': 'Bearer $token',
     };
+  }
+
+  Future<http.Response> _authorized(
+    Future<http.Response> Function() request,
+  ) async {
+    final response = await _send(request);
+    if (response.statusCode != 401 || onUnauthorized == null) return response;
+
+    String? refreshed;
+    try {
+      refreshed = await onUnauthorized!();
+    } catch (_) {
+      return response;
+    }
+    if (refreshed == null || refreshed.isEmpty) return response;
+    return await _send(request);
   }
 
   Future<http.Response> _send(Future<http.Response> Function() request) async {

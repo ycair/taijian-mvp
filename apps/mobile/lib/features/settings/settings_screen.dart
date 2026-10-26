@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +11,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/common.dart';
 import '../../data/command/command_attempt.dart';
 import '../../data/outbox/outbox_database.dart';
+import '../auth/auth_service.dart';
 import '../household/household_repository.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -21,13 +24,35 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _busy = false;
   final _inviteAttempt = CommandAttempt();
+  Set<String> _providers = const {};
+  bool _providersLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadProviders());
+  }
+
+  Future<void> _loadProviders() async {
+    try {
+      final providers = await ref.read(authServiceProvider).linkedProviders();
+      if (mounted) setState(() => _providers = providers);
+    } catch (_) {
+      // Leave the last known set; linking still works through the buttons.
+    } finally {
+      if (mounted) setState(() => _providersLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final config = ref.watch(appConfigProvider);
     final user = ref.watch(appUserProvider).value;
+    final currentUid = ref.watch(currentUserProvider)?.uid;
     final household = ref.watch(householdProvider).value;
     final members = ref.watch(householdMembersProvider).value ?? const <HouseholdMember>[];
+    final currentMember = members.where((member) => member.uid == currentUid).firstOrNull;
+    final isOwner = currentMember?.role == MemberRole.owner;
     final outbox = ref.watch(outboxEntriesProvider).value ?? const <OutboxEntry>[];
     final pending = outbox
         .where((entry) => entry.status == OutboxStatus.pending || entry.status == OutboxStatus.sending)
@@ -99,12 +124,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     value: timezoneLabel(user?.timezone ?? 'Asia/Taipei'),
                     onTap: () => _editProfileTimezone(user?.timezone ?? 'Asia/Taipei'),
                   ),
-                  _SettingRow(
-                    icon: Icons.link,
-                    title: '連結 LINE',
-                    value: config.liffConfigured ? '開啟 LIFF 完成連結' : '尚未設定 LIFF_URL',
-                    onTap: _linkLine,
-                  ),
+                  if (config.useSupabase)
+                    _SettingRow(
+                      icon: Icons.link,
+                      title: '已連結帳號',
+                      value: _providersLoading
+                          ? '載入中…'
+                          : _providers.isEmpty
+                          ? '尚未綁定'
+                          : _providers.map(_providerLabel).join('、'),
+                      onTap: _manageAccounts,
+                    )
+                  else
+                    _SettingRow(
+                      icon: Icons.link,
+                      title: '連結 LINE',
+                      value: config.liffConfigured ? '開啟 LIFF 完成連結' : '尚未設定 LIFF_URL',
+                      onTap: _linkLine,
+                    ),
                 ],
               ),
             ),
@@ -177,6 +214,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ],
                         ),
                         const Divider(height: 26),
+                        if (isOwner)
+                          _SettingRow(
+                            icon: Icons.group_outlined,
+                            title: '管理成員',
+                            value: '轉移屋主或移除代管人',
+                            onTap: _busy ? null : () => _manageMembers(members, currentUid),
+                          ),
                         _SettingRow(
                           icon: Icons.schedule,
                           title: '家庭時區',
@@ -252,6 +296,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     title: const Text('登出', style: TextStyle(color: AppTokens.overdue, fontWeight: FontWeight.w700)),
                     onTap: _signOut,
                   ),
+                  if (config.useSupabase)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.person_off_outlined, color: AppTokens.overdue),
+                      title: const Text(
+                        '刪除帳號',
+                        style: TextStyle(color: AppTokens.overdue, fontWeight: FontWeight.w700),
+                      ),
+                      subtitle: const Text('刪除 profile、登入綁定與可刪除的家庭資料'),
+                      onTap: _busy ? null : _deleteAccount,
+                    ),
                 ],
               ),
             ),
@@ -370,6 +425,180 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  String _providerLabel(String provider) {
+    return switch (provider) {
+      'line' => 'LINE',
+      'google' => 'Google',
+      'guest' => '訪客',
+      _ => provider,
+    };
+  }
+
+  Future<void> _manageAccounts() async {
+    final config = ref.read(appConfigProvider);
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('登入方式'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final provider in const ['line', 'google'])
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  provider == 'line' ? Icons.chat_bubble_outline : Icons.g_mobiledata,
+                  color: AppTokens.primaryStrong,
+                ),
+                title: Text(_providerLabel(provider)),
+                subtitle: provider == 'google' && !config.googleConfigured
+                    ? const Text('尚未設定 Google Client ID')
+                    : null,
+                trailing: Text(
+                  _providers.contains(provider) ? '解除' : '連結',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: provider == 'google' && !config.googleConfigured
+                        ? AppTokens.muted
+                        : AppTokens.primaryStrong,
+                  ),
+                ),
+                enabled: provider != 'google' || config.googleConfigured,
+                onTap: () {
+                  Navigator.of(dialogContext).pop();
+                  _toggleProvider(provider);
+                },
+              ),
+            if (_providers.contains('guest'))
+              const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Text(
+                  '目前是訪客。綁定 LINE 或 Google 後才能換手機找回資料。',
+                  style: TextStyle(fontSize: 12, color: AppTokens.muted, height: 1.4),
+                ),
+              ),
+            const SizedBox(height: 8),
+            const Text(
+              '不能解除最後一個登入方式。',
+              style: TextStyle(fontSize: 12, color: AppTokens.muted, height: 1.4),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('關閉')),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _toggleProvider(String provider) async {
+    final auth = ref.read(authServiceProvider);
+    final linked = _providers.contains(provider);
+    setState(() => _busy = true);
+    try {
+      if (linked) {
+        await auth.unlinkProvider(provider);
+      } else {
+        await auth.linkProvider(provider);
+      }
+      await _loadProviders();
+      if (mounted) _toast(linked ? '已解除 ${_providerLabel(provider)} 綁定。' : '已連結 ${_providerLabel(provider)}。');
+    } on AuthException catch (error) {
+      if (mounted) _toast(error.message);
+    } catch (error) {
+      if (mounted) _toast('帳號綁定失敗：$error');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _manageMembers(List<HouseholdMember> members, String? currentUid) async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('管理成員'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final member in members.where((member) => member.uid != currentUid))
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(member.displayName),
+                subtitle: Text(member.role.label),
+                trailing: TextButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                    _run(
+                      () => member.role == MemberRole.caretaker
+                          ? ref
+                                .read(householdRepositoryProvider)
+                                .updateMemberRole(userId: member.uid, role: 'owner')
+                          : ref.read(householdRepositoryProvider).removeMember(member.uid),
+                      success: member.role == MemberRole.caretaker ? '已轉移屋主。' : '已移除成員。',
+                    );
+                  },
+                  child: Text(member.role == MemberRole.caretaker ? '設為屋主' : '移除'),
+                ),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('關閉')),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteAccount() async {
+    final uid = ref.read(currentUserProvider)?.uid;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('刪除苔間帳號？'),
+        content: const Text(
+          '這會刪除你的 profile、登入綁定與可刪除的家庭資料。\n'
+          '如果你仍是別人的家庭唯一屋主，系統會要求先轉移或移除家庭。\n'
+          '此操作無法復原。',
+          style: TextStyle(height: 1.5),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('取消')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppTokens.overdue),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('刪除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    setState(() => _busy = true);
+    try {
+      await ref.read(authServiceProvider).deleteAccount();
+      if (uid != null) {
+        try {
+          await ref.read(outboxProvider).purgeForUid(uid);
+        } catch (_) {
+          // Best effort: the server-side account is already deleted.
+        }
+      }
+      if (mounted) _toast('帳號已刪除。');
+    } on AuthException catch (error) {
+      if (mounted) {
+        _toast(
+          error.code == 'LAST_OWNER'
+              ? '你仍是家庭唯一屋主，請先轉移屋主或移除家庭。'
+              : error.message,
+        );
+      }
+    } catch (error) {
+      if (mounted) _toast('刪除帳號失敗：$error');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _linkLine() async {
     final config = ref.read(appConfigProvider);
     if (!config.liffConfigured) {
@@ -398,13 +627,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _signOut() async {
+    Set<String> providers = const {};
+    try {
+      providers = await ref.read(authServiceProvider).linkedProviders();
+    } catch (_) {}
+    if (!mounted) return;
+    final guestOnly = providers.length == 1 && providers.contains('guest');
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('登出苔間？'),
-        content: const Text(
-          '登出會清除這台裝置上尚未同步的變更，以及前一個帳號的 Firestore 快取。'
-          '未送出的內容不會保留到下一次登入。',
+        content: Text(
+          guestOnly
+              ? '你目前是訪客。登出後沒有 LINE 或 Google 可以找回這個帳號，資料將無法復原。'
+              : '登出會清除這台裝置上尚未同步的變更，以及前一個帳號的本機快取。'
+                    '未送出的內容不會保留到下一次登入。',
+          style: const TextStyle(height: 1.5),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('取消')),

@@ -28,6 +28,10 @@
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>GIDClientID</key>
+	<string>590439259841-9e0b8dsauu68obh44ddk94ql2mqmfv34.apps.googleusercontent.com</string>
+	<key>GIDServerClientID</key>
+	<string>590439259841-gu96vci2ral20hv4ut2i96gmcl0l3lbu.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -37,7 +41,7 @@
 			<string>GoogleSignIn</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.000000000000-REPLACE</string>
+				<string>com.googleusercontent.apps.590439259841-9e0b8dsauu68obh44ddk94ql2mqmfv34</string>
 			</array>
 		</dict>
 		<dict>

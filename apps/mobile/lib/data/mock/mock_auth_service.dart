@@ -17,9 +17,16 @@ class MockAuthService implements AuthService {
   AppUser? get currentUser => _current;
 
   @override
-  Stream<AppUser?> authStateChanges() async* {
-    yield _current;
-    yield* _controller.stream;
+  Stream<AppUser?> authStateChanges() {
+    return Stream<AppUser?>.multi((controller) {
+      final subscription = _controller.stream.listen(
+        controller.add,
+        onError: controller.addError,
+        onDone: controller.close,
+      );
+      controller.add(_current);
+      controller.onCancel = subscription.cancel;
+    });
   }
 
   @override
@@ -30,6 +37,21 @@ class MockAuthService implements AuthService {
 
   @override
   Future<AppUser> signInWithLine() => _signIn();
+
+  @override
+  Future<AppUser> signInAsGuest() => _signIn();
+
+  @override
+  Future<void> linkProvider(String provider) async {}
+
+  @override
+  Future<void> unlinkProvider(String provider) async {}
+
+  @override
+  Future<Set<String>> linkedProviders() async => const {'line'};
+
+  @override
+  Future<void> deleteAccount() async {}
 
   Future<AppUser> _signIn() async {
     await Future<void>.delayed(const Duration(milliseconds: 220));

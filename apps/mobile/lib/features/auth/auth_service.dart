@@ -23,6 +23,24 @@ abstract class AuthService {
     throw const AuthException('此版本不支援 LINE 登入。', code: 'UNSUPPORTED');
   }
 
+  Future<AppUser> signInAsGuest() async {
+    throw const AuthException('此版本不支援訪客登入。', code: 'UNSUPPORTED');
+  }
+
+  Future<void> linkProvider(String provider) async {
+    throw const AuthException('此版本不支援帳號綁定。', code: 'UNSUPPORTED');
+  }
+
+  Future<void> unlinkProvider(String provider) async {
+    throw const AuthException('此版本不支援解除綁定。', code: 'UNSUPPORTED');
+  }
+
+  Future<Set<String>> linkedProviders() async => const {};
+
+  Future<void> deleteAccount() async {
+    throw const AuthException('此版本不支援刪除帳號。', code: 'UNSUPPORTED');
+  }
+
   Future<void> signOut();
 
   /// LINE linking is delegated to the LIFF `/link` page. Returns false when the

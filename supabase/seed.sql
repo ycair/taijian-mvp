@@ -54,3 +54,11 @@ values
   ('UtestA', '00000000-0000-4000-8000-00000000000a', 'Test A', 'active'),
   ('UtestB', '00000000-0000-4000-8000-00000000000b', 'Test B', 'active')
 on conflict (line_sub) do update set user_id = excluded.user_id, status = excluded.status;
+
+-- Seed data is inserted after migrations, so mirror the migration backfill for
+-- the local demo identities.
+insert into public.auth_identities (profile_id, provider, subject)
+values
+  ('00000000-0000-4000-8000-00000000000a', 'line', 'UtestA'),
+  ('00000000-0000-4000-8000-00000000000b', 'line', 'UtestB')
+on conflict (provider, subject) do nothing;

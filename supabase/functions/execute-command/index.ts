@@ -1,5 +1,5 @@
 import { corsHeaders, json } from '../_shared/http.ts';
-import { verifyUserToken } from '../_shared/jwt.ts';
+import { verifyAccessTokenFromRequest } from '../_shared/auth_tokens.ts';
 import { sql } from '../_shared/db.ts';
 
 type Envelope = {
@@ -62,10 +62,11 @@ async function requireMember(tx: any, householdId: string, userId: string) {
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
-  const userId = await verifyUserToken(request);
-  if (!userId) {
+  const auth = await verifyAccessTokenFromRequest(request);
+  if (!auth) {
     return json({ ok: false, code: 'UNAUTHENTICATED', message: 'Sign in required' });
   }
+  const userId = auth.profileId;
 
   let envelope: Envelope;
   try {
@@ -81,6 +82,21 @@ Deno.serve(async (request) => {
 
   try {
     const result = await sql.begin(async (tx: any) => {
+      const [session] = await tx`
+        select s.revoked_at, s.expires_at, p.status
+        from public.auth_sessions s
+        join public.profiles p on p.id = s.profile_id
+        where s.id = ${auth.sessionId} and s.profile_id = ${userId}
+      `;
+      if (
+        !session ||
+        session.revoked_at !== null ||
+        new Date(session.expires_at).getTime() <= Date.now() ||
+        session.status !== 'active'
+      ) {
+        throw Object.assign(new Error('session is not active'), { code: 'UNAUTHENTICATED' });
+      }
+
       const [replay] = await tx`
         select response, request_hash from commands
         where command_id = ${envelope.commandId} and expires_at > now()
@@ -121,11 +137,27 @@ Deno.serve(async (request) => {
           const secret = b64url(secretBytes);
           const secretHash = await sha256(secret);
           const expiresAt = new Date(Date.now() + 7 * 86400_000).toISOString();
-          await tx`insert into invites (id, household_id, role, created_by, secret_hash, expires_at)
-                   values (${inviteId}, ${householdId}, 'caretaker', ${userId}, ${secretHash}, ${expiresAt})`;
+          const inviteType = payload.inviteType === 'uid' ? 'uid' : 'link';
+          const invitedUserId = inviteType === 'uid' ? String(payload.invitedUserId ?? '') : null;
+          const invitedLabel = payload.invitedLabel == null ? null : String(payload.invitedLabel);
+          if (inviteType === 'uid') {
+            if (!invitedUserId) throw Object.assign(new Error('invitedUserId required'), { code: 'VALIDATION_ERROR' });
+            const [invited] = await tx`
+              select 1 from profiles where id = ${invitedUserId} and status = 'active' and deleted_at is null
+            `;
+            if (!invited) throw Object.assign(new Error('invited user not found'), { code: 'NOT_FOUND' });
+          }
+          await tx`insert into invites (id, household_id, role, created_by, secret_hash, expires_at, invite_type, invited_user_id, invited_label)
+                   values (${inviteId}, ${householdId}, 'caretaker', ${userId}, ${secretHash}, ${expiresAt}, ${inviteType}, ${invitedUserId}, ${invitedLabel})`;
           await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, command_id, source)
                    values (${householdId}, ${userId}, 'member.invite', 'invite', ${inviteId}, ${envelope.commandId}, 'liff')`;
-          response = ok(envelope.commandId, { token: `${inviteId}.${secret}`, inviteId, expiresAt });
+          response = ok(envelope.commandId, {
+            token: `${inviteId}.${secret}`,
+            inviteId,
+            expiresAt,
+            inviteType,
+            invitedUserId,
+          });
           break;
         }
 
@@ -133,13 +165,16 @@ Deno.serve(async (request) => {
           const token = String(payload.token ?? '');
           const [inviteId, secret] = token.split('.');
           if (!inviteId || !secret) throw Object.assign(new Error('invalid token'), { code: 'VALIDATION_ERROR' });
-          const [invite] = await tx`select * from invites where id = ${inviteId}`;
+          const [invite] = await tx`select * from invites where id = ${inviteId} for update`;
           if (!invite) throw Object.assign(new Error('invite not found'), { code: 'NOT_FOUND' });
           if (invite.status !== 'active' || new Date(invite.expires_at).getTime() < Date.now()) {
             throw Object.assign(new Error('invite expired'), { code: 'INVITE_EXPIRED' });
           }
           const hash = await sha256(secret);
           if (hash !== invite.secret_hash) throw Object.assign(new Error('invite not found'), { code: 'NOT_FOUND' });
+          if (invite.invite_type === 'uid' && invite.invited_user_id !== userId) {
+            throw Object.assign(new Error('this invite belongs to another user'), { code: 'FORBIDDEN' });
+          }
           const [existing] = await tx`select 1 from household_members where household_id = ${invite.household_id} and user_id = ${userId}`;
           if (!existing) {
             await tx`insert into household_members (household_id, user_id, role, invited_by)
@@ -152,6 +187,132 @@ Deno.serve(async (request) => {
                      values (${invite.household_id}, ${userId}, 'member.accept', 'member', ${userId}, ${envelope.commandId}, 'liff')`;
           }
           response = ok(envelope.commandId, { householdId: invite.household_id, alreadyMember: !!existing });
+          break;
+        }
+
+        case 'member.updateRole': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          await tx`select id from households where id = ${householdId} for update`;
+          const actor = await requireMember(tx, householdId, userId);
+          if (actor.role !== 'owner') throw Object.assign(new Error('owner only'), { code: 'FORBIDDEN' });
+          const targetUserId = String(payload.userId ?? '');
+          const role = payload.role === 'owner' ? 'owner' : 'caretaker';
+          const [target] = await tx`
+            select role from household_members where household_id = ${householdId} and user_id = ${targetUserId}
+          `;
+          if (!target) throw Object.assign(new Error('member not found'), { code: 'NOT_FOUND' });
+          if (target.role === 'owner' && role === 'caretaker') {
+            const [owners] = await tx`
+              select count(*)::int as count from household_members
+              where household_id = ${householdId} and role = 'owner'
+            `;
+            if (owners.count <= 1) throw Object.assign(new Error('last owner'), { code: 'LAST_OWNER' });
+          }
+          await tx`
+            update household_members set role = ${role}
+            where household_id = ${householdId} and user_id = ${targetUserId}
+          `;
+          await tx`
+            update households h set
+              owner_count = (select count(*) from household_members m where m.household_id = h.id and m.role = 'owner'),
+              member_count = (select count(*) from household_members m where m.household_id = h.id),
+              owner_id = coalesce(
+                (select m.user_id from household_members m
+                 where m.household_id = h.id and m.role = 'owner'
+                 order by m.joined_at limit 1),
+                h.owner_id
+              ),
+              updated_at = now()
+            where h.id = ${householdId}
+          `;
+          await tx`
+            insert into audit_logs (household_id, actor_id, action, target_type, target_id, after, command_id, source)
+            values (${householdId}, ${userId}, 'member.updateRole', 'member', ${targetUserId}, ${tx.json({ role })}, ${envelope.commandId}, 'liff')
+          `;
+          response = ok(envelope.commandId, { userId: targetUserId, role });
+          break;
+        }
+
+        case 'member.remove': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          await tx`select id from households where id = ${householdId} for update`;
+          const actor = await requireMember(tx, householdId, userId);
+          if (actor.role !== 'owner') throw Object.assign(new Error('owner only'), { code: 'FORBIDDEN' });
+          const targetUserId = String(payload.userId ?? '');
+          if (targetUserId === userId) {
+            throw Object.assign(new Error('use member.leave for yourself'), { code: 'VALIDATION_ERROR' });
+          }
+          const [target] = await tx`
+            select role from household_members where household_id = ${householdId} and user_id = ${targetUserId}
+          `;
+          if (!target) throw Object.assign(new Error('member not found'), { code: 'NOT_FOUND' });
+          if (target.role === 'owner') {
+            const [owners] = await tx`
+              select count(*)::int as count from household_members
+              where household_id = ${householdId} and role = 'owner'
+            `;
+            if (owners.count <= 1) throw Object.assign(new Error('last owner'), { code: 'LAST_OWNER' });
+          }
+          await tx`delete from household_members where household_id = ${householdId} and user_id = ${targetUserId}`;
+          await tx`
+            update households h set
+              owner_count = (select count(*) from household_members m where m.household_id = h.id and m.role = 'owner'),
+              member_count = (select count(*) from household_members m where m.household_id = h.id),
+              owner_id = coalesce(
+                (select m.user_id from household_members m
+                 where m.household_id = h.id and m.role = 'owner'
+                 order by m.joined_at limit 1),
+                h.owner_id
+              ),
+              updated_at = now()
+            where h.id = ${householdId}
+          `;
+          await tx`
+            update profiles set default_household_id = null, updated_at = now()
+            where id = ${targetUserId} and default_household_id = ${householdId}
+          `;
+          await tx`
+            insert into audit_logs (household_id, actor_id, action, target_type, target_id, command_id, source)
+            values (${householdId}, ${userId}, 'member.remove', 'member', ${targetUserId}, ${envelope.commandId}, 'liff')
+          `;
+          response = ok(envelope.commandId, { removed: targetUserId });
+          break;
+        }
+
+        case 'member.leave': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          await tx`select id from households where id = ${householdId} for update`;
+          const member = await requireMember(tx, householdId, userId);
+          if (member.role === 'owner') {
+            const [owners] = await tx`
+              select count(*)::int as count from household_members
+              where household_id = ${householdId} and role = 'owner'
+            `;
+            if (owners.count <= 1) throw Object.assign(new Error('last owner'), { code: 'LAST_OWNER' });
+          }
+          await tx`delete from household_members where household_id = ${householdId} and user_id = ${userId}`;
+          await tx`
+            update households h set
+              owner_count = (select count(*) from household_members m where m.household_id = h.id and m.role = 'owner'),
+              member_count = (select count(*) from household_members m where m.household_id = h.id),
+              owner_id = coalesce(
+                (select m.user_id from household_members m
+                 where m.household_id = h.id and m.role = 'owner'
+                 order by m.joined_at limit 1),
+                h.owner_id
+              ),
+              updated_at = now()
+            where h.id = ${householdId}
+          `;
+          await tx`
+            update profiles set default_household_id = null, updated_at = now()
+            where id = ${userId} and default_household_id = ${householdId}
+          `;
+          await tx`
+            insert into audit_logs (household_id, actor_id, action, target_type, target_id, command_id, source)
+            values (${householdId}, ${userId}, 'member.leave', 'member', ${userId}, ${envelope.commandId}, 'liff')
+          `;
+          response = ok(envelope.commandId, { left: householdId });
           break;
         }
 
@@ -255,6 +416,7 @@ Deno.serve(async (request) => {
     return json(result);
   } catch (error) {
     const code = (error as { code?: string }).code ?? 'INTERNAL';
-    return json(fail(envelope.commandId, code, error instanceof Error ? error.message : 'command failed'));
+    const status = code === 'UNAUTHENTICATED' ? 401 : 200;
+    return json(fail(envelope.commandId, code, code === 'INTERNAL' ? 'command failed' : (error instanceof Error ? error.message : 'command failed')), status);
   }
 });

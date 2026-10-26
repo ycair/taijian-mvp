@@ -88,6 +88,28 @@ class HouseholdRepository {
     await commands.submit('user.updateProfile', payload);
   }
 
+  Future<void> updateMemberRole({required String userId, required String role}) async {
+    final id = householdId;
+    if (id == null) throw StateError('No household');
+    await commands.submit(
+      'member.updateRole',
+      {'userId': userId, 'role': role},
+      householdId: id,
+    );
+  }
+
+  Future<void> removeMember(String userId) async {
+    final id = householdId;
+    if (id == null) throw StateError('No household');
+    await commands.submit('member.remove', {'userId': userId}, householdId: id);
+  }
+
+  Future<void> leaveHousehold() async {
+    final id = householdId;
+    if (id == null) throw StateError('No household');
+    await commands.submit('member.leave', {}, householdId: id);
+  }
+
   Future<void> setDefaultHousehold(String id) {
     return updateProfile(defaultHouseholdId: id);
   }

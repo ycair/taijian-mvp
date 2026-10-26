@@ -36,8 +36,8 @@ line3rdp.app.taijian.mobile
 5. `SupabaseReadStore` polls PostgREST; writes use `execute-command`.
 6. The existing outbox keeps writes idempotent and retryable.
 
-The custom JWT currently expires after 2 hours; a production build should add a
-refresh path or move to Supabase Auth.
+The app now stores a 1-hour access JWT plus a rotating 30-day refresh token;
+`SupabaseRestClient` refreshes once on 401 and retries.
 
 ## Build
 
@@ -49,42 +49,37 @@ flutter build ios --profile \
   --dart-define=SUPABASE_URL=https://bqezqvhdmqanxgzfvdag.supabase.co \
   --dart-define=SUPABASE_ANON_KEY=sb_publishable_JokBny3AnM8sCs75W3RsCA_TBN24fWl \
   --dart-define=LINE_CHANNEL_ID=2012198098 \
-  --dart-define=LIFF_URL=https://liff.line.me/2012198098-yDGNuYOH
+  --dart-define=LIFF_URL=https://liff.line.me/2012198098-yDGNuYOH \
+  --dart-define=GOOGLE_IOS_CLIENT_ID=590439259841-9e0b8dsauu68obh44ddk94ql2mqmfv34.apps.googleusercontent.com \
+  --dart-define=GOOGLE_SERVER_CLIENT_ID=590439259841-gu96vci2ral20hv4ut2i96gmcl0l3lbu.apps.googleusercontent.com
 ```
 
 Do **not** put the Supabase secret key or `JWT_SECRET` in the app.
 
-### Personal-team local installs
+### Local Profile installs
 
-Release/Profile keep the Sign in with Apple entitlement for App Store builds.
-A personal Apple team cannot provision that capability. For a local Profile
-install, temporarily point the Profile build at `RunnerDebug.entitlements`,
-build, then revert the Xcode project change:
+Apple sign-in, TestFlight, App Store, APNs remote push, and real StoreKit/IAP are
+deferred. `Runner.entitlements` no longer requests Sign in with Apple, so a local
+Profile build signs with the personal team without a temporary entitlement
+workaround.
+
+Build and install:
 
 ```bash
-# local-only; do not commit
-python3 - <<'PY'
-from pathlib import Path
-p = Path('ios/Runner.xcodeproj/project.pbxproj')
-s = p.read_text()
-start = s.index('249021D4217E4FDB00AE95B9 /* Profile */')
-end = s.index('name = Profile;', start) + len('name = Profile;')
-segment = s[start:end].replace(
-    'CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;',
-    'CODE_SIGN_ENTITLEMENTS = Runner/RunnerDebug.entitlements;',
-)
-p.write_text(s[:start] + segment + s[end:])
-PY
-flutter build ios --profile ...  # same defines as above
-git checkout -- ios/Runner.xcodeproj/project.pbxproj
+flutter build ios --profile <dart-defines above>
+xcrun devicectl device install app --device <UDID> build/ios/iphoneos/Runner.app
 ```
 
-Install with `xcrun devicectl device install app --device <UDID> build/ios/iphoneos/Runner.app`.
+Google login needs the iOS OAuth client in `GIDClientID`, the Web client in
+`GIDServerClientID`, and the Web client in the Edge secret
+`GOOGLE_SERVER_CLIENT_ID`. Add the test Google account under Google Auth Platform
+→ Test users.
 
 ## Verification
 
 - `flutter analyze` clean
-- `flutter test` 59 passing
+- `flutter test` 65 passing
 - Physical iPhone install/launch verified
 - Native LINE login updates the same `line_users` mapping and shows the existing
   household/animals from the LIFF account
+- Guest login and refresh rotation verified locally; Google awaits device test

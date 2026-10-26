@@ -94,35 +94,61 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     ),
                     const SizedBox(height: 16),
                   ],
-                  if (config.useSupabase)
+                  if (config.useMock)
                     FilledButton.icon(
-                      onPressed: _busy
-                          ? null
-                          : () => _signIn(auth.signInWithLine),
+                      onPressed: _busy ? null : () => _signIn(auth.signInWithLine),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppTokens.ink,
+                        minimumSize: const Size(0, 54),
+                      ),
+                      icon: const Icon(Icons.science_outlined, size: 22),
+                      label: const Text('使用測試帳號登入'),
+                    )
+                  else if (config.useSupabase) ...[
+                    FilledButton.icon(
+                      onPressed: _busy ? null : () => _signIn(auth.signInWithLine),
                       style: FilledButton.styleFrom(
                         backgroundColor: const Color(0xFF06C755),
                         minimumSize: const Size(0, 54),
                       ),
                       icon: const Icon(Icons.chat_bubble, size: 22),
                       label: const Text('使用 LINE 登入'),
-                    )
-                  else ...[
-                    FilledButton.icon(
-                      onPressed: _busy
-                          ? null
-                          : () => _signIn(auth.signInWithApple),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppTokens.ink,
-                        minimumSize: const Size(0, 54),
-                      ),
-                      icon: const Icon(Icons.apple, size: 24),
-                      label: Text(config.useMock ? '使用測試帳號登入' : '使用 Apple 登入'),
                     ),
                     const SizedBox(height: 12),
                     OutlinedButton.icon(
-                      onPressed: _busy
+                      onPressed: _busy || !config.googleConfigured
                           ? null
                           : () => _signIn(auth.signInWithGoogle),
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        minimumSize: const Size(0, 54),
+                      ),
+                      icon: Icon(
+                        Icons.g_mobiledata,
+                        size: 28,
+                        color: config.googleConfigured
+                            ? AppTokens.primaryStrong
+                            : AppTokens.muted,
+                      ),
+                      label: Text(
+                        config.googleConfigured
+                            ? '使用 Google 登入'
+                            : 'Google 登入尚未設定',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: _busy ? null : () => _signIn(auth.signInAsGuest),
+                      child: const Text('先以訪客身分試用'),
+                    ),
+                    const Text(
+                      '訪客資料只存在這台裝置；換手機前請先綁定 LINE 或 Google。',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 11, color: AppTokens.muted, height: 1.4),
+                    ),
+                  ] else
+                    OutlinedButton.icon(
+                      onPressed: _busy ? null : () => _signIn(auth.signInWithGoogle),
                       style: OutlinedButton.styleFrom(
                         backgroundColor: Colors.white,
                         minimumSize: const Size(0, 54),
@@ -134,7 +160,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       ),
                       label: const Text('使用 Google 登入'),
                     ),
-                  ],
                   if (_error != null) ...[
                     const SizedBox(height: 16),
                     Text(

@@ -85,6 +85,7 @@ Future<AppDependencies> bootstrap(AppConfig config) async {
       baseUrl: config.supabaseUrl,
       apiKey: config.supabaseAnonKey,
       tokenProvider: () => supabaseAuth.token,
+      onUnauthorized: supabaseAuth.refreshAccessToken,
     );
     readStore = SupabaseReadStore(rest);
     commandApi = SupabaseCommandApi(rest, appVersion: appVersion);
