@@ -284,6 +284,64 @@ class Animal {
   }
 }
 
+class LineageRelative {
+  const LineageRelative({
+    required this.edgeId,
+    required this.relation,
+    required this.accessible,
+    this.animalId,
+    this.name,
+    this.speciesLabel,
+    this.avatarColor = '#7C9A76',
+    this.status,
+  });
+
+  factory LineageRelative.fromMap(Map<String, dynamic> map) {
+    return LineageRelative(
+      edgeId: readString(map, 'edgeId'),
+      relation: readString(map, 'relation'),
+      accessible: map['accessible'] == true,
+      animalId: readString(map, 'animalId').isEmpty ? null : readString(map, 'animalId'),
+      name: readString(map, 'name').isEmpty ? null : readString(map, 'name'),
+      speciesLabel: readString(map, 'speciesLabel'),
+      avatarColor: readString(map, 'avatarColor', '#7C9A76'),
+      status: readString(map, 'status', 'active'),
+    );
+  }
+
+  final String edgeId;
+  final String relation;
+  final bool accessible;
+  final String? animalId;
+  final String? name;
+  final String? speciesLabel;
+  final String avatarColor;
+  final String? status;
+
+  bool get isParent => relation == 'parent';
+
+  bool get isChild => relation == 'child';
+
+  String get placeholderLabel => '已轉讓／不可存取';
+}
+
+class LineageGraph {
+  const LineageGraph({this.parents = const [], this.children = const []});
+
+  final List<LineageRelative> parents;
+  final List<LineageRelative> children;
+
+  bool get isEmpty => parents.isEmpty && children.isEmpty;
+
+  static LineageGraph fromRows(List<Map<String, dynamic>> rows) {
+    final relatives = rows.map(LineageRelative.fromMap).toList(growable: false);
+    return LineageGraph(
+      parents: relatives.where((relative) => relative.isParent).toList(growable: false),
+      children: relatives.where((relative) => relative.isChild).toList(growable: false),
+    );
+  }
+}
+
 enum RecordType {
   feeding,
   water,

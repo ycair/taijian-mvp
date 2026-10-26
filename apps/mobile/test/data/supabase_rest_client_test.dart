@@ -59,6 +59,37 @@ void main() {
     expect(captured.body, jsonEncode({'idToken': 'line-id-token'}));
   });
 
+  test('rpc posts JSON to PostgREST and decodes rows', () async {
+    late http.Request captured;
+    final client = SupabaseRestClient(
+      baseUrl: 'https://example.supabase.co',
+      apiKey: 'sb_publishable_test',
+      tokenProvider: () => 'token-123',
+      httpClient: MockClient((request) async {
+        captured = request;
+        return http.Response.bytes(
+          utf8.encode(
+            jsonEncode([
+              {'edge_id': 'e1', 'accessible': true},
+            ]),
+          ),
+          200,
+        );
+      }),
+    );
+
+    final rows = await client.rpc('lineage_for_animal', {
+      'p_animal_id': 'a1',
+    });
+
+    expect(rows, [
+      {'edge_id': 'e1', 'accessible': true},
+    ]);
+    expect(captured.url.path, '/rest/v1/rpc/lineage_for_animal');
+    expect(captured.headers['authorization'], 'Bearer token-123');
+    expect(captured.body, jsonEncode({'p_animal_id': 'a1'}));
+  });
+
   test('HTTP errors expose status, PostgREST code, and auth state', () async {
     final client = SupabaseRestClient(
       baseUrl: 'https://example.supabase.co',

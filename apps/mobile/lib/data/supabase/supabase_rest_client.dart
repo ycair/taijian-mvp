@@ -65,6 +65,31 @@ class SupabaseRestClient {
         .toList(growable: false);
   }
 
+  Future<List<Map<String, dynamic>>> rpc(
+    String name,
+    Map<String, dynamic> body,
+  ) async {
+    final response = await _authorized(
+      () => _http.post(
+        Uri.parse('$_baseUrl/rest/v1/rpc/$name'),
+        headers: _headers(json: true),
+        body: jsonEncode(body),
+      ),
+    );
+    final decoded = _decode(response);
+    if (decoded is! List) {
+      throw const SupabaseApiException(
+        statusCode: 200,
+        code: 'INVALID_RESPONSE',
+        message: 'Expected a JSON array from an RPC',
+      );
+    }
+    return decoded
+        .whereType<Map>()
+        .map((row) => Map<String, dynamic>.from(row))
+        .toList(growable: false);
+  }
+
   Future<Map<String, dynamic>> callFunction(
     String name,
     Map<String, dynamic> body, {

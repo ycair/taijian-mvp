@@ -497,6 +497,79 @@ Deno.serve(async (request) => {
           break;
         }
 
+        case 'lineage.add': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          const member = await requireMember(tx, householdId, userId);
+          if (member.role !== 'owner') throw Object.assign(new Error('owner only'), { code: 'FORBIDDEN' });
+          const parentId = String(payload.parentId ?? '');
+          const childId = String(payload.childId ?? '');
+          if (!parentId || !childId || parentId === childId) {
+            throw Object.assign(new Error('parent and child must differ'), { code: 'VALIDATION_ERROR' });
+          }
+          const animals = await tx`
+            select id, household_id, deleted_at from animals
+            where id = any(${[parentId, childId]}::uuid[])
+            order by id
+            for update
+          `;
+          if (animals.length !== 2) throw Object.assign(new Error('animal not found'), { code: 'NOT_FOUND' });
+          if (animals.some((animal: any) => animal.household_id !== householdId || animal.deleted_at !== null)) {
+            throw Object.assign(new Error('both animals must belong to this household'), { code: 'FORBIDDEN' });
+          }
+          const [duplicate] = await tx`
+            select id from animal_lineage where parent_id = ${parentId} and child_id = ${childId}
+          `;
+          if (duplicate) throw Object.assign(new Error('lineage edge already exists'), { code: 'CONFLICT' });
+          const [parentCount] = await tx`
+            select count(*)::int as count from animal_lineage where child_id = ${childId}
+          `;
+          if (parentCount.count >= 2) {
+            throw Object.assign(new Error('a resident can have at most two parents'), { code: 'LINEAGE_LIMIT' });
+          }
+          const [cycle] = await tx`
+            with recursive ancestors as (
+              select parent_id from animal_lineage where child_id = ${parentId}
+              union
+              select l.parent_id from animal_lineage l join ancestors a on l.child_id = a.parent_id
+            )
+            select 1 from ancestors where parent_id = ${childId} limit 1
+          `;
+          if (cycle) throw Object.assign(new Error('lineage cycle'), { code: 'LINEAGE_CYCLE' });
+          const edgeId = crypto.randomUUID();
+          await tx`insert into animal_lineage (id, parent_id, child_id, created_by)
+                   values (${edgeId}, ${parentId}, ${childId}, ${userId})`;
+          await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, after, command_id, source)
+                   values (${householdId}, ${userId}, 'lineage.add', 'animal_lineage', ${edgeId},
+                   ${tx.json({ parentId, childId })}, ${envelope.commandId}, 'liff')`;
+          response = ok(envelope.commandId, { edgeId, parentId, childId });
+          break;
+        }
+
+        case 'lineage.remove': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          const member = await requireMember(tx, householdId, userId);
+          if (member.role !== 'owner') throw Object.assign(new Error('owner only'), { code: 'FORBIDDEN' });
+          const edgeId = String(payload.edgeId ?? '');
+          const [edge] = await tx`
+            select l.id, l.parent_id, l.child_id, p.household_id as parent_household, c.household_id as child_household
+            from animal_lineage l
+            join animals p on p.id = l.parent_id
+            join animals c on c.id = l.child_id
+            where l.id = ${edgeId}
+            for update of l
+          `;
+          if (!edge) throw Object.assign(new Error('lineage edge not found'), { code: 'NOT_FOUND' });
+          if (edge.parent_household !== householdId && edge.child_household !== householdId) {
+            throw Object.assign(new Error('lineage edge not accessible'), { code: 'FORBIDDEN' });
+          }
+          await tx`delete from animal_lineage where id = ${edgeId}`;
+          await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, after, command_id, source)
+                   values (${householdId}, ${userId}, 'lineage.remove', 'animal_lineage', ${edgeId},
+                   ${tx.json({ parentId: edge.parent_id, childId: edge.child_id })}, ${envelope.commandId}, 'liff')`;
+          response = ok(envelope.commandId, { edgeId });
+          break;
+        }
+
         case 'record.create': {
           if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
           await requireMember(tx, householdId, userId);

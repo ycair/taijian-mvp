@@ -10,6 +10,7 @@ import '../../core/time/app_time.dart';
 import '../../core/widgets/common.dart';
 import '../records/quick_record_sheet.dart';
 import 'animal_repository.dart';
+import 'lineage_repository.dart';
 import '../reminders/reminder_repository.dart';
 
 class AnimalDetailScreen extends ConsumerWidget {
@@ -22,6 +23,7 @@ class AnimalDetailScreen extends ConsumerWidget {
     final animalAsync = ref.watch(animalProvider(animalId));
     final reminderAsync = ref.watch(animalRemindersProvider(animalId));
     final recordAsync = ref.watch(animalRecordsProvider(animalId));
+    final lineageAsync = ref.watch(lineageProvider(animalId));
     final timezone = ref.watch(householdTimezoneProvider);
     final animal = animalAsync.value;
     final currentUid = ref.watch(currentUserProvider)?.uid;
@@ -128,6 +130,8 @@ class AnimalDetailScreen extends ConsumerWidget {
               child: Text(animal.notes!, style: const TextStyle(height: 1.5)),
             ),
           ],
+          const SizedBox(height: 22),
+          _LineageSection(animal: animal, isOwner: isOwner, lineage: lineageAsync),
           const SizedBox(height: 22),
           const _SectionTitle(title: '快速紀錄'),
           const SizedBox(height: 10),
@@ -320,6 +324,284 @@ class AnimalDetailScreen extends ConsumerWidget {
       const SnackBar(content: Text('居民已刪除，會自動同步。')),
     );
     context.go('/animals');
+  }
+}
+
+
+class _LineageSection extends ConsumerWidget {
+  const _LineageSection({
+    required this.animal,
+    required this.isOwner,
+    required this.lineage,
+  });
+
+  final Animal animal;
+  final bool isOwner;
+  final AsyncValue<LineageGraph> lineage;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final graph = lineage.value ?? const LineageGraph();
+    final error = lineage.hasError;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Expanded(child: _SectionTitle(title: '家族')),
+            if (isOwner) ...[
+              TextButton(
+                onPressed: () => _addRelative(context, ref, asParent: true),
+                child: const Text('連結父母'),
+              ),
+              TextButton(
+                onPressed: () => _addRelative(context, ref, asParent: false),
+                child: const Text('連結子代'),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (error)
+          InlineBanner(
+            icon: Icons.lock_outline,
+            message: '家族資料暫時無法讀取。',
+            color: const Color(0xFFFFE7D6),
+          )
+        else if (lineage.isLoading && graph.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: LinearProgressIndicator(minHeight: 2),
+          )
+        else if (graph.isEmpty)
+          MossCard(
+            child: Text(
+              '還沒有家族連結。',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          )
+        else ...[
+          if (graph.parents.isNotEmpty) ...[
+            const _LineageLabel(label: '父母'),
+            for (final relative in graph.parents)
+              _LineageRow(
+                relative: relative,
+                isOwner: isOwner,
+                onRemove: () => _removeRelative(context, ref, relative),
+              ),
+          ],
+          if (graph.children.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            const _LineageLabel(label: '子代'),
+            for (final relative in graph.children)
+              _LineageRow(
+                relative: relative,
+                isOwner: isOwner,
+                onRemove: () => _removeRelative(context, ref, relative),
+              ),
+          ],
+        ],
+      ],
+    );
+  }
+
+  Future<void> _addRelative(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool asParent,
+  }) async {
+    final animals = ref
+        .read(activeAnimalsProvider)
+        .where((candidate) => candidate.id != animal.id)
+        .toList(growable: false);
+    if (animals.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('需要先有另一位居民，才能建立家族連結。')),
+      );
+      return;
+    }
+    final selected = await showDialog<Animal>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(asParent ? '選擇父母' : '選擇子代'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              for (final candidate in animals)
+                ListTile(
+                  leading: AnimalAvatar(
+                    label: candidate.initial,
+                    colorHex: candidate.avatarColor,
+                    size: 38,
+                  ),
+                  title: Text(candidate.name),
+                  subtitle: Text(candidate.displaySpecies),
+                  onTap: () => Navigator.of(context).pop(candidate),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('取消'),
+          ),
+        ],
+      ),
+    );
+    if (selected == null || !context.mounted) return;
+    try {
+      await ref.read(lineageRepositoryProvider).add(
+        parentId: asParent ? selected.id : animal.id,
+        childId: asParent ? animal.id : selected.id,
+      );
+      ref.invalidate(lineageProvider(animal.id));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('家族連結已建立，會自動同步。')),
+        );
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('建立家族連結失敗：$error')),
+        );
+      }
+    }
+  }
+
+  Future<void> _removeRelative(
+    BuildContext context,
+    WidgetRef ref,
+    LineageRelative relative,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('移除家族連結？'),
+        content: const Text('只會移除這條家族關係，不會刪除任何居民。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('移除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await ref.read(lineageRepositoryProvider).remove(relative);
+      ref.invalidate(lineageProvider(animal.id));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('家族連結已移除，會自動同步。')),
+        );
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('移除家族連結失敗：$error')),
+        );
+      }
+    }
+  }
+}
+
+class _LineageLabel extends StatelessWidget {
+  const _LineageLabel({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6, bottom: 4),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+          color: AppTokens.muted,
+          letterSpacing: 0.8,
+        ),
+      ),
+    );
+  }
+}
+
+class _LineageRow extends StatelessWidget {
+  const _LineageRow({
+    required this.relative,
+    required this.isOwner,
+    required this.onRemove,
+  });
+
+  final LineageRelative relative;
+  final bool isOwner;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final relativeId = relative.animalId;
+    final accessible = relative.accessible && relativeId != null;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: MossCard(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        onTap: accessible ? () => context.push('/animals/$relativeId') : null,
+        child: Row(
+          children: [
+            accessible
+                ? AnimalAvatar(
+                    label: (relative.name ?? '?').substring(0, 1),
+                    colorHex: relative.avatarColor,
+                    size: 42,
+                  )
+                : Container(
+                    width: 42,
+                    height: 42,
+                    decoration: const BoxDecoration(
+                      color: AppTokens.successBg,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.lock_outline, size: 19, color: AppTokens.muted),
+                  ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    accessible ? (relative.name ?? '未命名') : relative.placeholderLabel,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: accessible ? null : AppTokens.muted,
+                    ),
+                  ),
+                  if (accessible && (relative.speciesLabel ?? '').isNotEmpty)
+                    Text(
+                      relative.speciesLabel!,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                ],
+              ),
+            ),
+            if (isOwner)
+              IconButton(
+                tooltip: '移除家族連結',
+                onPressed: onRemove,
+                icon: const Icon(Icons.link_off, size: 19),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
