@@ -95,6 +95,63 @@ function recordMetadata(value: unknown): Record<string, unknown> {
   return metadata;
 }
 
+function journalPhotos(
+  value: unknown,
+  householdId: string,
+  journalId: string,
+): { photos: Record<string, unknown>[]; coverPath: string | null } {
+  const raw = Array.isArray(value) ? value : [];
+  if (raw.length > 5) {
+    throw Object.assign(new Error('a journal can have at most 5 photos'), { code: 'VALIDATION_ERROR' });
+  }
+  const prefix = `${householdId}/${journalId}/`;
+  const seen = new Set<string>();
+  const photos: Record<string, unknown>[] = [];
+  for (const item of raw) {
+    if (typeof item !== 'object' || item == null || Array.isArray(item)) {
+      throw Object.assign(new Error('invalid journal photo'), { code: 'VALIDATION_ERROR' });
+    }
+    const row = item as Record<string, unknown>;
+    const path = String(row.path ?? '').trim();
+    if (
+      !path.startsWith(prefix) ||
+      path.includes('..') ||
+      path.length > 300 ||
+      seen.has(path)
+    ) {
+      throw Object.assign(new Error('invalid journal photo path'), { code: 'VALIDATION_ERROR' });
+    }
+    seen.add(path);
+    photos.push({
+      path,
+      caption: row.caption == null ? '' : String(row.caption).trim().slice(0, 200),
+    });
+  }
+  const coverPath = photos.length ? String(photos[0].path) : null;
+  return { photos, coverPath };
+}
+
+function journalValues(payload: Record<string, unknown>) {
+  const title = String(payload.title ?? '').trim();
+  if (!title || title.length > 80) {
+    throw Object.assign(new Error('journal title must be 1-80 characters'), { code: 'VALIDATION_ERROR' });
+  }
+  const body = String(payload.body ?? '').trim().slice(0, 5000);
+  const journalDate = String(payload.journalDate ?? '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(journalDate)) {
+    throw Object.assign(new Error('invalid journal date'), { code: 'VALIDATION_ERROR' });
+  }
+  const rawAnimalIds = Array.isArray(payload.animalIds) ? payload.animalIds.map(String) : [];
+  const animalIds = [...new Set(rawAnimalIds.filter(Boolean))];
+  if (animalIds.length > 20) {
+    throw Object.assign(new Error('too many animals'), { code: 'VALIDATION_ERROR' });
+  }
+  const requestedCover = payload.coverPath == null || String(payload.coverPath).trim() === ''
+    ? null
+    : String(payload.coverPath).trim();
+  return { title, body, journalDate, animalIds, requestedCover };
+}
+
 function recordValues(type: string, payload: Record<string, unknown>) {
   if (!RECORD_TYPES.has(type)) {
     throw Object.assign(new Error('invalid record type'), { code: 'VALIDATION_ERROR' });
@@ -1034,6 +1091,129 @@ Deno.serve(async (request) => {
             completedByName: completion.completed_by_name,
             alreadyCompleted: completion.completed_by !== userId,
           });
+          break;
+        }
+
+        case 'journal.create': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          await requireMember(tx, householdId, userId);
+          const journalId = String(payload.journalId ?? crypto.randomUUID());
+          const [existing] = await tx`
+            select id from journal_entries
+            where id = ${journalId} and household_id = ${householdId} and deleted_at is null
+          `;
+          if (existing) {
+            response = ok(envelope.commandId, { journalId, alreadyExists: true });
+            break;
+          }
+          const values = journalValues(payload);
+          if (values.animalIds.length) {
+            const animals = await tx`
+              select id from animals
+              where id = any(${values.animalIds}::uuid[]) and household_id = ${householdId}
+                and deleted_at is null
+            `;
+            if (animals.length !== values.animalIds.length) {
+              throw Object.assign(new Error('journal animal not found'), { code: 'NOT_FOUND' });
+            }
+          }
+          const photoData = journalPhotos(payload.photos, householdId, journalId);
+          const coverPath = values.requestedCover && photoData.photos.some((photo) => photo.path === values.requestedCover)
+            ? values.requestedCover
+            : photoData.coverPath;
+          await tx`insert into journal_entries
+                   (id, household_id, title, body, journal_date, animal_ids, photos, cover_path,
+                    revision, created_by, updated_by)
+                   values (${journalId}, ${householdId}, ${values.title}, ${values.body}, ${values.journalDate},
+                   ${values.animalIds}, ${tx.json(photoData.photos)}, ${coverPath}, 0, ${userId}, ${userId})`;
+          await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, after, command_id, source)
+                   values (${householdId}, ${userId}, 'journal.create', 'journal_entry', ${journalId},
+                   ${tx.json({ title: values.title, photos: photoData.photos.length })}, ${envelope.commandId}, 'ios')`;
+          response = ok(envelope.commandId, { journalId }, 0);
+          break;
+        }
+
+        case 'journal.update': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          const member = await requireMember(tx, householdId, userId);
+          const journalId = String(payload.journalId ?? '');
+          const [entry] = await tx`
+            select * from journal_entries
+            where id = ${journalId} and household_id = ${householdId} and deleted_at is null
+            for update
+          `;
+          if (!entry) throw Object.assign(new Error('journal not found'), { code: 'NOT_FOUND' });
+          if (member.role !== 'owner' && entry.created_by !== userId) {
+            throw Object.assign(new Error('you can only edit your own journal'), { code: 'FORBIDDEN' });
+          }
+          if (envelope.baseRevision !== undefined && envelope.baseRevision !== entry.revision) {
+            throw Object.assign(new Error('revision conflict'), {
+              code: 'CONFLICT',
+              current: entry,
+              currentRevision: entry.revision,
+            });
+          }
+          const values = journalValues({ ...entry, ...payload });
+          if (values.animalIds.length) {
+            const animals = await tx`
+              select id from animals
+              where id = any(${values.animalIds}::uuid[]) and household_id = ${householdId}
+                and deleted_at is null
+            `;
+            if (animals.length !== values.animalIds.length) {
+              throw Object.assign(new Error('journal animal not found'), { code: 'NOT_FOUND' });
+            }
+          }
+          const photoData = journalPhotos(payload.photos ?? entry.photos, householdId, journalId);
+          const coverPath = values.requestedCover && photoData.photos.some((photo) => photo.path === values.requestedCover)
+            ? values.requestedCover
+            : photoData.coverPath;
+          await tx`update journal_entries set
+                     title = ${values.title},
+                     body = ${values.body},
+                     journal_date = ${values.journalDate},
+                     animal_ids = ${values.animalIds},
+                     photos = ${tx.json(photoData.photos)},
+                     cover_path = ${coverPath},
+                     revision = revision + 1,
+                     last_changed_fields = array['title','body','journalDate','animalIds','photos','coverPath'],
+                     updated_by = ${userId},
+                     updated_at = now()
+                   where id = ${journalId}`;
+          await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, after, command_id, source)
+                   values (${householdId}, ${userId}, 'journal.update', 'journal_entry', ${journalId},
+                   ${tx.json({ title: values.title, photos: photoData.photos.length })}, ${envelope.commandId}, 'ios')`;
+          response = ok(envelope.commandId, { journalId, revision: entry.revision + 1 }, entry.revision + 1);
+          break;
+        }
+
+        case 'journal.delete': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          const member = await requireMember(tx, householdId, userId);
+          const journalId = String(payload.journalId ?? '');
+          const [entry] = await tx`
+            select * from journal_entries
+            where id = ${journalId} and household_id = ${householdId} and deleted_at is null
+            for update
+          `;
+          if (!entry) throw Object.assign(new Error('journal not found'), { code: 'NOT_FOUND' });
+          if (member.role !== 'owner' && entry.created_by !== userId) {
+            throw Object.assign(new Error('you can only delete your own journal'), { code: 'FORBIDDEN' });
+          }
+          if (envelope.baseRevision !== undefined && envelope.baseRevision !== entry.revision) {
+            throw Object.assign(new Error('revision conflict'), {
+              code: 'CONFLICT',
+              current: entry,
+              currentRevision: entry.revision,
+            });
+          }
+          await tx`update journal_entries set
+                     deleted_at = now(), revision = revision + 1,
+                     last_changed_fields = array['deletedAt'], updated_by = ${userId}, updated_at = now()
+                   where id = ${journalId}`;
+          await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, command_id, source)
+                   values (${householdId}, ${userId}, 'journal.delete', 'journal_entry', ${journalId}, ${envelope.commandId}, 'ios')`;
+          response = ok(envelope.commandId, { journalId, revision: entry.revision + 1 }, entry.revision + 1);
           break;
         }
 

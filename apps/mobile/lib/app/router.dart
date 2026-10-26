@@ -11,6 +11,9 @@ import '../features/auth/sign_in_screen.dart';
 import '../features/household/create_household_screen.dart';
 import '../features/records/animal_analytics_screen.dart';
 import '../features/records/household_analytics_screen.dart';
+import '../features/journal/journal_detail_screen.dart';
+import '../features/journal/journal_editor_screen.dart';
+import '../features/journal/journal_screen.dart';
 import '../features/records/records_screen.dart';
 import '../features/reminders/reminder_form_screen.dart';
 import '../features/reminders/weekly_overview_screen.dart';
@@ -62,6 +65,26 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/household/new',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const CreateHouseholdScreen(),
+      ),
+      GoRoute(
+        path: '/journal',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const JournalScreen(),
+      ),
+      GoRoute(
+        path: '/journal/new',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const JournalEditorScreen(),
+      ),
+      GoRoute(
+        path: '/journal/:entryId/edit',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => JournalEditorScreen(entryId: state.pathParameters['entryId']),
+      ),
+      GoRoute(
+        path: '/journal/:entryId',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => JournalDetailScreen(entryId: state.pathParameters['entryId']!),
       ),
       GoRoute(
         path: '/reminders/weekly',

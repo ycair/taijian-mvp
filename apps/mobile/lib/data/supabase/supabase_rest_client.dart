@@ -90,6 +90,54 @@ class SupabaseRestClient {
         .toList(growable: false);
   }
 
+  Future<void> uploadStorageObject(
+    String bucket,
+    String path,
+    List<int> bytes, {
+    required String contentType,
+  }) async {
+    final response = await _authorized(
+      () => _http.post(
+        Uri.parse('$_baseUrl/storage/v1/object/$bucket/${_storagePath(path)}'),
+        headers: {
+          ..._headers(json: false),
+          'content-type': contentType,
+          'x-upsert': 'true',
+        },
+        body: bytes,
+      ),
+    );
+    _decode(response);
+  }
+
+  Future<void> deleteStorageObject(String bucket, String path) async {
+    final response = await _authorized(
+      () => _http.delete(
+        Uri.parse('$_baseUrl/storage/v1/object/$bucket/${_storagePath(path)}'),
+        headers: _headers(),
+      ),
+    );
+    _decode(response);
+  }
+
+  Future<String?> signedStorageUrl(String bucket, String path) async {
+    final response = await _authorized(
+      () => _http.post(
+        Uri.parse('$_baseUrl/storage/v1/object/sign/$bucket/${_storagePath(path)}'),
+        headers: _headers(json: true),
+        body: jsonEncode({'expiresIn': 3600}),
+      ),
+    );
+    final decoded = _decode(response);
+    if (decoded is! Map) return null;
+    final signed = decoded['signedURL'] ?? decoded['signedUrl'];
+    if (signed is! String || signed.isEmpty) return null;
+    return '$_baseUrl/storage/v1$signed';
+  }
+
+  static String _storagePath(String path) =>
+      path.split('/').map(Uri.encodeComponent).join('/');
+
   Future<Map<String, dynamic>> callFunction(
     String name,
     Map<String, dynamic> body, {

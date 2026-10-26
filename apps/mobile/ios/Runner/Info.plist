@@ -55,6 +55,8 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>選擇照片加入家庭旅程與照護回憶。</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>lineauth2</string>

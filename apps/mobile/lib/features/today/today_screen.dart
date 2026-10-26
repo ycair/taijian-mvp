@@ -138,10 +138,20 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
               kicker: 'Today',
               title: '${_greeting(now)}，${user?.displayName ?? '苔友'}。',
               subtitle: '${household?.name ?? '我的家庭'} · ${_dateLabel(now, timezone)}',
-              trailing: TextButton.icon(
-                onPressed: () => context.push('/reminders/weekly'),
-                icon: const Icon(Icons.calendar_view_week_outlined, size: 18),
-                label: const Text('本週'),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: '旅程',
+                    onPressed: () => context.push('/journal'),
+                    icon: const Icon(Icons.menu_book_outlined, size: 21),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => context.push('/reminders/weekly'),
+                    icon: const Icon(Icons.calendar_view_week_outlined, size: 18),
+                    label: const Text('本週'),
+                  ),
+                ],
               ),
             ),
             Padding(
