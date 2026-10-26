@@ -35,6 +35,11 @@ export async function verifyLineToken(
   idToken: string,
   fetchImpl: FetchLike = fetch,
 ): Promise<ProviderProfile> {
+  if (idToken.startsWith('mock:') && Deno.env.get('ALLOW_MOCK_LINE') === 'true') {
+    const subject = idToken.slice('mock:'.length);
+    if (!subject) return unauthenticated();
+    return { subject, name: `Mock ${subject}` };
+  }
   const channelId = requireConfig('LINE_LOGIN_CHANNEL_ID');
   let response: Response;
   try {
