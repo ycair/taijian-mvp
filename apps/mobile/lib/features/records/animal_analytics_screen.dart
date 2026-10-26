@@ -200,6 +200,12 @@ class _AnimalAnalyticsBody extends StatelessWidget {
                     _AttentionRow(label: '活動力異常', count: analytics.abnormalActivity),
                   if (analytics.medicalCount > 0)
                     _AttentionRow(label: '醫療紀錄', count: analytics.medicalCount),
+                  if (analytics.weightChange != null && analytics.weightChange!.abs() > 0)
+                    _WeightChangeRow(
+                      label: '體重變化',
+                      value: '${analytics.weightChange! >= 0 ? '+' : ''}'
+                          '${analytics.weightChange!.toStringAsFixed(1)} ${analytics.weightUnit}',
+                    ),
                 ],
               ),
             ),
@@ -258,6 +264,28 @@ class _CountChip extends StatelessWidget {
               color: count > 0 ? AppTokens.primaryStrong : AppTokens.muted,
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WeightChangeRow extends StatelessWidget {
+  const _WeightChangeRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        children: [
+          const Icon(Icons.monitor_weight_outlined, size: 18, color: AppTokens.overdue),
+          const SizedBox(width: 8),
+          Expanded(child: Text(label)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w800, color: AppTokens.overdue)),
         ],
       ),
     );

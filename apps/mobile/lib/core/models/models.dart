@@ -702,8 +702,22 @@ class RecordAnalytics {
 
   int countFor(RecordType type) => counts[type.name] ?? 0;
 
+  double? get weightChange {
+    final weights = measurements
+        .where((point) => point.type == RecordType.weight)
+        .toList(growable: false);
+    if (weights.length < 2) return null;
+    return weights.last.value - weights.first.value;
+  }
+
+  String get weightUnit {
+    final weights = measurements.where((point) => point.type == RecordType.weight);
+    return weights.isEmpty ? 'g' : weights.last.unit;
+  }
+
   bool get hasAttention =>
-      medicalCount > 0 || refusedFeedings > 0 || abnormalActivity > 0;
+      medicalCount > 0 || refusedFeedings > 0 || abnormalActivity > 0 ||
+      (weightChange?.abs() ?? 0) > 0;
 }
 
 
