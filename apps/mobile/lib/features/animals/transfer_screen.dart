@@ -108,7 +108,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
           MossCard(
             child: Row(
               children: [
-                AnimalAvatar(label: animal.initial, colorHex: animal.avatarColor, size: 52),
+                AnimalAvatar(label: animal.initial, colorHex: animal.avatarColor, pattern: animal.avatarPattern, size: 52),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(

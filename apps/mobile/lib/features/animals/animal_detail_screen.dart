@@ -110,7 +110,7 @@ class AnimalDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
-                AnimalAvatar(label: animal.initial, colorHex: animal.avatarColor, size: 76),
+                AnimalAvatar(label: animal.initial, colorHex: animal.avatarColor, pattern: animal.avatarPattern, size: 76),
                 const SizedBox(width: 18),
                 Expanded(
                   child: Column(

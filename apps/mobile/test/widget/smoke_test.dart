@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/time/app_time.dart';
 import 'package:mobile/features/animals/animal_detail_screen.dart';
 import 'package:mobile/features/animals/animals_screen.dart';
 import 'package:mobile/features/today/today_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../support/test_harness.dart';
 
 Future<void> _finish(WidgetTester tester, TestHarness harness) async {
@@ -104,6 +107,36 @@ void main() {
     expect(find.text('謝謝慢慢。'), findsOneWidget);
     expect(find.byTooltip('編輯居民'), findsNothing);
     expect(find.byTooltip('居民管理'), findsNothing);
+
+    await _finish(tester, harness);
+  });
+
+  testWidgets('Animals searches and filters by a local group', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'animal_list:mock_owner:household_moss': jsonEncode({
+        'groups': ['最愛'],
+        'animalGroups': {'animal_afa': '最愛'},
+        'order': [],
+        'sortMode': 'custom',
+      }),
+    });
+    final harness = await createTestHarness();
+    addTearDown(harness.dispose);
+
+    await tester.pumpWidget(wrapScreen(harness, const AnimalsScreen()));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), '小綠');
+    await tester.pumpAndSettle();
+    expect(find.text('小綠'), findsNWidgets(2));
+    expect(find.text('阿肥'), findsNothing);
+
+    await tester.enterText(find.byType(TextField), '');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('最愛').first);
+    await tester.pumpAndSettle();
+    expect(find.text('阿肥'), findsOneWidget);
+    expect(find.text('小綠'), findsNothing);
 
     await _finish(tester, harness);
   });
