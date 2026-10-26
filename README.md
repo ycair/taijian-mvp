@@ -95,8 +95,8 @@ for multiple caregivers, not as a single-device notebook:
 - Postgres/RLS reads with background polling.
 - Successful outbox writes trigger an immediate provider refresh, so local changes
   no longer require pull-to-refresh.
-- Cross-device Supabase Realtime subscriptions are **not implemented yet**; other
-  devices update on the next poll.
+- Supabase Realtime subscriptions for household/profile tables refresh providers
+  immediately across devices; polling remains the fallback.
 
 ## Architecture
 
@@ -223,7 +223,6 @@ GitHub `test` check.
 
 ## Deferred / not yet started
 
-- Supabase Realtime cross-device subscriptions.
 - Journal reactions, comments, follow graph, and moderation/reporting.
 - Journal photo crop, stickers, freeform collage, photo quota, and external social posting.
 - Proposals/upvotes.
