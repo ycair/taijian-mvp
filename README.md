@@ -5,7 +5,7 @@
 
 **Status:** Supabase demo running locally — no billing account required.  
 **Working name:** 苔間（商標／網域尚未檢索）  
-**Target:** LINE-first demo on Supabase; Flutter iOS client remains a mock-mode prototype.
+**Target:** LINE-first demo on Supabase; Flutter iOS with native LINE + Supabase real mode.
 
 ---
 
@@ -75,7 +75,9 @@ and reminder; 設定 → owner creates an invite link. The invite can be accepte
    `https://<project-ref>.supabase.co/functions/v1/line-webhook`.
 
 `.env.local`, `supabase/functions/.env`, LINE secrets, and the Supabase secret key must stay
-out of git. The Flutter app still runs in mock mode; wiring it to this API is a follow-up.
+out of git. The Flutter app supports a Supabase real mode with native LINE login
+(see [Flutter iOS native LINE](docs/operations/ios-native-line.md)); mock remains
+the default in debug builds.
 
 ## Why this exists
 
@@ -158,7 +160,7 @@ out of git. The Flutter app still runs in mock mode; wiring it to this API is a 
 apps/
   liff/                 React + Vite + TypeScript + CSS Modules（Firebase Phase 1 reference）
   liff-sb/              React + Vite + Supabase demo（current）
-  mobile/               Flutter iOS（Phase 2, mock mode）
+  mobile/               Flutter iOS（Phase 2, native LINE + Supabase real mode）
 services/
   functions/            Node 22 + TypeScript + Firebase Functions v2（paused）
 supabase/
@@ -178,6 +180,7 @@ docs/
 
 - [v1 Design Spec](docs/superpowers/specs/2026-10-23-taijian-mvp-design.md)
 - [Supabase cloud demo](docs/operations/supabase-cloud.md)
+- [Flutter iOS native LINE](docs/operations/ios-native-line.md)
 - [Visual Directions](docs/design/visual-directions.html)
 - Reverse-engineering notes (private): `ycair/paapajiu-re`
 

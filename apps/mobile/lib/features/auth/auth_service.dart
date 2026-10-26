@@ -19,6 +19,10 @@ abstract class AuthService {
 
   Future<AppUser> signInWithGoogle();
 
+  Future<AppUser> signInWithLine() async {
+    throw const AuthException('此版本不支援 LINE 登入。', code: 'UNSUPPORTED');
+  }
+
   Future<void> signOut();
 
   /// LINE linking is delegated to the LIFF `/link` page. Returns false when the

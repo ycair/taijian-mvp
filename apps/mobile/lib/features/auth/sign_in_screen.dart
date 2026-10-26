@@ -62,7 +62,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         borderRadius: BorderRadius.circular(30),
                         border: Border.all(color: AppTokens.butter, width: 2),
                       ),
-                      child: const Icon(Icons.spa, size: 44, color: AppTokens.primaryStrong),
+                      child: const Icon(
+                        Icons.spa,
+                        size: 44,
+                        color: AppTokens.primaryStrong,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -78,9 +82,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   Text(
                     '把每一次照顧，留在同一個家。',
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTokens.muted,
-                    ),
+                    style: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(color: AppTokens.muted),
                   ),
                   const SizedBox(height: 40),
                   if (config.useMock) ...[
@@ -91,31 +94,56 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     ),
                     const SizedBox(height: 16),
                   ],
-                  FilledButton.icon(
-                    onPressed: _busy ? null : () => _signIn(auth.signInWithApple),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppTokens.ink,
-                      minimumSize: const Size(0, 54),
+                  if (config.useSupabase)
+                    FilledButton.icon(
+                      onPressed: _busy
+                          ? null
+                          : () => _signIn(auth.signInWithLine),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF06C755),
+                        minimumSize: const Size(0, 54),
+                      ),
+                      icon: const Icon(Icons.chat_bubble, size: 22),
+                      label: const Text('使用 LINE 登入'),
+                    )
+                  else ...[
+                    FilledButton.icon(
+                      onPressed: _busy
+                          ? null
+                          : () => _signIn(auth.signInWithApple),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppTokens.ink,
+                        minimumSize: const Size(0, 54),
+                      ),
+                      icon: const Icon(Icons.apple, size: 24),
+                      label: Text(config.useMock ? '使用測試帳號登入' : '使用 Apple 登入'),
                     ),
-                    icon: const Icon(Icons.apple, size: 24),
-                    label: Text(config.useMock ? '使用測試帳號登入' : '使用 Apple 登入'),
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: _busy ? null : () => _signIn(auth.signInWithGoogle),
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      minimumSize: const Size(0, 54),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: _busy
+                          ? null
+                          : () => _signIn(auth.signInWithGoogle),
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        minimumSize: const Size(0, 54),
+                      ),
+                      icon: Icon(
+                        Icons.g_mobiledata,
+                        size: 28,
+                        color: AppTokens.primaryStrong,
+                      ),
+                      label: const Text('使用 Google 登入'),
                     ),
-                    icon: Icon(Icons.g_mobiledata, size: 28, color: AppTokens.primaryStrong),
-                    label: const Text('使用 Google 登入'),
-                  ),
+                  ],
                   if (_error != null) ...[
                     const SizedBox(height: 16),
                     Text(
                       _error!,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: AppTokens.overdue, height: 1.4),
+                      style: const TextStyle(
+                        color: AppTokens.overdue,
+                        height: 1.4,
+                      ),
                     ),
                   ],
                   if (_busy) ...[
@@ -154,12 +182,22 @@ class SplashScreen extends StatelessWidget {
           children: [
             Icon(Icons.spa, size: 48, color: AppTokens.primary),
             SizedBox(height: 20),
-            Text('苔間', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: 2)),
+            Text(
+              '苔間',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 2,
+              ),
+            ),
             SizedBox(height: 20),
             SizedBox(
               width: 24,
               height: 24,
-              child: CircularProgressIndicator(strokeWidth: 2.5, color: AppTokens.primary),
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: AppTokens.primary,
+              ),
             ),
           ],
         ),
