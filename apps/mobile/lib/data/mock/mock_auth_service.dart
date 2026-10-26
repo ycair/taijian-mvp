@@ -41,6 +41,9 @@ class MockAuthService implements AuthService {
   Future<void> unlinkProvider(String provider) async {}
 
   @override
+  Future<Set<String>> linkedProviders() async => const {'line'};
+
+  @override
   Future<void> deleteAccount() async {}
 
   Future<AppUser> _signIn() async {

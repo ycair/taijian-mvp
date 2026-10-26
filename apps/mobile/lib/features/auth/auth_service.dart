@@ -35,6 +35,8 @@ abstract class AuthService {
     throw const AuthException('此版本不支援解除綁定。', code: 'UNSUPPORTED');
   }
 
+  Future<Set<String>> linkedProviders() async => const {};
+
   Future<void> deleteAccount() async {
     throw const AuthException('此版本不支援刪除帳號。', code: 'UNSUPPORTED');
   }

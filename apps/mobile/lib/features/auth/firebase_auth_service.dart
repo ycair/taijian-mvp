@@ -1,12 +1,8 @@
-import 'dart:convert';
 import 'dart:developer' as developer;
-import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/config/app_config.dart';
@@ -44,45 +40,7 @@ class FirebaseAuthService implements AuthService {
 
   @override
   Future<AppUser> signInWithApple() async {
-    try {
-      final rawNonce = _randomNonce();
-      final hashedNonce = sha256.convert(utf8.encode(rawNonce)).toString();
-      final appleCredential = await SignInWithApple.getAppleIDCredential(
-        scopes: const [
-          AppleIDAuthorizationScopes.email,
-          AppleIDAuthorizationScopes.fullName,
-        ],
-        nonce: hashedNonce,
-      );
-      final identityToken = appleCredential.identityToken;
-      final authorizationCode = appleCredential.authorizationCode;
-      if (identityToken == null || identityToken.isEmpty) {
-        throw const AuthException('Apple 沒有回傳身分權杖，請再試一次。');
-      }
-      final credential = OAuthProvider('apple.com').credential(
-        idToken: identityToken,
-        accessToken: authorizationCode,
-        rawNonce: rawNonce,
-      );
-      final result = await _auth.signInWithCredential(credential);
-      final user = result.user;
-      if (user == null) throw const AuthException('Apple 登入未完成。');
-      final displayName = [
-        appleCredential.givenName,
-        appleCredential.familyName,
-      ].whereType<String>().where((part) => part.trim().isNotEmpty).join(' ');
-      if (displayName.isNotEmpty && (user.displayName == null || user.displayName!.isEmpty)) {
-        await user.updateDisplayName(displayName);
-      }
-      return _toAppUser(_auth.currentUser ?? user);
-    } on SignInWithAppleAuthorizationException catch (error) {
-      if (error.code == AuthorizationErrorCode.canceled) {
-        throw const AuthException('已取消 Apple 登入。', code: 'CANCELLED');
-      }
-      throw AuthException('Apple 登入失敗：${error.message}', code: 'APPLE_FAILED');
-    } on FirebaseAuthException catch (error) {
-      throw AuthException('登入失敗：${error.message ?? error.code}', code: error.code);
-    }
+    throw const AuthException('Apple 登入已暫停。', code: 'UNSUPPORTED');
   }
 
   @override
@@ -130,6 +88,9 @@ class FirebaseAuthService implements AuthService {
   }
 
   @override
+  Future<Set<String>> linkedProviders() async => const {};
+
+  @override
   Future<void> deleteAccount() async {
     throw const AuthException('Firebase 版本不支援刪除帳號。', code: 'UNSUPPORTED');
   }
@@ -175,12 +136,4 @@ class FirebaseAuthService implements AuthService {
     }
   }
 
-  static String _randomNonce([int length = 32]) {
-    const charset = '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
-    final random = Random.secure();
-    return List<String>.generate(
-      length,
-      (_) => charset[random.nextInt(charset.length)],
-    ).join();
-  }
 }

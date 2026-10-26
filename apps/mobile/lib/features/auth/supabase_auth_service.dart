@@ -203,6 +203,15 @@ class SupabaseAuthService implements AuthService {
   }
 
   @override
+  Future<Set<String>> linkedProviders() async {
+    final response = await _client.callFunction('auth', {'action': 'identities'});
+    _throwIfFailed(response);
+    final providers = response['providers'];
+    if (providers is! List) return const {};
+    return providers.whereType<String>().toSet();
+  }
+
+  @override
   Future<void> signOut() async {
     if (_accessToken != null) {
       try {

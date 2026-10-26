@@ -48,6 +48,9 @@ class FakeAuthService implements AuthService {
   Future<void> deleteAccount() async {}
 
   @override
+  Future<Set<String>> linkedProviders() async => const {'line'};
+
+  @override
   Future<void> signOut() async {}
 
   @override
@@ -72,6 +75,8 @@ void main() {
         supabaseUrl: 'https://example.supabase.co',
         supabaseAnonKey: 'sb_publishable_test',
         lineChannelId: '2012198098',
+        googleIosClientId: 'ios-client',
+        googleServerClientId: 'server-client',
       ),
       auth: auth,
       readStore: harness.dependencies.readStore,
@@ -89,6 +94,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('使用 LINE 登入'), findsOneWidget);
+    expect(find.text('使用 Google 登入'), findsOneWidget);
+    expect(find.text('先以訪客身分試用'), findsOneWidget);
     expect(find.text('使用 Apple 登入'), findsNothing);
 
     await tester.tap(find.text('使用 LINE 登入'));
