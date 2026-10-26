@@ -29,7 +29,7 @@
 - Guest lifecycle: guest can bind a provider; losing the device without binding means unrecoverable data.
 - Account deletion: sole owner of a shared household cannot delete without transfer.
 - LIFF token storage: localStorage refresh token is XSS-sensitive; keep the LIFF surface minimal.
-- Google audience: verify the iOS OAuth client ID, not a web client ID.
+- Google audience: verify the **Web** OAuth client ID (`GOOGLE_SERVER_CLIENT_ID`), not the iOS client ID; iOS uses the Web ID as `GIDServerClientID`.
 
 ---
 
@@ -135,7 +135,7 @@ grant select on auth_identities, auth_sessions to service_role;
 - [ ] Write tests for valid LINE/Google responses, wrong `aud`, expired token, and malformed provider response.
 - [ ] Run tests; expect failures.
 - [ ] Implement LINE via `POST https://api.line.me/oauth2/v2.1/verify` with `LINE_LOGIN_CHANNEL_ID`.
-- [ ] Implement Google via `https://oauth2.googleapis.com/tokeninfo?id_token=...`; require `aud === GOOGLE_IOS_CLIENT_ID`, `exp` in the future, and non-empty `sub`.
+- [ ] Implement Google via `https://oauth2.googleapis.com/tokeninfo?id_token=...`; require `aud === GOOGLE_SERVER_CLIENT_ID`, `exp` in the future, and non-empty `sub`.
 - [ ] Do not include token values in errors/logs.
 - [ ] Run tests; expect pass.
 - [ ] Commit.
@@ -228,7 +228,7 @@ grant select on auth_identities, auth_sessions to service_role;
   - duplicate identity error surfaces as AuthException.
 - [ ] Run tests; expect failures.
 - [ ] Implement token store and auth service changes.
-- [ ] Use `google_sign_in` to obtain an ID token; send it to `auth` action `google`.
+- [ ] Initialize `google_sign_in` with the iOS client ID and Web `serverClientId`, obtain an ID token, and send it to `auth` action `google`.
 - [ ] Guest sign-in calls `auth` action `guest`; no native SDK.
 - [ ] Run tests; expect pass.
 - [ ] Commit.
@@ -252,7 +252,7 @@ grant select on auth_identities, auth_sessions to service_role;
 
 - [ ] Write failing widget tests for the three options, guest warning, linked identity display, and delete confirmation.
 - [ ] Implement UI using the existing Direction B tokens; no pixel-art assets.
-- [ ] Add a real Google iOS OAuth client ID to `Info.plist`/build config; current placeholder must be replaced. If the client ID is not available, Google remains visibly disabled with a config message; LINE/guest still test.
+- [ ] Add the iOS client ID as `GIDClientID` and the Web client ID as `GIDServerClientID`/Edge `GOOGLE_SERVER_CLIENT_ID`; replace the placeholder URL scheme with the reversed iOS client ID. If the IDs are not available, Google remains visibly disabled with a config message; LINE/guest still test.
 - [ ] Remove the Apple button/flow from the Supabase path and remove the Apple entitlement from `Runner.entitlements`. Keep the Firebase legacy code compiling only if it does not require the entitlement; if `sign_in_with_apple` becomes unused, remove the dependency and dead code in a separate cleanup commit.
 - [ ] Run `flutter analyze` and widget tests; expect pass.
 - [ ] Commit.
@@ -308,7 +308,7 @@ curl -s -X POST "$FUNCTIONS_URL/auth" -H 'content-type: application/json' \
 ### Task 10: Cloud deployment and verification
 
 - [ ] Apply the migration to `bqezqvhdmqanxgzfvdag`; preserve existing LINE profile/household data.
-- [ ] Deploy `auth` and updated `line-login`; set `GOOGLE_IOS_CLIENT_ID`, `JWT_SECRET`, and existing Supabase secrets. Do not set Apple/APNs secrets.
+- [ ] Deploy `auth` and updated `line-login`; set `GOOGLE_SERVER_CLIENT_ID` (Web OAuth client), `JWT_SECRET`, and existing Supabase secrets. Do not set Apple/APNs secrets.
 - [ ] Run security/performance advisors; fix regressions.
 - [ ] Verify cloud LINE and guest login; Google after client ID; no App Store/APNs work.
 - [ ] Open a PR; CI must be green; request a whole-branch review.

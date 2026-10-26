@@ -128,7 +128,7 @@ release; it delegates to `auth` with `action=line`.
 |---|---|
 | `JWT_SECRET` | HS256 signing/verification for access JWTs |
 | `LINE_LOGIN_CHANNEL_ID` | LINE ID-token audience |
-| `GOOGLE_IOS_CLIENT_ID` | Google ID-token audience |
+| `GOOGLE_SERVER_CLIENT_ID` | Google Web OAuth client ID used as the ID-token audience |
 | `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` | server-side user/session writes |
 | `SUPABASE_DB_URL` | transactions for sessions/identities |
 
@@ -246,7 +246,7 @@ Rules:
 - Use constant-time comparison for refresh hashes where applicable.
 - Rate-limit auth endpoints; return generic errors for unknown identities.
 - Account deletion revokes all sessions and schedules data purge.
-- Google audience must be the iOS OAuth client ID, not a web client.
+- Google audience must be the **Web** OAuth client ID (`GOOGLE_SERVER_CLIENT_ID`), because the iOS Google Sign-In SDK uses the server client ID for ID tokens. The iOS client ID is only for the app/URL scheme.
 
 ## 9. Migration
 
@@ -302,8 +302,9 @@ Rules:
 ## 12. Risks / open items
 
 - **Apple/App Store:** deferred; no paid-team dependency for the current scope.
-- **Google client configuration:** need a real iOS OAuth client ID and URL scheme;
-  the current Info.plist has a placeholder.
+- **Google client configuration:** need both an iOS OAuth client (bundle ID +
+  reversed URL scheme) and a Web OAuth client as `GIDServerClientID` / Edge
+  `GOOGLE_SERVER_CLIENT_ID`; the current Info.plist has a placeholder.
 - **Refresh token security:** custom auth is sensitive; the implementation must not
   log or store plaintext refresh tokens.
 - **Account linking UX:** rejecting duplicate identities is deliberate; later we
