@@ -40,6 +40,7 @@ class SupabaseAuthService implements AuthService {
   String? _accessToken;
   String? _refreshToken;
   AppUser? _current;
+  Future<String?>? _refreshInFlight;
 
   String? get token => _accessToken;
 
@@ -253,7 +254,17 @@ class SupabaseAuthService implements AuthService {
     return await _applyAuthResponse(response);
   }
 
-  Future<String?> _refreshAccessToken() async {
+  Future<String?> _refreshAccessToken() {
+    final active = _refreshInFlight;
+    if (active != null) return active;
+    final future = _performRefreshAccessToken();
+    _refreshInFlight = future;
+    return future.whenComplete(() {
+      if (identical(_refreshInFlight, future)) _refreshInFlight = null;
+    });
+  }
+
+  Future<String?> _performRefreshAccessToken() async {
     try {
       await _refreshSession();
       return _accessToken;
