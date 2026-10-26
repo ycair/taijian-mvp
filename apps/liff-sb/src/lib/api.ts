@@ -39,6 +39,9 @@ export async function callCommand<T = unknown>(
 
 export type LineLoginResponse = {
   ok: boolean;
+  accessToken?: string;
+  refreshToken?: string;
+  sessionId?: string;
   token?: string;
   userId?: string;
   profile?: {
@@ -50,13 +53,57 @@ export type LineLoginResponse = {
   message?: string;
 };
 
+export type RefreshResponse = {
+  ok: boolean;
+  accessToken?: string;
+  refreshToken?: string;
+  sessionId?: string;
+  userId?: string;
+  profile?: LineLoginResponse['profile'];
+  message?: string;
+};
+
 export async function loginWithLine(idToken: string): Promise<LineLoginResponse> {
-  const response = await fetch(`${functionsUrl}/line-login`, {
+  const response = await fetch(`${functionsUrl}/auth`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', apikey: supabaseAnonKey },
-    body: JSON.stringify({ idToken }),
+    body: JSON.stringify({ action: 'line', idToken, platform: 'liff' }),
   });
   return (await response.json()) as LineLoginResponse;
+}
+
+export async function refreshSessionToken(refreshToken: string): Promise<RefreshResponse> {
+  const response = await fetch(`${functionsUrl}/auth`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', apikey: supabaseAnonKey },
+    body: JSON.stringify({ action: 'refresh', refreshToken }),
+  });
+  return (await response.json()) as RefreshResponse;
+}
+
+export async function logoutSession(token: string): Promise<void> {
+  await fetch(`${functionsUrl}/auth`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      apikey: supabaseAnonKey,
+      authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ action: 'logout' }),
+  });
+}
+
+export function tokenExpiryMs(token: string): number | null {
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  const payloadPart = parts[1];
+  if (!payloadPart) return null;
+  try {
+    const payload = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')));
+    return typeof payload.exp === 'number' ? payload.exp * 1000 : null;
+  } catch {
+    return null;
+  }
 }
 
 export function newCommandId(): string {
