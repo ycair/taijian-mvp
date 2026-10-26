@@ -1328,6 +1328,15 @@ Deno.serve(async (request) => {
           if (member.role !== 'owner' && order.profile_id !== userId) {
             throw Object.assign(new Error('cannot cancel this order'), { code: 'FORBIDDEN' });
           }
+          if (order.status === 'cancelled') {
+            response = ok(envelope.commandId, {
+              orderId,
+              status: 'cancelled',
+              alreadyCancelled: true,
+              balance: await pointsBalance(tx, order.profile_id),
+            });
+            break;
+          }
           if (order.status !== 'confirmed') {
             throw Object.assign(new Error('order is not cancellable'), { code: 'INVALID_STATE' });
           }
