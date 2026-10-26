@@ -67,11 +67,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const CreateHouseholdScreen(),
       ),
       GoRoute(
-        path: '/journal',
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const JournalScreen(),
-      ),
-      GoRoute(
         path: '/journal/new',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const JournalEditorScreen(),
@@ -95,6 +90,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/records/analytics',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const HouseholdAnalyticsScreen(),
+      ),
+      GoRoute(
+        path: '/records',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => Scaffold(
+          appBar: AppBar(title: const Text('照護紀錄')),
+          body: const RecordsScreen(),
+        ),
       ),
       GoRoute(
         path: '/transfers',
@@ -162,7 +165,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           StatefulShellBranch(
             routes: [
-              GoRoute(path: '/records', builder: (context, state) => const RecordsScreen()),
+              GoRoute(path: '/journal', builder: (context, state) => const JournalScreen()),
             ],
           ),
           StatefulShellBranch(

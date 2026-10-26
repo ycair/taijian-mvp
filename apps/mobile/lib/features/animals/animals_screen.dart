@@ -238,6 +238,37 @@ class _AnimalsScreenState extends ConsumerState<AnimalsScreen> {
               ),
             ),
             Padding(
+              padding: const EdgeInsets.fromLTRB(20, 2, 20, 12),
+              child: MossCard(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                child: Row(
+                  children: [
+                    const Icon(Icons.history_outlined, color: AppTokens.primaryStrong),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('照護時間軸', style: TextStyle(fontWeight: FontWeight.w800)),
+                          SizedBox(height: 2),
+                          Text('紀錄、分析與家庭照護摘要', style: TextStyle(fontSize: 11, color: AppTokens.muted)),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => context.push('/records'),
+                      child: const Text('查看'),
+                    ),
+                    IconButton(
+                      tooltip: '家庭分析',
+                      onPressed: () => context.push('/records/analytics'),
+                      icon: const Icon(Icons.insights_outlined, size: 19),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
               child: TextField(
                 controller: _searchController,
