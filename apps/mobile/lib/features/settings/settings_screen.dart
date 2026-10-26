@@ -241,6 +241,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           onTap: _busy ? null : () => _editHouseholdTimezone(household),
                         ),
                         _SettingRow(
+                          icon: Icons.menu_book_outlined,
+                          title: '旅程',
+                          value: '照片日誌與家庭回憶',
+                          onTap: () => context.push('/journal'),
+                        ),
+                        _SettingRow(
                           icon: Icons.person_add_alt_1,
                           title: '邀請家人',
                           value: '建立 7 天有效的邀請連結',

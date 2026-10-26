@@ -20,6 +20,7 @@
 8. `20261026130000_care_core_advisors`
 9. `20261026140000_care_core_records_analytics`
 10. `20261026160000_commerce_sandbox`
+11. `20261026170000_journal_photo_core`
 
 2A adds the read-only `species` catalog, resident profile fields
 (`avatar_pattern`, `memorial_at`, `memorial_note`), lineage edges, and transfer
@@ -50,7 +51,7 @@ Schema notes:
 
 - `auth` (`verify_jwt=false`; LINE/Google/guest/refresh/link/unlink/logout/delete/identities)
 - `line-login` (`verify_jwt=false`; compatibility wrapper; returns access+refresh+legacy token)
-- `execute-command` (`verify_jwt=false`; verifies access JWT and active session; v9 includes 2A/2B commands plus sandbox points, shop orders, and subscriptions)
+- `execute-command` (`verify_jwt=false`; verifies access JWT and active session; v10 includes 2A/2B/3A commands plus journal photo entries)
 - `line-webhook` (`verify_jwt=false`; verifies the LINE signature)
 
 `auth` and `execute-command` require a valid session. `JWT_SECRET` must be the
