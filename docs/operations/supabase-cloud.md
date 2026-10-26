@@ -14,6 +14,7 @@
 2. `20261025153657_profile_visibility`
 3. `20261025153808_api_hardening`
 4. `20261025153837_function_execute_hardening`
+5. `20261026120000_foundation_identity` (local; apply to cloud in Task 10)
 
 Schema notes:
 
@@ -28,13 +29,14 @@ Schema notes:
 
 ## Deployed functions
 
-- `line-login` (`verify_jwt=false`; verifies LINE ID token itself)
-- `execute-command` (`verify_jwt=false`; verifies the custom JWT itself)
+- `auth` (`verify_jwt=false`; LINE/Google/guest/refresh/link/unlink/logout/delete/identities)
+- `line-login` (`verify_jwt=false`; compatibility wrapper; returns access+refresh+legacy token)
+- `execute-command` (`verify_jwt=false`; verifies access JWT and active session)
 - `line-webhook` (`verify_jwt=false`; verifies the LINE signature)
 
-The functions are deployed, but **`line-login` and `execute-command` cannot
-work until the `JWT_SECRET` function secret is set**. `JWT_SECRET` must be the
-project's legacy JWT secret used by PostgREST, not a new random value.
+`auth` and `execute-command` require a valid session. `JWT_SECRET` must be the
+project's legacy JWT secret used by PostgREST; refresh tokens are stored hashed
+in `auth_sessions`.
 
 ## Required Edge Function secrets
 
@@ -47,8 +49,9 @@ Set these in the dashboard at:
 | `JWT_SECRET` | Project Settings → API → JWT secret | yes |
 | `LINE_LOGIN_CHANNEL_ID` | LINE Login channel | no |
 | `LIFF_ID` | LIFF app under the LINE Login channel | no |
-| `LINE_MESSAGING_CHANNEL_SECRET` | Messaging API channel | yes |
-| `LINE_CHANNEL_ACCESS_TOKEN` | Messaging API channel | yes |
+| `GOOGLE_SERVER_CLIENT_ID` | Google **Web** OAuth client ID (ID-token audience) | no |
+| `LINE_MESSAGING_CHANNEL_SECRET` | Messaging API channel (Bot only) | yes |
+| `LINE_CHANNEL_ACCESS_TOKEN` | Messaging API channel (Bot only) | yes |
 
 Do **not** set `ALLOW_MOCK_LINE` in the cloud project. Mock login is local-only.
 
@@ -129,8 +132,8 @@ Required public Edge Function secrets:
 | `LINE_LOGIN_CHANNEL_ID` | `2012198098` |
 | `LIFF_ID` | `2012198098-yDGNuYOH` |
 
-`JWT_SECRET` is configured and `line-login` no longer returns a worker error.
-Do not set `ALLOW_MOCK_LINE` on the cloud project.
+`JWT_SECRET` is configured. Do not set `ALLOW_MOCK_LINE` on the cloud project.
+Access JWTs are 1 hour; refresh tokens rotate every use and expire after 30 days.
 
 ## Static deploy (Netlify Drop)
 
