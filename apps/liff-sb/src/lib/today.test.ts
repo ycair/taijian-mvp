@@ -41,6 +41,11 @@ describe('buildTodayTasks', () => {
     expect(tasks[0]?.completedByName).toBe('Test A');
   });
 
+  it('drops tasks for memorial animals', () => {
+    const tasks = buildTodayTasks([reminder], [], [{ ...animal, status: 'memorial' }], new Date(), 'Asia/Taipei');
+    expect(tasks).toHaveLength(0);
+  });
+
   it('drops tasks for archived animals', () => {
     const tasks = buildTodayTasks([reminder], [], [{ ...animal, status: 'archived' }], new Date(), 'Asia/Taipei');
     expect(tasks).toHaveLength(0);

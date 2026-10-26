@@ -27,7 +27,7 @@ export function AnimalsPage() {
       .from('animals')
       .select('*')
       .eq('household_id', householdId)
-      .eq('status', 'active')
+      .in('status', ['active', 'memorial'])
       .is('deleted_at', null)
       .order('name');
     if (loadError) setError(loadError.message);
@@ -80,7 +80,10 @@ export function AnimalsPage() {
               <div className="avatar" style={{ background: animal.avatar_color }} />
               <div>
                 <div style={{ fontWeight: 700 }}>{animal.name}</div>
-                <div className="muted" style={{ fontSize: 12 }}>{animal.species_label ?? animal.species}</div>
+                <div className="muted" style={{ fontSize: 12 }}>
+                  {animal.species_label ?? animal.species}
+                  {animal.status === 'memorial' ? ' · 紀念' : ''}
+                </div>
               </div>
             </div>
           </Link>
