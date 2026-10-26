@@ -189,10 +189,14 @@ class Animal {
     required this.avatarColor,
     required this.status,
     required this.revision,
+    this.avatarPattern = 'solid',
     this.morph,
     this.sex = 'unknown',
     this.notes,
     this.birthDate,
+    this.adoptionDate,
+    this.memorialAt,
+    this.memorialNote,
   });
 
   factory Animal.fromMap(String id, Map<String, dynamic> map) {
@@ -203,12 +207,18 @@ class Animal {
       species: readString(map, 'species', 'other'),
       speciesLabel: readString(map, 'speciesLabel'),
       avatarColor: readString(map, 'avatarColor', '#7C9A76'),
+      avatarPattern: readString(map, 'avatarPattern', 'solid'),
       status: readString(map, 'status', 'active'),
       revision: readInt(map, 'revision'),
       morph: (map['morph'] as String?)?.trim().isEmpty == true ? null : map['morph'] as String?,
       sex: readString(map, 'sex', 'unknown'),
       notes: map['notes'] as String?,
       birthDate: map['birthDate'] as String?,
+      adoptionDate: map['adoptionDate'] as String?,
+      memorialAt: readDate(map, 'memorialAt'),
+      memorialNote: (map['memorialNote'] as String?)?.trim().isEmpty == true
+          ? null
+          : map['memorialNote'] as String?,
     );
   }
 
@@ -218,33 +228,58 @@ class Animal {
   final String species;
   final String speciesLabel;
   final String avatarColor;
+  final String avatarPattern;
   final String status;
   final int revision;
   final String? morph;
   final String sex;
   final String? notes;
   final String? birthDate;
+  final String? adoptionDate;
+  final DateTime? memorialAt;
+  final String? memorialNote;
 
   bool get isActive => status == 'active';
+
+  bool get isMemorial => status == 'memorial';
 
   String get displaySpecies => speciesLabel.isNotEmpty ? speciesLabel : species;
 
   String get initial => name.trim().isEmpty ? '?' : name.trim().substring(0, 1);
 
-  Animal copyWith({int? revision, String? name, String? morph, String? notes}) {
+  Animal copyWith({
+    int? revision,
+    String? name,
+    String? species,
+    String? speciesLabel,
+    String? avatarColor,
+    String? avatarPattern,
+    String? status,
+    String? morph,
+    String? sex,
+    String? notes,
+    String? birthDate,
+    String? adoptionDate,
+    DateTime? memorialAt,
+    String? memorialNote,
+  }) {
     return Animal(
       id: id,
       householdId: householdId,
       name: name ?? this.name,
-      species: species,
-      speciesLabel: speciesLabel,
-      avatarColor: avatarColor,
-      status: status,
+      species: species ?? this.species,
+      speciesLabel: speciesLabel ?? this.speciesLabel,
+      avatarColor: avatarColor ?? this.avatarColor,
+      avatarPattern: avatarPattern ?? this.avatarPattern,
+      status: status ?? this.status,
       revision: revision ?? this.revision,
       morph: morph ?? this.morph,
-      sex: sex,
+      sex: sex ?? this.sex,
       notes: notes ?? this.notes,
-      birthDate: birthDate,
+      birthDate: birthDate ?? this.birthDate,
+      adoptionDate: adoptionDate ?? this.adoptionDate,
+      memorialAt: memorialAt ?? this.memorialAt,
+      memorialNote: memorialNote ?? this.memorialNote,
     );
   }
 }

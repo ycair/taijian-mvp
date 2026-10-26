@@ -18,6 +18,8 @@ class AnimalRepository {
     String sex = 'unknown',
     String? notes,
     String? birthDate,
+    String? adoptionDate,
+    String avatarPattern = 'solid',
   }) async {
     if (householdId == null) throw StateError('No household');
     final species = speciesById(speciesId);
@@ -29,6 +31,8 @@ class AnimalRepository {
         if (species != null) 'speciesLabel': species.name,
         'sex': sex,
         'avatarColor': avatarColor,
+        'avatarPattern': avatarPattern,
+        'adoptionDate': ?adoptionDate,
         if (morph != null && morph.trim().isNotEmpty) 'morph': morph.trim(),
         if (notes != null && notes.trim().isNotEmpty) 'notes': notes.trim(),
         'birthDate': ?birthDate,
@@ -40,17 +44,35 @@ class AnimalRepository {
   Future<void> update({
     required Animal animal,
     String? name,
+    String? speciesId,
+    String? speciesLabel,
     String? morph,
+    String? sex,
     String? notes,
+    String? birthDate,
+    String? adoptionDate,
+    String? avatarColor,
+    String? avatarPattern,
   }) async {
     if (householdId == null) throw StateError('No household');
+    final species = speciesId == null ? null : speciesById(speciesId);
     await commands.submit(
       'animal.update',
       {
         'animalId': animal.id,
         if (name != null) 'name': name.trim(),
+        'species': ?speciesId,
+        if (speciesLabel != null)
+          'speciesLabel': speciesLabel.trim()
+        else if (species != null)
+          'speciesLabel': species.name,
         if (morph != null) 'morph': morph.trim(),
+        'sex': ?sex,
         if (notes != null) 'notes': notes.trim(),
+        'birthDate': ?birthDate,
+        'adoptionDate': ?adoptionDate,
+        'avatarColor': ?avatarColor,
+        'avatarPattern': ?avatarPattern,
       },
       householdId: householdId,
       baseRevision: animal.revision,

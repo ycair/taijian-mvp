@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/species.dart';
 import '../../core/theme/app_theme.dart';
+import '../species/species_repository.dart';
 import '../animals/animal_repository.dart';
 
 class NewAnimalScreen extends ConsumerStatefulWidget {
@@ -18,9 +19,12 @@ class _NewAnimalScreenState extends ConsumerState<NewAnimalScreen> {
   final _nameController = TextEditingController();
   final _morphController = TextEditingController();
   final _notesController = TextEditingController();
+  final _birthDateController = TextEditingController();
+  final _adoptionDateController = TextEditingController();
   String _speciesId = speciesList.first.id;
   String _sex = 'unknown';
-  String _avatarColor = AppTokens.avatarPalette.first;
+  String _avatarColor = speciesList.first.defaultColor;
+  String _avatarPattern = speciesList.first.defaultPattern;
   bool _busy = false;
 
   @override
@@ -28,6 +32,8 @@ class _NewAnimalScreenState extends ConsumerState<NewAnimalScreen> {
     _nameController.dispose();
     _morphController.dispose();
     _notesController.dispose();
+    _birthDateController.dispose();
+    _adoptionDateController.dispose();
     super.dispose();
   }
 
@@ -42,6 +48,9 @@ class _NewAnimalScreenState extends ConsumerState<NewAnimalScreen> {
         morph: _morphController.text,
         sex: _sex,
         notes: _notesController.text,
+        birthDate: _birthDateController.text.trim().isEmpty ? null : _birthDateController.text.trim(),
+        adoptionDate: _adoptionDateController.text.trim().isEmpty ? null : _adoptionDateController.text.trim(),
+        avatarPattern: _avatarPattern,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -58,6 +67,7 @@ class _NewAnimalScreenState extends ConsumerState<NewAnimalScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final catalog = ref.watch(speciesCatalogProvider).value ?? speciesList;
     return Scaffold(
       appBar: AppBar(title: const Text('新增居民')),
       body: SafeArea(
@@ -82,10 +92,43 @@ class _NewAnimalScreenState extends ConsumerState<NewAnimalScreen> {
                 initialValue: _speciesId,
                 decoration: const InputDecoration(labelText: '物種'),
                 items: [
-                  for (final species in speciesList)
+                  for (final species in catalog)
                     DropdownMenuItem(value: species.id, child: Text(species.name)),
                 ],
-                onChanged: (value) => setState(() => _speciesId = value ?? _speciesId),
+                onChanged: (value) {
+                  final selected = speciesById(value ?? _speciesId);
+                  setState(() {
+                    _speciesId = value ?? _speciesId;
+                    if (selected != null) {
+                      _avatarColor = selected.defaultColor;
+                      _avatarPattern = selected.defaultPattern;
+                    }
+                  });
+                },
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _birthDateController,
+                      decoration: const InputDecoration(
+                        labelText: '生日（選填）',
+                        hintText: 'YYYY-MM-DD',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _adoptionDateController,
+                      decoration: const InputDecoration(
+                        labelText: '到家日（選填）',
+                        hintText: 'YYYY-MM-DD',
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 14),
               TextFormField(
@@ -103,6 +146,19 @@ class _NewAnimalScreenState extends ConsumerState<NewAnimalScreen> {
                 ],
                 selected: {_sex},
                 onSelectionChanged: (value) => setState(() => _sex = value.first),
+              ),
+              const SizedBox(height: 18),
+              Text('圖案', style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 8),
+              SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(value: 'solid', label: Text('素色')),
+                  ButtonSegment(value: 'spots', label: Text('斑點')),
+                  ButtonSegment(value: 'stripes', label: Text('條紋')),
+                  ButtonSegment(value: 'gradient', label: Text('漸層')),
+                ],
+                selected: {_avatarPattern},
+                onSelectionChanged: (value) => setState(() => _avatarPattern = value.first),
               ),
               const SizedBox(height: 20),
               Text('代表色', style: Theme.of(context).textTheme.labelLarge),

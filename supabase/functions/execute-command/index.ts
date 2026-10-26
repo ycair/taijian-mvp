@@ -320,14 +320,180 @@ Deno.serve(async (request) => {
           if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
           await requireMember(tx, householdId, userId);
           const id = crypto.randomUUID();
-          await tx`insert into animals (id, household_id, name, species, species_label, morph, sex, birth_date, adoption_date, avatar_color, notes, created_by, updated_by)
+          const avatarPattern = String(payload.avatarPattern ?? 'solid');
+          if (!['solid', 'spots', 'stripes', 'gradient'].includes(avatarPattern)) {
+            throw Object.assign(new Error('invalid avatar pattern'), { code: 'VALIDATION_ERROR' });
+          }
+          await tx`insert into animals (id, household_id, name, species, species_label, morph, sex, birth_date, adoption_date, avatar_color, avatar_pattern, notes, created_by, updated_by)
                    values (${id}, ${householdId}, ${String(payload.name)}, ${String(payload.species)},
                    ${payload.speciesLabel ?? null}, ${payload.morph ?? null}, ${payload.sex ?? 'unknown'},
                    ${payload.birthDate ?? null}, ${payload.adoptionDate ?? null},
-                   ${payload.avatarColor ?? '#7C9A76'}, ${payload.notes ?? null}, ${userId}, ${userId})`;
+                   ${payload.avatarColor ?? '#7C9A76'}, ${avatarPattern},
+                   ${payload.notes ?? null}, ${userId}, ${userId})`;
           await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, after, command_id, source)
                    values (${householdId}, ${userId}, 'animal.create', 'animal', ${id}, ${tx.json(payload)}, ${envelope.commandId}, 'liff')`;
           response = ok(envelope.commandId, { animalId: id }, 0);
+          break;
+        }
+
+        case 'animal.update': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          const member = await requireMember(tx, householdId, userId);
+          if (member.role !== 'owner') throw Object.assign(new Error('owner only'), { code: 'FORBIDDEN' });
+          const animalId = String(payload.animalId ?? '');
+          const [animal] = await tx`
+            select * from animals
+            where id = ${animalId} and household_id = ${householdId} and deleted_at is null
+            for update
+          `;
+          if (!animal) throw Object.assign(new Error('animal not found'), { code: 'NOT_FOUND' });
+          if (animal.status === 'memorial' || animal.status === 'archived') {
+            throw Object.assign(new Error('animal is not editable'), { code: 'INVALID_STATE' });
+          }
+          if (envelope.baseRevision !== undefined && envelope.baseRevision !== animal.revision) {
+            throw Object.assign(new Error('revision conflict'), {
+              code: 'CONFLICT',
+              current: animal,
+              currentRevision: animal.revision,
+            });
+          }
+
+          const has = (key: string) => Object.prototype.hasOwnProperty.call(payload, key);
+          const changed: string[] = [];
+          let name = animal.name as string;
+          let species = animal.species as string;
+          let speciesLabel = animal.species_label as string | null;
+          let morph = animal.morph as string | null;
+          let sex = animal.sex as string;
+          let birthDate = animal.birth_date as string | null;
+          let adoptionDate = animal.adoption_date as string | null;
+          let avatarColor = animal.avatar_color as string;
+          let avatarPattern = animal.avatar_pattern as string;
+          let notes = animal.notes as string | null;
+
+          if (has('name')) {
+            name = String(payload.name ?? '').trim();
+            if (!name || name.length > 40) throw Object.assign(new Error('name must be 1-40 characters'), { code: 'VALIDATION_ERROR' });
+            changed.push('name');
+          }
+          if (has('species')) {
+            species = String(payload.species ?? '').trim();
+            const [catalog] = await tx`select name from species where id = ${species} and active = true`;
+            if (!catalog) throw Object.assign(new Error('unknown species'), { code: 'VALIDATION_ERROR' });
+            if (!has('speciesLabel')) speciesLabel = catalog.name;
+            changed.push('species');
+          }
+          if (has('speciesLabel')) {
+            speciesLabel = payload.speciesLabel == null ? null : String(payload.speciesLabel).trim().slice(0, 60);
+            changed.push('speciesLabel');
+          }
+          if (has('morph')) {
+            morph = payload.morph == null || String(payload.morph).trim() === '' ? null : String(payload.morph).trim().slice(0, 60);
+            changed.push('morph');
+          }
+          if (has('sex')) {
+            sex = String(payload.sex ?? 'unknown');
+            if (!['male', 'female', 'unknown'].includes(sex)) throw Object.assign(new Error('invalid sex'), { code: 'VALIDATION_ERROR' });
+            changed.push('sex');
+          }
+          if (has('birthDate')) {
+            birthDate = payload.birthDate == null || String(payload.birthDate).trim() === '' ? null : String(payload.birthDate);
+            if (birthDate && !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) throw Object.assign(new Error('invalid birth date'), { code: 'VALIDATION_ERROR' });
+            changed.push('birthDate');
+          }
+          if (has('adoptionDate')) {
+            adoptionDate = payload.adoptionDate == null || String(payload.adoptionDate).trim() === '' ? null : String(payload.adoptionDate);
+            if (adoptionDate && !/^\d{4}-\d{2}-\d{2}$/.test(adoptionDate)) throw Object.assign(new Error('invalid adoption date'), { code: 'VALIDATION_ERROR' });
+            changed.push('adoptionDate');
+          }
+          if (has('avatarColor')) {
+            avatarColor = String(payload.avatarColor ?? '').trim();
+            if (!/^#[0-9A-Fa-f]{6}$/.test(avatarColor)) throw Object.assign(new Error('invalid avatar color'), { code: 'VALIDATION_ERROR' });
+            changed.push('avatarColor');
+          }
+          if (has('avatarPattern')) {
+            avatarPattern = String(payload.avatarPattern ?? 'solid');
+            if (!['solid', 'spots', 'stripes', 'gradient'].includes(avatarPattern)) throw Object.assign(new Error('invalid avatar pattern'), { code: 'VALIDATION_ERROR' });
+            changed.push('avatarPattern');
+          }
+          if (has('notes')) {
+            notes = payload.notes == null || String(payload.notes).trim() === '' ? null : String(payload.notes).trim().slice(0, 2000);
+            changed.push('notes');
+          }
+          if (!changed.length) throw Object.assign(new Error('no fields to update'), { code: 'VALIDATION_ERROR' });
+
+          await tx`
+            update animals set
+              name = ${name},
+              species = ${species},
+              species_label = ${speciesLabel},
+              morph = ${morph},
+              sex = ${sex},
+              birth_date = ${birthDate},
+              adoption_date = ${adoptionDate},
+              avatar_color = ${avatarColor},
+              avatar_pattern = ${avatarPattern},
+              notes = ${notes},
+              revision = revision + 1,
+              last_changed_fields = ${changed},
+              updated_by = ${userId},
+              updated_at = now()
+            where id = ${animalId}
+          `;
+          await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, after, command_id, source)
+                   values (${householdId}, ${userId}, 'animal.update', 'animal', ${animalId}, ${tx.json(payload)}, ${envelope.commandId}, 'liff')`;
+          response = ok(envelope.commandId, { animalId, revision: animal.revision + 1 }, animal.revision + 1);
+          break;
+        }
+
+        case 'animal.archive': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          const member = await requireMember(tx, householdId, userId);
+          if (member.role !== 'owner') throw Object.assign(new Error('owner only'), { code: 'FORBIDDEN' });
+          const animalId = String(payload.animalId ?? '');
+          const [animal] = await tx`
+            select id, revision, status from animals
+            where id = ${animalId} and household_id = ${householdId} and deleted_at is null
+            for update
+          `;
+          if (!animal) throw Object.assign(new Error('animal not found'), { code: 'NOT_FOUND' });
+          if (animal.status === 'memorial') throw Object.assign(new Error('memorial animal cannot be archived'), { code: 'INVALID_STATE' });
+          if (envelope.baseRevision !== undefined && envelope.baseRevision !== animal.revision) {
+            throw Object.assign(new Error('revision conflict'), { code: 'CONFLICT', currentRevision: animal.revision });
+          }
+          await tx`update animals set status = 'archived', revision = revision + 1, last_changed_fields = array['status'],
+                     updated_by = ${userId}, updated_at = now() where id = ${animalId}`;
+          await tx`update reminders set enabled = false, updated_at = now() where animal_id = ${animalId} and household_id = ${householdId}`;
+          await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, command_id, source)
+                   values (${householdId}, ${userId}, 'animal.archive', 'animal', ${animalId}, ${envelope.commandId}, 'liff')`;
+          response = ok(envelope.commandId, { animalId, revision: animal.revision + 1 }, animal.revision + 1);
+          break;
+        }
+
+        case 'animal.delete': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          const member = await requireMember(tx, householdId, userId);
+          if (member.role !== 'owner') throw Object.assign(new Error('owner only'), { code: 'FORBIDDEN' });
+          const animalId = String(payload.animalId ?? '');
+          const [animal] = await tx`
+            select id, revision, status from animals
+            where id = ${animalId} and household_id = ${householdId} and deleted_at is null
+            for update
+          `;
+          if (!animal) throw Object.assign(new Error('animal not found'), { code: 'NOT_FOUND' });
+          if (animal.status === 'memorial') throw Object.assign(new Error('memorial animal cannot be deleted'), { code: 'INVALID_STATE' });
+          if (envelope.baseRevision !== undefined && envelope.baseRevision !== animal.revision) {
+            throw Object.assign(new Error('revision conflict'), { code: 'CONFLICT', currentRevision: animal.revision });
+          }
+          await tx`update animals set deleted_at = now(), revision = revision + 1, last_changed_fields = array['deletedAt'],
+                     updated_by = ${userId}, updated_at = now() where id = ${animalId}`;
+          await tx`update reminders set enabled = false, deleted_at = now(), updated_at = now()
+                   where animal_id = ${animalId} and household_id = ${householdId} and deleted_at is null`;
+          await tx`update records set deleted_at = now(), updated_at = now()
+                   where animal_id = ${animalId} and household_id = ${householdId} and deleted_at is null`;
+          await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, command_id, source)
+                   values (${householdId}, ${userId}, 'animal.delete', 'animal', ${animalId}, ${envelope.commandId}, 'liff')`;
+          response = ok(envelope.commandId, { animalId, revision: animal.revision + 1 }, animal.revision + 1);
           break;
         }
 
@@ -417,6 +583,15 @@ Deno.serve(async (request) => {
   } catch (error) {
     const code = (error as { code?: string }).code ?? 'INTERNAL';
     const status = code === 'UNAUTHENTICATED' ? 401 : 200;
-    return json(fail(envelope.commandId, code, code === 'INTERNAL' ? 'command failed' : (error instanceof Error ? error.message : 'command failed')), status);
+    const detail = error as { current?: unknown; currentRevision?: unknown };
+    return json(fail(
+      envelope.commandId,
+      code,
+      code === 'INTERNAL' ? 'command failed' : (error instanceof Error ? error.message : 'command failed'),
+      {
+        ...(detail.current === undefined ? {} : { current: detail.current }),
+        ...(detail.currentRevision === undefined ? {} : { currentRevision: detail.currentRevision }),
+      },
+    ), status);
   }
 });

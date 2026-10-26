@@ -70,11 +70,19 @@ void main() {
       'species': 'leopard-gecko',
       'species_label': '豹紋守宮',
       'avatar_color': '#7C9A76',
-      'status': 'active',
+      'avatar_pattern': 'spots',
+      'status': 'memorial',
       'revision': 2,
+      'adoption_date': '2024-02-03',
+      'memorial_at': '2026-10-26T01:02:03.000Z',
+      'memorial_note': '謝謝你陪我們。',
     });
     expect(animal.householdId, 'h1');
     expect(animal.displaySpecies, '豹紋守宮');
+    expect(animal.avatarPattern, 'spots');
+    expect(animal.adoptionDate, '2024-02-03');
+    expect(animal.isMemorial, isTrue);
+    expect(animal.memorialNote, '謝謝你陪我們。');
 
     final record = recordFromSupabase({
       'id': 'r1',

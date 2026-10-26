@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/providers.dart';
 import '../../core/models/models.dart';
+import '../../core/species.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/time/app_time.dart';
 import '../../core/widgets/common.dart';
@@ -337,6 +338,14 @@ class _AnimalEditSheetState extends ConsumerState<_AnimalEditSheet> {
   late final TextEditingController _name = TextEditingController(text: widget.animal.name);
   late final TextEditingController _morph = TextEditingController(text: widget.animal.morph ?? '');
   late final TextEditingController _notes = TextEditingController(text: widget.animal.notes ?? '');
+  late final TextEditingController _birthDate =
+      TextEditingController(text: widget.animal.birthDate ?? '');
+  late final TextEditingController _adoptionDate =
+      TextEditingController(text: widget.animal.adoptionDate ?? '');
+  late String _speciesId = widget.animal.species;
+  late String _sex = widget.animal.sex;
+  late String _avatarColor = widget.animal.avatarColor;
+  late String _avatarPattern = widget.animal.avatarPattern;
   bool _busy = false;
   String? _error;
 
@@ -345,6 +354,8 @@ class _AnimalEditSheetState extends ConsumerState<_AnimalEditSheet> {
     _name.dispose();
     _morph.dispose();
     _notes.dispose();
+    _birthDate.dispose();
+    _adoptionDate.dispose();
     super.dispose();
   }
 
@@ -367,8 +378,14 @@ class _AnimalEditSheetState extends ConsumerState<_AnimalEditSheet> {
       await ref.read(animalRepositoryProvider).update(
         animal: widget.animal,
         name: name,
+        speciesId: _speciesId,
         morph: _morph.text,
+        sex: _sex,
         notes: _notes.text,
+        birthDate: _birthDate.text.trim(),
+        adoptionDate: _adoptionDate.text.trim(),
+        avatarColor: _avatarColor,
+        avatarPattern: _avatarPattern,
       );
       if (mounted) Navigator.of(context).pop(true);
     } catch (error) {
@@ -400,6 +417,95 @@ class _AnimalEditSheetState extends ConsumerState<_AnimalEditSheet> {
               controller: _morph,
               maxLength: 60,
               decoration: const InputDecoration(labelText: '基因 / 型態（選填）'),
+            ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              initialValue: _speciesId,
+              decoration: const InputDecoration(labelText: '物種'),
+              items: [
+                for (final species in speciesList)
+                  DropdownMenuItem(value: species.id, child: Text(species.name)),
+              ],
+              onChanged: (value) => setState(() => _speciesId = value ?? _speciesId),
+            ),
+            const SizedBox(height: 10),
+            Text('性別', style: Theme.of(context).textTheme.labelLarge),
+            const SizedBox(height: 8),
+            SegmentedButton<String>(
+              segments: const [
+                ButtonSegment(value: 'female', label: Text('母')),
+                ButtonSegment(value: 'male', label: Text('公')),
+                ButtonSegment(value: 'unknown', label: Text('未知')),
+              ],
+              selected: {_sex},
+              onSelectionChanged: (value) => setState(() => _sex = value.first),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _birthDate,
+                    decoration: const InputDecoration(
+                      labelText: '生日（選填）',
+                      hintText: 'YYYY-MM-DD',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    controller: _adoptionDate,
+                    decoration: const InputDecoration(
+                      labelText: '到家日（選填）',
+                      hintText: 'YYYY-MM-DD',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text('圖案', style: Theme.of(context).textTheme.labelLarge),
+            const SizedBox(height: 8),
+            SegmentedButton<String>(
+              segments: const [
+                ButtonSegment(value: 'solid', label: Text('素色')),
+                ButtonSegment(value: 'spots', label: Text('斑點')),
+                ButtonSegment(value: 'stripes', label: Text('條紋')),
+                ButtonSegment(value: 'gradient', label: Text('漸層')),
+              ],
+              selected: {_avatarPattern},
+              onSelectionChanged: (value) => setState(() => _avatarPattern = value.first),
+            ),
+            const SizedBox(height: 12),
+            Text('代表色', style: Theme.of(context).textTheme.labelLarge),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 9,
+              runSpacing: 9,
+              children: [
+                for (final color in AppTokens.avatarPalette)
+                  Semantics(
+                    selected: color == _avatarColor,
+                    label: '代表色 $color',
+                    child: InkWell(
+                      onTap: () => setState(() => _avatarColor = color),
+                      borderRadius: BorderRadius.circular(999),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: AppTokens.colorFromHex(color),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: color == _avatarColor ? AppTokens.ink : Colors.white,
+                            width: color == _avatarColor ? 3 : 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 8),
             TextField(
