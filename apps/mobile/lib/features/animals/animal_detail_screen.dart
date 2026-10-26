@@ -11,6 +11,7 @@ import '../../core/widgets/common.dart';
 import '../records/quick_record_sheet.dart';
 import 'animal_repository.dart';
 import 'lineage_repository.dart';
+import '../records/record_action_tile.dart';
 import '../reminders/reminder_repository.dart';
 
 class AnimalDetailScreen extends ConsumerWidget {
@@ -259,7 +260,16 @@ class AnimalDetailScreen extends ConsumerWidget {
               ),
             ),
           const SizedBox(height: 26),
-          const _SectionTitle(title: '最近紀錄'),
+          Row(
+            children: [
+              const Expanded(child: _SectionTitle(title: '最近紀錄')),
+              TextButton.icon(
+                onPressed: () => context.push('/animals/${animal.id}/analytics'),
+                  icon: const Icon(Icons.insights_outlined, size: 18),
+                  label: const Text('分析'),
+                ),
+            ],
+          ),
           const SizedBox(height: 10),
           if (recordAsync.hasError)
             InlineBanner(
@@ -277,7 +287,11 @@ class AnimalDetailScreen extends ConsumerWidget {
               child: Column(
                 children: [
                   for (final record in records.take(6))
-                    _RecordRow(record: record, timezone: timezone),
+                    RecordActionTile(
+                      record: record,
+                      animal: animal,
+                      timezone: timezone,
+                    ),
                 ],
               ),
             ),
@@ -1114,59 +1128,4 @@ class _ReminderCardState extends ConsumerState<_ReminderCard> {
       ),
     );
   }
-}
-
-class _RecordRow extends StatelessWidget {
-  const _RecordRow({required this.record, required this.timezone});
-
-  final CareRecord record;
-  final String timezone;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(color: AppTokens.successBg, shape: BoxShape.circle),
-            child: Icon(_iconFor(record.type), size: 17, color: AppTokens.primaryStrong),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  record.type.label,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-                if (record.summary.isNotEmpty)
-                  Text(record.summary, style: Theme.of(context).textTheme.bodySmall),
-              ],
-            ),
-          ),
-          Text(
-            formatDateTime(record.occurredAt, timezone),
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ],
-      ),
-    );
-  }
-
-  static IconData _iconFor(RecordType type) => switch (type) {
-    RecordType.feeding => Icons.restaurant_outlined,
-    RecordType.water => Icons.water_drop_outlined,
-    RecordType.weight => Icons.monitor_weight_outlined,
-    RecordType.poop => Icons.circle_outlined,
-    RecordType.shed => Icons.change_history,
-    RecordType.activity => Icons.directions_run,
-    RecordType.medical => Icons.medical_services_outlined,
-    RecordType.note => Icons.edit_note,
-    RecordType.custom => Icons.straighten,
-  };
 }

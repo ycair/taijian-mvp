@@ -59,6 +59,62 @@ async function requireMember(tx: any, householdId: string, userId: string) {
   return rows[0] as { role: string };
 }
 
+const RECORD_TYPES = new Set([
+  'feeding', 'water', 'weight', 'length', 'poop', 'shed',
+  'activity', 'medical', 'note', 'custom',
+]);
+
+function recordMetadata(value: unknown): Record<string, unknown> {
+  if (value == null) return {};
+  if (typeof value !== 'object' || Array.isArray(value)) {
+    throw Object.assign(new Error('metadata must be an object'), { code: 'VALIDATION_ERROR' });
+  }
+  const metadata = value as Record<string, unknown>;
+  if (JSON.stringify(metadata).length > 4000) {
+    throw Object.assign(new Error('metadata is too large'), { code: 'VALIDATION_ERROR' });
+  }
+  if (metadata.refused != null && typeof metadata.refused !== 'boolean') {
+    throw Object.assign(new Error('refused must be a boolean'), { code: 'VALIDATION_ERROR' });
+  }
+  if (metadata.activityLevel != null && !['normal', 'low', 'high'].includes(String(metadata.activityLevel))) {
+    throw Object.assign(new Error('invalid activity level'), { code: 'VALIDATION_ERROR' });
+  }
+  for (const key of ['food', 'medication', 'dosage', 'label']) {
+    if (metadata[key] != null && typeof metadata[key] !== 'string') {
+      throw Object.assign(new Error(`${key} must be text`), { code: 'VALIDATION_ERROR' });
+    }
+  }
+  return metadata;
+}
+
+function recordValues(type: string, payload: Record<string, unknown>) {
+  if (!RECORD_TYPES.has(type)) {
+    throw Object.assign(new Error('invalid record type'), { code: 'VALIDATION_ERROR' });
+  }
+  const rawValue = payload.value;
+  const value = rawValue == null || rawValue === '' ? null : Number(rawValue);
+  if (value !== null && (!Number.isFinite(value) || value < 0 || value > 1_000_000)) {
+    throw Object.assign(new Error('invalid record value'), { code: 'VALIDATION_ERROR' });
+  }
+  if ((type === 'weight' || type === 'length') && value === null) {
+    throw Object.assign(new Error('measurement value required'), { code: 'VALIDATION_ERROR' });
+  }
+  const unit = payload.unit == null || String(payload.unit).trim() === ''
+    ? null
+    : String(payload.unit).trim().slice(0, 16);
+  const note = payload.note == null || String(payload.note).trim() === ''
+    ? null
+    : String(payload.note).trim().slice(0, 1000);
+  const occurredAt = new Date(String(payload.occurredAt ?? ''));
+  if (Number.isNaN(occurredAt.getTime())) {
+    throw Object.assign(new Error('invalid record time'), { code: 'VALIDATION_ERROR' });
+  }
+  if (occurredAt.getTime() > Date.now() + 5 * 60_000) {
+    throw Object.assign(new Error('record time cannot be in the future'), { code: 'VALIDATION_ERROR' });
+  }
+  return { value, unit, note, occurredAt, metadata: recordMetadata(payload.metadata) };
+}
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
@@ -832,13 +888,104 @@ Deno.serve(async (request) => {
             response = ok(envelope.commandId, { recordId: id, alreadyExists: true });
             break;
           }
+          const type = String(payload.type ?? '');
+          const values = recordValues(type, payload);
           await tx`insert into records (id, household_id, animal_id, type, occurred_at, value, unit, note, metadata, source, created_by, updated_by)
-                   values (${id}, ${householdId}, ${animalId}, ${String(payload.type)}, ${String(payload.occurredAt)},
-                   ${payload.value ?? null}, ${payload.unit ?? null}, ${payload.note ?? null},
-                   ${tx.json(payload.metadata ?? {})}, 'liff', ${userId}, ${userId})`;
+                   values (${id}, ${householdId}, ${animalId}, ${type}, ${values.occurredAt.toISOString()},
+                   ${values.value}, ${values.unit}, ${values.note}, ${tx.json(values.metadata)}, 'ios', ${userId}, ${userId})`;
           await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, after, command_id, source)
                    values (${householdId}, ${userId}, 'record.create', 'record', ${id}, ${tx.json(payload)}, ${envelope.commandId}, 'liff')`;
           response = ok(envelope.commandId, { recordId: id }, 0);
+          break;
+        }
+
+        case 'record.update': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          const member = await requireMember(tx, householdId, userId);
+          const recordId = String(payload.recordId ?? '');
+          const [record] = await tx`
+            select * from records
+            where id = ${recordId} and household_id = ${householdId} and deleted_at is null
+            for update
+          `;
+          if (!record) throw Object.assign(new Error('record not found'), { code: 'NOT_FOUND' });
+          if (member.role !== 'owner' && record.created_by !== userId) {
+            throw Object.assign(new Error('you can only edit your own records'), { code: 'FORBIDDEN' });
+          }
+          const [animal] = await tx`select status from animals where id = ${record.animal_id} and household_id = ${householdId}`;
+          if (!animal || animal.status !== 'active') {
+            throw Object.assign(new Error('records are read-only for this resident'), { code: 'INVALID_STATE' });
+          }
+          if (envelope.baseRevision !== undefined && envelope.baseRevision !== record.revision) {
+            throw Object.assign(new Error('revision conflict'), {
+              code: 'CONFLICT',
+              current: record,
+              currentRevision: record.revision,
+            });
+          }
+          const has = (key: string) => Object.prototype.hasOwnProperty.call(payload, key);
+          const type = has('type') ? String(payload.type ?? '') : String(record.type);
+          const values = recordValues(type, {
+            ...record,
+            ...payload,
+            occurredAt: has('occurredAt') ? payload.occurredAt : record.occurred_at,
+            metadata: has('metadata') ? payload.metadata : record.metadata,
+          });
+          const changed = ['type', 'occurredAt', 'value', 'unit', 'note', 'metadata']
+            .filter((key) => has(key));
+          if (!changed.length) throw Object.assign(new Error('no fields to update'), { code: 'VALIDATION_ERROR' });
+          await tx`update records set
+                     type = ${type},
+                     occurred_at = ${values.occurredAt.toISOString()},
+                     value = ${values.value},
+                     unit = ${values.unit},
+                     note = ${values.note},
+                     metadata = ${tx.json(values.metadata)},
+                     revision = revision + 1,
+                     last_changed_fields = ${changed},
+                     updated_by = ${userId},
+                     updated_at = now()
+                   where id = ${recordId}`;
+          await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, after, command_id, source)
+                   values (${householdId}, ${userId}, 'record.update', 'record', ${recordId}, ${tx.json(payload)}, ${envelope.commandId}, 'liff')`;
+          response = ok(envelope.commandId, { recordId, revision: record.revision + 1 }, record.revision + 1);
+          break;
+        }
+
+        case 'record.delete': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          const member = await requireMember(tx, householdId, userId);
+          const recordId = String(payload.recordId ?? '');
+          const [record] = await tx`
+            select * from records
+            where id = ${recordId} and household_id = ${householdId} and deleted_at is null
+            for update
+          `;
+          if (!record) throw Object.assign(new Error('record not found'), { code: 'NOT_FOUND' });
+          if (member.role !== 'owner' && record.created_by !== userId) {
+            throw Object.assign(new Error('you can only delete your own records'), { code: 'FORBIDDEN' });
+          }
+          const [animal] = await tx`select status from animals where id = ${record.animal_id} and household_id = ${householdId}`;
+          if (!animal || animal.status !== 'active') {
+            throw Object.assign(new Error('records are read-only for this resident'), { code: 'INVALID_STATE' });
+          }
+          if (envelope.baseRevision !== undefined && envelope.baseRevision !== record.revision) {
+            throw Object.assign(new Error('revision conflict'), {
+              code: 'CONFLICT',
+              current: record,
+              currentRevision: record.revision,
+            });
+          }
+          await tx`update records set
+                     deleted_at = now(),
+                     revision = revision + 1,
+                     last_changed_fields = array['deletedAt'],
+                     updated_by = ${userId},
+                     updated_at = now()
+                   where id = ${recordId}`;
+          await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, command_id, source)
+                   values (${householdId}, ${userId}, 'record.delete', 'record', ${recordId}, ${envelope.commandId}, 'liff')`;
+          response = ok(envelope.commandId, { recordId, revision: record.revision + 1 }, record.revision + 1);
           break;
         }
 
