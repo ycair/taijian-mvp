@@ -68,6 +68,12 @@ for multiple caregivers, not as a single-device notebook:
 - J3 currently has no likes, comments, follow graph, or public moderation/report UI.
 - System share sheet; no public storage bucket and no direct client writes.
 
+### Proposals
+
+- Authenticated proposal board with create and one-vote-per-profile upvotes.
+- `proposals_list()` RPC, Realtime refresh, and a Settings entry.
+- Status administration/comments are deferred.
+
 ### Map / dens
 
 - Shared household map with default zones (苔庭/水盆/躲藏/曬台).
@@ -225,7 +231,6 @@ GitHub `test` check.
 
 - Journal reactions, comments, follow graph, and moderation/reporting.
 - Journal photo crop, stickers, freeform collage, photo quota, and external social posting.
-- Proposals/upvotes.
 - Real StoreKit/IAP, payments, shipping, order fulfillment, and admin shop console.
 - APNs/FCM remote push, Widgets, Share Extension.
 - Apple Sign-In.

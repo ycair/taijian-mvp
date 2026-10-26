@@ -7,6 +7,7 @@ import 'package:realtime_client/realtime_client.dart';
 import '../features/animals/transfer_repository.dart';
 import '../features/journal/journal_repository.dart';
 import '../features/map/map_repository.dart';
+import '../features/proposals/proposals_repository.dart';
 import '../features/shop/commerce_repository.dart';
 import 'providers.dart';
 
@@ -110,6 +111,18 @@ class _RealtimeSyncState extends ConsumerState<RealtimeSync> {
           callback: changed,
         );
       }
+      channel.onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'proposals',
+        callback: changed,
+      );
+      channel.onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'proposal_votes',
+        callback: changed,
+      );
       channel.subscribe((status, error) {
         if (status == RealtimeSubscribeStatus.channelError) {
           debugPrint('Realtime channel error: $error');
@@ -154,6 +167,7 @@ class _RealtimeSyncState extends ConsumerState<RealtimeSync> {
     ref.invalidate(mapZonesProvider);
     ref.invalidate(mapPositionsProvider);
     ref.invalidate(journalEntriesProvider);
+    ref.invalidate(proposalsProvider);
   }
 
   void _disconnect() {

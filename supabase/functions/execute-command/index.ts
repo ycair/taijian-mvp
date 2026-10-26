@@ -1242,6 +1242,44 @@ Deno.serve(async (request) => {
           break;
         }
 
+        case 'proposal.create': {
+          const title = String(payload.title ?? '').trim();
+          if (!title || title.length > 80) {
+            throw Object.assign(new Error('proposal title must be 1-80 characters'), { code: 'VALIDATION_ERROR' });
+          }
+          const body = String(payload.body ?? '').trim().slice(0, 5000);
+          const id = crypto.randomUUID();
+          await tx`insert into proposals (id, author_id, title, body)
+                   values (${id}, ${userId}, ${title}, ${body})`;
+          response = ok(envelope.commandId, { proposalId: id });
+          break;
+        }
+
+        case 'proposal.vote': {
+          const proposalId = String(payload.proposalId ?? '');
+          const [proposal] = await tx`
+            select id from proposals where id = ${proposalId} and deleted_at is null for update
+          `;
+          if (!proposal) throw Object.assign(new Error('proposal not found'), { code: 'NOT_FOUND' });
+          const [existing] = await tx`
+            select 1 from proposal_votes where proposal_id = ${proposalId} and profile_id = ${userId}
+          `;
+          if (existing) {
+            await tx`delete from proposal_votes where proposal_id = ${proposalId} and profile_id = ${userId}`;
+          } else {
+            await tx`insert into proposal_votes (proposal_id, profile_id) values (${proposalId}, ${userId})`;
+          }
+          const [count] = await tx`
+            select count(*)::int as count from proposal_votes where proposal_id = ${proposalId}
+          `;
+          response = ok(envelope.commandId, {
+            proposalId,
+            voted: !existing,
+            voteCount: count.count,
+          });
+          break;
+        }
+
         case 'map.ensureDefaults': {
           if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
           await requireMember(tx, householdId, userId);
