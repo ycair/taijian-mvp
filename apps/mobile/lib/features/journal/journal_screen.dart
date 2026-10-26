@@ -15,6 +15,7 @@ class JournalScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final entries = ref.watch(journalEntriesProvider);
     final animals = ref.watch(animalsProvider).value ?? const [];
+    final members = ref.watch(householdMembersProvider).value ?? const [];
     final byId = {for (final animal in animals) animal.id: animal};
 
     return Scaffold(
@@ -72,6 +73,10 @@ class JournalScreen extends ConsumerWidget {
                             for (final id in entry.animalIds)
                               if (byId[id] != null) byId[id]!.name,
                           ],
+                          authorName: members
+                              .where((member) => member.uid == entry.createdBy)
+                              .map((member) => member.displayName)
+                              .firstOrNull,
                         ),
                       ),
                   ],
@@ -83,10 +88,11 @@ class JournalScreen extends ConsumerWidget {
 }
 
 class _JournalCard extends StatelessWidget {
-  const _JournalCard({required this.entry, required this.animalNames});
+  const _JournalCard({required this.entry, required this.animalNames, this.authorName});
 
   final JournalEntry entry;
   final List<String> animalNames;
+  final String? authorName;
 
   @override
   Widget build(BuildContext context) {
@@ -109,6 +115,27 @@ class _JournalCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 14,
+                        backgroundColor: AppTokens.successBg,
+                        child: Text(
+                          (authorName ?? '苔').trim().isEmpty ? '苔' : (authorName ?? '苔').trim().substring(0, 1),
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppTokens.primaryStrong),
+                        ),
+                      ),
+                      const SizedBox(width: 7),
+                      Expanded(
+                        child: Text(
+                          authorName ?? '家庭成員',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      const _VisibilityChip(label: '家庭'),
+                    ],
+                  ),
+                  const SizedBox(height: 7),
                   Text(entry.journalDate, style: Theme.of(context).textTheme.bodySmall),
                   const SizedBox(height: 3),
                   Text(entry.title, style: Theme.of(context).textTheme.titleMedium),
@@ -121,13 +148,23 @@ class _JournalCard extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
-                  if (animalNames.isNotEmpty) ...[
-                    const SizedBox(height: 7),
-                    Text(
-                      animalNames.join(' · '),
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTokens.primaryStrong),
-                    ),
-                  ],
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      if (animalNames.isNotEmpty)
+                        Expanded(
+                          child: Text(
+                            animalNames.join(' · '),
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTokens.primaryStrong),
+                          ),
+                        )
+                      else
+                        const Spacer(),
+                      const Icon(Icons.photo_library_outlined, size: 14, color: AppTokens.muted),
+                      const SizedBox(width: 4),
+                      Text('${entry.photos.length}', style: Theme.of(context).textTheme.bodySmall),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -179,6 +216,28 @@ class JournalPhotoImage extends ConsumerWidget {
                   progress == null ? child : const ColoredBox(color: AppTokens.successBg),
               errorBuilder: (context, error, stack) => const _JournalPlaceholder(),
             ),
+    );
+  }
+}
+
+
+class _VisibilityChip extends StatelessWidget {
+  const _VisibilityChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppTokens.successBg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTokens.primaryStrong),
+      ),
     );
   }
 }

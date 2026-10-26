@@ -38,9 +38,9 @@ class AppShell extends StatelessWidget {
             label: '居民',
           ),
           NavigationDestination(
-            icon: Icon(Icons.history_outlined),
-            selectedIcon: Icon(Icons.history),
-            label: '紀錄',
+            icon: Icon(Icons.menu_book_outlined),
+            selectedIcon: Icon(Icons.menu_book),
+            label: '旅程',
           ),
           NavigationDestination(
             icon: Icon(Icons.storefront_outlined),
