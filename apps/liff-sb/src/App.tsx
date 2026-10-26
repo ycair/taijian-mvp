@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { BrowserRouter, Navigate, NavLink, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Link, Navigate, NavLink, Route, Routes } from 'react-router-dom';
 import { makeClient } from './lib/supabase';
 import { loginWithLine, logoutSession, refreshSessionToken, tokenExpiryMs } from './lib/api';
 import { getLineIdToken } from './lib/liff';
@@ -10,6 +10,7 @@ import { AnimalDetailPage } from './pages/AnimalDetailPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { InvitePage } from './pages/InvitePage';
 import { PublicJournalFeedPage, PublicJournalPage } from './pages/PublicJournalPage';
+import { PrivacyPage, TermsPage } from './pages/LegalPage';
 
 type AppState = {
   token: string;
@@ -144,6 +145,11 @@ function LoginPage() {
         <button className="btn" style={{ width: '100%' }} onClick={login} disabled={busy}>
           {busy ? '登入中…' : '以 LINE 登入'}
         </button>
+        <div style={{ marginTop: 12, fontSize: 11 }}>
+          <Link to="/privacy" style={{ color: 'var(--muted)' }}>隱私權</Link>
+          <span style={{ color: 'var(--muted)' }}> · </span>
+          <Link to="/terms" style={{ color: 'var(--muted)' }}>服務條款</Link>
+        </div>
       </div>
     </div>
   );
@@ -272,6 +278,8 @@ export function App() {
       <Routes>
         <Route path="/s/:token" element={<PublicJournalPage />} />
         <Route path="/feed" element={<PublicJournalFeedPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
         <Route
           path="*"
           element={
