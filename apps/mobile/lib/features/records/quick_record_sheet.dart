@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
@@ -61,6 +62,7 @@ class _QuickRecordSheetState extends ConsumerState<QuickRecordSheet> {
   late final TextEditingController _unitController;
   late final TextEditingController _noteController;
   late final TextEditingController _foodController;
+  late final TextEditingController _quantityController;
   late final TextEditingController _medicationController;
   late final TextEditingController _dosageController;
   late final TextEditingController _labelController;
@@ -83,6 +85,11 @@ class _QuickRecordSheetState extends ConsumerState<QuickRecordSheet> {
     _foodController = TextEditingController(
       text: record?.metadata['food'] is String ? record!.metadata['food'] as String : '',
     );
+    _quantityController = TextEditingController(
+      text: record?.metadata['quantity'] is num
+          ? (record!.metadata['quantity'] as num).toInt().toString()
+          : '',
+    );
     _medicationController = TextEditingController(
       text: record?.metadata['medication'] is String ? record!.metadata['medication'] as String : '',
     );
@@ -104,6 +111,7 @@ class _QuickRecordSheetState extends ConsumerState<QuickRecordSheet> {
     _unitController.dispose();
     _noteController.dispose();
     _foodController.dispose();
+    _quantityController.dispose();
     _medicationController.dispose();
     _dosageController.dispose();
     _labelController.dispose();
@@ -164,6 +172,8 @@ class _QuickRecordSheetState extends ConsumerState<QuickRecordSheet> {
         if (_foodController.text.trim().isNotEmpty) {
           metadata['food'] = _foodController.text.trim();
         }
+        final quantity = int.tryParse(_quantityController.text.trim());
+        if (quantity != null && quantity > 0) metadata['quantity'] = quantity;
         if (_refused) metadata['refused'] = true;
       case RecordType.activity:
         metadata['activityLevel'] = _activityLevel;
@@ -334,6 +344,17 @@ class _QuickRecordSheetState extends ConsumerState<QuickRecordSheet> {
                 decoration: const InputDecoration(
                   labelText: '食物（選填）',
                   hintText: '例如：蟋蟀、杜比亞',
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _quantityController,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  labelText: '數量（選填）',
+                  hintText: '例如：3',
+                  suffixText: '隻 / 份',
                 ),
               ),
               const SizedBox(height: 4),
