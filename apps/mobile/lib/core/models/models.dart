@@ -342,6 +342,58 @@ class LineageGraph {
   }
 }
 
+class AnimalTransfer {
+  const AnimalTransfer({
+    required this.id,
+    required this.direction,
+    required this.transferType,
+    required this.status,
+    required this.animalNames,
+    required this.sourceHouseholdName,
+    required this.expiresAt,
+    required this.createdAt,
+  });
+
+  factory AnimalTransfer.fromMap(Map<String, dynamic> map) {
+    return AnimalTransfer(
+      id: readString(map, 'id'),
+      direction: readString(map, 'direction', 'outgoing'),
+      transferType: readString(map, 'transferType', 'other'),
+      status: readString(map, 'status', 'pending'),
+      animalNames: readStringList(map, 'animalNames'),
+      sourceHouseholdName: readString(map, 'sourceHouseholdName', '家庭'),
+      expiresAt: readDate(map, 'expiresAt') ?? DateTime.now().toUtc(),
+      createdAt: readDate(map, 'createdAt') ?? DateTime.now().toUtc(),
+    );
+  }
+
+  final String id;
+  final String direction;
+  final String transferType;
+  final String status;
+  final List<String> animalNames;
+  final String sourceHouseholdName;
+  final DateTime expiresAt;
+  final DateTime createdAt;
+
+  bool get isIncoming => direction == 'incoming';
+
+  bool get isPending => status == 'pending';
+
+  bool get isExpired => status == 'expired' || expiresAt.isBefore(DateTime.now().toUtc());
+
+  String get animalLabel => animalNames.isEmpty ? '居民' : animalNames.join('、');
+
+  String get statusLabel => switch (status) {
+    'pending' => isExpired ? '已過期' : '等待回覆',
+    'accepted' => '已接受',
+    'declined' => '已拒絕',
+    'cancelled' => '已取消',
+    'expired' => '已過期',
+    _ => status,
+  };
+}
+
 enum RecordType {
   feeding,
   water,

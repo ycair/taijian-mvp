@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../features/animals/animal_detail_screen.dart';
 import '../features/animals/animals_screen.dart';
 import '../features/animals/new_animal_screen.dart';
+import '../features/animals/transfer_inbox_screen.dart';
+import '../features/animals/transfer_screen.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/household/create_household_screen.dart';
 import '../features/records/records_screen.dart';
@@ -58,6 +60,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const CreateHouseholdScreen(),
       ),
       GoRoute(
+        path: '/transfers',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const TransferInboxScreen(),
+      ),
+      GoRoute(
         path: '/reminders/new',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => ReminderFormScreen(
@@ -95,6 +102,15 @@ final routerProvider = Provider<GoRouter>((ref) {
                     builder: (context, state) => AnimalDetailScreen(
                       animalId: state.pathParameters['animalId']!,
                     ),
+                    routes: [
+                      GoRoute(
+                        path: 'transfer',
+                        parentNavigatorKey: _rootNavigatorKey,
+                        builder: (context, state) => TransferScreen(
+                          animalId: state.pathParameters['animalId']!,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

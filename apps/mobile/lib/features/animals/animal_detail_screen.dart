@@ -72,6 +72,8 @@ class AnimalDetailScreen extends ConsumerWidget {
               tooltip: '居民管理',
               onSelected: (action) {
                 switch (action) {
+                  case _AnimalAdminAction.transfer:
+                    context.push('/animals/${animal.id}/transfer');
                   case _AnimalAdminAction.memorialize:
                     _memorializeAnimal(context, ref, animal);
                   case _AnimalAdminAction.archive:
@@ -81,6 +83,10 @@ class AnimalDetailScreen extends ConsumerWidget {
                 }
               },
               itemBuilder: (context) => const [
+                PopupMenuItem(
+                  value: _AnimalAdminAction.transfer,
+                  child: Text('轉移居民'),
+                ),
                 PopupMenuItem(
                   value: _AnimalAdminAction.memorialize,
                   child: Text('設為紀念'),
@@ -709,7 +715,7 @@ class _LineageRow extends StatelessWidget {
   }
 }
 
-enum _AnimalAdminAction { memorialize, archive, delete }
+enum _AnimalAdminAction { transfer, memorialize, archive, delete }
 
 class _AnimalEditSheet extends ConsumerStatefulWidget {
   const _AnimalEditSheet({required this.animal});
