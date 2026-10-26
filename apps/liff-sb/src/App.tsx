@@ -26,6 +26,21 @@ const ACCESS_KEY = 'sb_access';
 const REFRESH_KEY = 'sb_refresh';
 const USER_KEY = 'sb_user';
 
+function BrandBar() {
+  return (
+    <header className="topbar">
+      <div className="brand">
+        <div className="brand-mark" aria-hidden="true">苔</div>
+        <div>
+          <div className="brand-name">苔間</div>
+          <div className="brand-sub">把每一次照顧，留在同一個家</div>
+        </div>
+      </div>
+      <span className="line-pill">LINE 版</span>
+    </header>
+  );
+}
+
 export function useApp(): AppState {
   const value = useContext(AppContext);
   if (!value) throw new Error('AppContext missing');
@@ -118,8 +133,9 @@ function LoginPage() {
   }
 
   return (
-    <div className="app" style={{ display: 'grid', placeItems: 'center' }}>
-      <div className="card" style={{ width: '100%', textAlign: 'center' }}>
+    <div className="app login-app">
+      <BrandBar />
+      <div className="card login-card">
         <div className="kicker">苔間 · Supabase Demo</div>
         <h1 className="h1">把每一次照顧，留在同一個家。</h1>
         <p className="muted">使用 LINE 或測試帳號登入。</p>
@@ -216,18 +232,26 @@ function AppProvider({ children }: { children: ReactNode }) {
 function BottomNav() {
   return (
     <nav className="nav">
-      <NavLink to="/" end>
-        今日
+      <NavLink to="/" end aria-label="今日">
+        <span className="nav-icon" aria-hidden="true">☀</span>
+        <span>今日</span>
       </NavLink>
-      <NavLink to="/animals">居民</NavLink>
-      <NavLink to="/settings">設定</NavLink>
+      <NavLink to="/animals" aria-label="居民">
+        <span className="nav-icon" aria-hidden="true">❋</span>
+        <span>居民</span>
+      </NavLink>
+      <NavLink to="/settings" aria-label="設定">
+        <span className="nav-icon" aria-hidden="true">⚙</span>
+        <span>設定</span>
+      </NavLink>
     </nav>
   );
 }
 
 function Shell() {
   return (
-    <>
+    <div className="shell">
+      <BrandBar />
       <Routes>
         <Route path="/" element={<TodayPage />} />
         <Route path="/animals" element={<AnimalsPage />} />
@@ -237,7 +261,7 @@ function Shell() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <BottomNav />
-    </>
+    </div>
   );
 }
 

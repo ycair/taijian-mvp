@@ -15,6 +15,7 @@ import '../features/records/records_screen.dart';
 import '../features/reminders/reminder_form_screen.dart';
 import '../features/reminders/weekly_overview_screen.dart';
 import '../features/settings/settings_screen.dart';
+import '../features/shop/shop_screen.dart';
 import '../features/today/today_screen.dart';
 import 'auth_refresh.dart';
 import 'providers.dart';
@@ -139,6 +140,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(path: '/records', builder: (context, state) => const RecordsScreen()),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(path: '/shop', builder: (context, state) => const ShopScreen()),
             ],
           ),
           StatefulShellBranch(

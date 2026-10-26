@@ -35,6 +35,8 @@ export function AnimalDetailPage() {
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [type, setType] = useState('feeding');
   const [value, setValue] = useState('');
+  const [food, setFood] = useState('');
+  const [quantity, setQuantity] = useState('');
   const [note, setNote] = useState('');
   const [reminderTitle, setReminderTitle] = useState('餵食');
   const [reminderTime, setReminderTime] = useState('08:30');
@@ -72,6 +74,13 @@ export function AnimalDetailPage() {
       if (type === 'weight') payload.unit = 'g';
     }
     if (note.trim()) payload.note = note.trim();
+    if (type === 'feeding') {
+      const metadata: Record<string, unknown> = {};
+      if (food.trim()) metadata.food = food.trim();
+      const parsedQuantity = Number(quantity);
+      if (Number.isInteger(parsedQuantity) && parsedQuantity > 0) metadata.quantity = parsedQuantity;
+      if (Object.keys(metadata).length) payload.metadata = metadata;
+    }
     const result = await callCommand(token, {
       commandId: newCommandId(),
       type: 'record.create',
@@ -83,6 +92,8 @@ export function AnimalDetailPage() {
       return;
     }
     setValue('');
+    setFood('');
+    setQuantity('');
     setNote('');
     load();
   }
@@ -137,6 +148,12 @@ export function AnimalDetailPage() {
         </select>
         {(type === 'weight' || type === 'custom') && (
           <input className="input" inputMode="decimal" placeholder="數值" value={value} onChange={(e) => setValue(e.target.value)} />
+        )}
+        {type === 'feeding' && (
+          <>
+            <input className="input" placeholder="食物（選填，例如蟋蟀）" value={food} onChange={(e) => setFood(e.target.value)} />
+            <input className="input" inputMode="numeric" placeholder="數量（選填，例如 3 隻）" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
+          </>
         )}
         <textarea className="input" placeholder="備註" value={note} onChange={(e) => setNote(e.target.value)} />
         <button className="btn" onClick={addRecord}>儲存</button>

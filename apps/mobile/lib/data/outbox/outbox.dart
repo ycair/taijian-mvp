@@ -61,6 +61,10 @@ class Outbox {
 
   bool _flushing = false;
   bool _rerunRequested = false;
+  final _sentController = StreamController<void>.broadcast();
+
+  /// Emits after a command is accepted and removed from the queue.
+  Stream<void> get sent => _sentController.stream;
 
   Future<QueuedCommand> enqueue(
     String type,
@@ -174,6 +178,7 @@ class Outbox {
             );
             if (result.ok) {
               await (db.delete(db.outboxEntries)..where((r) => r.commandId.equals(row.commandId))).go();
+              _sentController.add(null);
               sent += 1;
             } else if (result.isConflict) {
               await (db.update(db.outboxEntries)..where((r) => r.commandId.equals(row.commandId))).write(
