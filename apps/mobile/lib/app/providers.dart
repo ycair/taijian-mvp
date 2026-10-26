@@ -111,10 +111,8 @@ final memorialAnimalsProvider = Provider<List<Animal>>((ref) {
   return List<Animal>.unmodifiable(animals);
 });
 
-final animalProvider = StreamProvider.family<Animal?, String>((ref, animalId) {
-  final id = ref.watch(householdIdProvider);
-  if (id == null) return Stream<Animal?>.value(null);
-  return ref.watch(readStoreProvider).watchAnimals(id).map((animals) {
+final animalProvider = Provider.family<AsyncValue<Animal?>, String>((ref, animalId) {
+  return ref.watch(animalsProvider).whenData((animals) {
     for (final animal in animals) {
       if (animal.id == animalId) return animal;
     }
@@ -128,10 +126,10 @@ final recordsProvider = StreamProvider<List<CareRecord>>((ref) {
   return ref.watch(readStoreProvider).watchRecords(id);
 });
 
-final animalRecordsProvider = StreamProvider.family<List<CareRecord>, String>((ref, animalId) {
-  final id = ref.watch(householdIdProvider);
-  if (id == null) return Stream<List<CareRecord>>.value(const []);
-  return ref.watch(readStoreProvider).watchRecords(id, animalId: animalId);
+final animalRecordsProvider = Provider.family<AsyncValue<List<CareRecord>>, String>((ref, animalId) {
+  return ref.watch(recordsProvider).whenData(
+    (records) => records.where((record) => record.animalId == animalId).toList(growable: false),
+  );
 });
 
 final remindersProvider = StreamProvider<List<Reminder>>((ref) {
@@ -140,10 +138,10 @@ final remindersProvider = StreamProvider<List<Reminder>>((ref) {
   return ref.watch(readStoreProvider).watchReminders(id);
 });
 
-final animalRemindersProvider = StreamProvider.family<List<Reminder>, String>((ref, animalId) {
-  final id = ref.watch(householdIdProvider);
-  if (id == null) return Stream<List<Reminder>>.value(const []);
-  return ref.watch(readStoreProvider).watchReminders(id, animalId: animalId);
+final animalRemindersProvider = Provider.family<AsyncValue<List<Reminder>>, String>((ref, animalId) {
+  return ref.watch(remindersProvider).whenData(
+    (reminders) => reminders.where((reminder) => reminder.animalId == animalId).toList(growable: false),
+  );
 });
 
 final todayCompletionsProvider = StreamProvider<List<Completion>>((ref) {
