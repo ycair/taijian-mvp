@@ -20,7 +20,8 @@ and transfer tables is revoked; reads use the two privacy RPCs.
 - Flutter: `flutter analyze` clean, 75 tests.
 - LIFF: 7 Vitest tests and `tsc --noEmit`.
 - Cloud smoke: guest login → household → resident profile update → lineage →
-  own-household transfer → memorial → record rejection, then account deletion.
+  own-household transfer → memorial → record rejection. The isolated smoke
+  profile and households were cleaned up afterward.
 - Physical iPhone Profile install at `app.taijian.mobile` verified launching
   against the cloud project.
 
