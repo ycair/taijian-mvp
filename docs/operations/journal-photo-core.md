@@ -44,3 +44,15 @@ storage object after the command succeeds.
   create, list, update, delete, and object cleanup.
 - Flutter analyzer clean; 88 tests passing.
 - iOS build/install verification follows.
+
+## J2/J3 visibility
+
+Visibility is stored per entry (`household`, `link`, `public`). The public read
+surface is the `journal-public` Edge Function:
+
+- `GET /journal-public?token=<share_token>` for unlisted J2 links.
+- `GET /journal-public?feed=1&limit=20` for public J3 entries.
+
+The function only returns safe entry/author fields and creates short-lived signed
+photo URLs with the service role. Switching an entry back to `household` clears
+the share token and invalidates previous links.

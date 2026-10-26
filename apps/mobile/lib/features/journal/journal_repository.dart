@@ -74,6 +74,7 @@ class JournalRepository {
     required List<String> animalIds,
     required List<JournalPhoto> photos,
     String? coverPath,
+    String visibility = 'household',
   }) async {
     if (householdId == null) throw StateError('No household');
     await commands.submit(
@@ -86,6 +87,7 @@ class JournalRepository {
         'animalIds': animalIds,
         'photos': photos.map((photo) => photo.toMap()).toList(),
         'coverPath': ?coverPath,
+        'visibility': visibility,
       },
       householdId: householdId,
       baseRevision: 0,
@@ -101,6 +103,7 @@ class JournalRepository {
     required List<String> animalIds,
     required List<JournalPhoto> photos,
     String? coverPath,
+    String visibility = 'household',
   }) async {
     if (householdId == null) throw StateError('No household');
     await commands.submit(
@@ -113,6 +116,7 @@ class JournalRepository {
         'animalIds': animalIds,
         'photos': photos.map((photo) => photo.toMap()).toList(),
         'coverPath': ?coverPath,
+        'visibility': visibility,
       },
       householdId: householdId,
       baseRevision: entry.revision,

@@ -1121,15 +1121,21 @@ Deno.serve(async (request) => {
           const coverPath = values.requestedCover && photoData.photos.some((photo) => photo.path === values.requestedCover)
             ? values.requestedCover
             : photoData.coverPath;
+          const visibility = ['household', 'link', 'public'].includes(String(payload.visibility))
+            ? String(payload.visibility)
+            : 'household';
+          const shareToken = visibility === 'household' ? null : crypto.randomUUID();
+          const publishedAt = visibility === 'public' ? new Date().toISOString() : null;
           await tx`insert into journal_entries
                    (id, household_id, title, body, journal_date, animal_ids, photos, cover_path,
-                    revision, created_by, updated_by)
+                    visibility, share_token, published_at, revision, created_by, updated_by)
                    values (${journalId}, ${householdId}, ${values.title}, ${values.body}, ${values.journalDate},
-                   ${values.animalIds}, ${tx.json(photoData.photos)}, ${coverPath}, 0, ${userId}, ${userId})`;
+                   ${values.animalIds}, ${tx.json(photoData.photos)}, ${coverPath},
+                   ${visibility}, ${shareToken}, ${publishedAt}, 0, ${userId}, ${userId})`;
           await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, after, command_id, source)
                    values (${householdId}, ${userId}, 'journal.create', 'journal_entry', ${journalId},
-                   ${tx.json({ title: values.title, photos: photoData.photos.length })}, ${envelope.commandId}, 'ios')`;
-          response = ok(envelope.commandId, { journalId }, 0);
+                   ${tx.json({ title: values.title, photos: photoData.photos.length, visibility })}, ${envelope.commandId}, 'ios')`;
+          response = ok(envelope.commandId, { journalId, visibility, shareToken }, 0);
           break;
         }
 
@@ -1168,6 +1174,17 @@ Deno.serve(async (request) => {
           const coverPath = values.requestedCover && photoData.photos.some((photo) => photo.path === values.requestedCover)
             ? values.requestedCover
             : photoData.coverPath;
+          const visibility = payload.visibility != null
+            ? (['household', 'link', 'public'].includes(String(payload.visibility))
+              ? String(payload.visibility)
+              : 'household')
+            : (entry.visibility ?? 'household');
+          const shareToken = visibility === 'household'
+            ? null
+            : (entry.share_token ?? crypto.randomUUID());
+          const publishedAt = visibility === 'public'
+            ? (entry.published_at ?? new Date().toISOString())
+            : null;
           await tx`update journal_entries set
                      title = ${values.title},
                      body = ${values.body},
@@ -1175,6 +1192,9 @@ Deno.serve(async (request) => {
                      animal_ids = ${values.animalIds},
                      photos = ${tx.json(photoData.photos)},
                      cover_path = ${coverPath},
+                     visibility = ${visibility},
+                     share_token = ${shareToken},
+                     published_at = ${publishedAt},
                      revision = revision + 1,
                      last_changed_fields = array['title','body','journalDate','animalIds','photos','coverPath'],
                      updated_by = ${userId},
@@ -1183,7 +1203,12 @@ Deno.serve(async (request) => {
           await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, after, command_id, source)
                    values (${householdId}, ${userId}, 'journal.update', 'journal_entry', ${journalId},
                    ${tx.json({ title: values.title, photos: photoData.photos.length })}, ${envelope.commandId}, 'ios')`;
-          response = ok(envelope.commandId, { journalId, revision: entry.revision + 1 }, entry.revision + 1);
+          response = ok(envelope.commandId, {
+            journalId,
+            revision: entry.revision + 1,
+            visibility,
+            shareToken,
+          }, entry.revision + 1);
           break;
         }
 

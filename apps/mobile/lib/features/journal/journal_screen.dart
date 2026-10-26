@@ -132,7 +132,7 @@ class _JournalCard extends StatelessWidget {
                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
                         ),
                       ),
-                      const _VisibilityChip(label: '家庭'),
+                      _VisibilityChip(label: entry.visibilityLabel),
                     ],
                   ),
                   const SizedBox(height: 7),
