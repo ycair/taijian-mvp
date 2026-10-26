@@ -4,11 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/providers.dart';
 import '../../core/models/models.dart';
+import '../../core/species.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/time/app_time.dart';
 import '../../core/widgets/common.dart';
 import '../records/quick_record_sheet.dart';
 import 'animal_repository.dart';
+import 'lineage_repository.dart';
 import '../reminders/reminder_repository.dart';
 
 class AnimalDetailScreen extends ConsumerWidget {
@@ -21,6 +23,7 @@ class AnimalDetailScreen extends ConsumerWidget {
     final animalAsync = ref.watch(animalProvider(animalId));
     final reminderAsync = ref.watch(animalRemindersProvider(animalId));
     final recordAsync = ref.watch(animalRecordsProvider(animalId));
+    final lineageAsync = ref.watch(lineageProvider(animalId));
     final timezone = ref.watch(householdTimezoneProvider);
     final animal = animalAsync.value;
     final currentUid = ref.watch(currentUserProvider)?.uid;
@@ -58,16 +61,21 @@ class AnimalDetailScreen extends ConsumerWidget {
           icon: const Icon(Icons.arrow_back),
         ),
         actions: [
-          IconButton(
-            tooltip: '編輯居民',
-            onPressed: () => _editAnimal(context, ref, animal),
-            icon: const Icon(Icons.edit_outlined),
-          ),
-          if (isOwner)
+          if (!animal.isMemorial)
+            IconButton(
+              tooltip: '編輯居民',
+              onPressed: () => _editAnimal(context, ref, animal),
+              icon: const Icon(Icons.edit_outlined),
+            ),
+          if (isOwner && !animal.isMemorial)
             PopupMenuButton<_AnimalAdminAction>(
               tooltip: '居民管理',
               onSelected: (action) {
                 switch (action) {
+                  case _AnimalAdminAction.transfer:
+                    context.push('/animals/${animal.id}/transfer');
+                  case _AnimalAdminAction.memorialize:
+                    _memorializeAnimal(context, ref, animal);
                   case _AnimalAdminAction.archive:
                     _archiveAnimal(context, ref, animal);
                   case _AnimalAdminAction.delete:
@@ -75,6 +83,14 @@ class AnimalDetailScreen extends ConsumerWidget {
                 }
               },
               itemBuilder: (context) => const [
+                PopupMenuItem(
+                  value: _AnimalAdminAction.transfer,
+                  child: Text('轉移居民'),
+                ),
+                PopupMenuItem(
+                  value: _AnimalAdminAction.memorialize,
+                  child: Text('設為紀念'),
+                ),
                 PopupMenuItem(
                   value: _AnimalAdminAction.archive,
                   child: Text('封存居民'),
@@ -94,7 +110,7 @@ class AnimalDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
-                AnimalAvatar(label: animal.initial, colorHex: animal.avatarColor, size: 76),
+                AnimalAvatar(label: animal.initial, colorHex: animal.avatarColor, pattern: animal.avatarPattern, size: 76),
                 const SizedBox(width: 18),
                 Expanded(
                   child: Column(
@@ -121,12 +137,50 @@ class AnimalDetailScreen extends ConsumerWidget {
               ],
             ),
           ),
+          if (animal.isMemorial) ...[
+            const SizedBox(height: 12),
+            MossCard(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.local_florist_outlined, color: AppTokens.primaryStrong),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('已成為了苔間的回憶。', style: TextStyle(fontWeight: FontWeight.w700)),
+                        if (animal.memorialAt != null)
+                          Text(
+                            formatDateTime(animal.memorialAt!, timezone),
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        if (animal.memorialNote != null && animal.memorialNote!.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(animal.memorialNote!),
+                          ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '紀錄保留，提醒與新增照護已停止。',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (animal.notes != null && animal.notes!.isNotEmpty) ...[
             const SizedBox(height: 12),
             MossCard(
               child: Text(animal.notes!, style: const TextStyle(height: 1.5)),
             ),
           ],
+          const SizedBox(height: 22),
+          _LineageSection(animal: animal, isOwner: isOwner, lineage: lineageAsync),
+          if (!animal.isMemorial) ...[
           const SizedBox(height: 22),
           const _SectionTitle(title: '快速紀錄'),
           const SizedBox(height: 10),
@@ -169,12 +223,15 @@ class AnimalDetailScreen extends ConsumerWidget {
               ],
             ),
           ),
+          ],
           const SizedBox(height: 26),
           Row(
             children: [
               const Expanded(child: _SectionTitle(title: '提醒')),
               TextButton.icon(
-                onPressed: () => context.push('/reminders/new?animalId=${animal.id}'),
+                onPressed: animal.isMemorial
+                    ? null
+                    : () => context.push('/reminders/new?animalId=${animal.id}'),
                 icon: const Icon(Icons.add, size: 18),
                 label: const Text('新增'),
               ),
@@ -247,6 +304,64 @@ class AnimalDetailScreen extends ConsumerWidget {
         const SnackBar(content: Text('居民資料已更新，會自動同步。')),
       );
     }
+  }
+
+  static Future<void> _memorializeAnimal(
+    BuildContext context,
+    WidgetRef ref,
+    Animal animal,
+  ) async {
+    final controller = TextEditingController();
+    final note = await showDialog<String?>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('設為紀念？'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('「${animal.name}」會移到紀念區；提醒會停用，之後不能再新增照護紀錄。這個動作無法復原。'),
+            const SizedBox(height: 14),
+            TextField(
+              controller: controller,
+              maxLines: 3,
+              maxLength: 500,
+              decoration: const InputDecoration(
+                labelText: '想留下的話（選填）',
+                alignLabelWithHint: true,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(null),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('設為紀念'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (note == null) return;
+    try {
+      await ref.read(animalRepositoryProvider).memorialize(animal, note: note);
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('設定失敗：$error')),
+        );
+      }
+      return;
+    }
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('已設為紀念，會自動同步。')),
+    );
+    context.go('/animals');
   }
 
   static Future<void> _archiveAnimal(
@@ -322,7 +437,285 @@ class AnimalDetailScreen extends ConsumerWidget {
   }
 }
 
-enum _AnimalAdminAction { archive, delete }
+
+class _LineageSection extends ConsumerWidget {
+  const _LineageSection({
+    required this.animal,
+    required this.isOwner,
+    required this.lineage,
+  });
+
+  final Animal animal;
+  final bool isOwner;
+  final AsyncValue<LineageGraph> lineage;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final graph = lineage.value ?? const LineageGraph();
+    final error = lineage.hasError;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Expanded(child: _SectionTitle(title: '家族')),
+            if (isOwner) ...[
+              TextButton(
+                onPressed: () => _addRelative(context, ref, asParent: true),
+                child: const Text('連結父母'),
+              ),
+              TextButton(
+                onPressed: () => _addRelative(context, ref, asParent: false),
+                child: const Text('連結子代'),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (error)
+          InlineBanner(
+            icon: Icons.lock_outline,
+            message: '家族資料暫時無法讀取。',
+            color: const Color(0xFFFFE7D6),
+          )
+        else if (lineage.isLoading && graph.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: LinearProgressIndicator(minHeight: 2),
+          )
+        else if (graph.isEmpty)
+          MossCard(
+            child: Text(
+              '還沒有家族連結。',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          )
+        else ...[
+          if (graph.parents.isNotEmpty) ...[
+            const _LineageLabel(label: '父母'),
+            for (final relative in graph.parents)
+              _LineageRow(
+                relative: relative,
+                isOwner: isOwner,
+                onRemove: () => _removeRelative(context, ref, relative),
+              ),
+          ],
+          if (graph.children.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            const _LineageLabel(label: '子代'),
+            for (final relative in graph.children)
+              _LineageRow(
+                relative: relative,
+                isOwner: isOwner,
+                onRemove: () => _removeRelative(context, ref, relative),
+              ),
+          ],
+        ],
+      ],
+    );
+  }
+
+  Future<void> _addRelative(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool asParent,
+  }) async {
+    final animals = ref
+        .read(activeAnimalsProvider)
+        .where((candidate) => candidate.id != animal.id)
+        .toList(growable: false);
+    if (animals.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('需要先有另一位居民，才能建立家族連結。')),
+      );
+      return;
+    }
+    final selected = await showDialog<Animal>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(asParent ? '選擇父母' : '選擇子代'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              for (final candidate in animals)
+                ListTile(
+                  leading: AnimalAvatar(
+                    label: candidate.initial,
+                    colorHex: candidate.avatarColor,
+                    size: 38,
+                  ),
+                  title: Text(candidate.name),
+                  subtitle: Text(candidate.displaySpecies),
+                  onTap: () => Navigator.of(context).pop(candidate),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('取消'),
+          ),
+        ],
+      ),
+    );
+    if (selected == null || !context.mounted) return;
+    try {
+      await ref.read(lineageRepositoryProvider).add(
+        parentId: asParent ? selected.id : animal.id,
+        childId: asParent ? animal.id : selected.id,
+      );
+      ref.invalidate(lineageProvider(animal.id));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('家族連結已建立，會自動同步。')),
+        );
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('建立家族連結失敗：$error')),
+        );
+      }
+    }
+  }
+
+  Future<void> _removeRelative(
+    BuildContext context,
+    WidgetRef ref,
+    LineageRelative relative,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('移除家族連結？'),
+        content: const Text('只會移除這條家族關係，不會刪除任何居民。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('移除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await ref.read(lineageRepositoryProvider).remove(relative);
+      ref.invalidate(lineageProvider(animal.id));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('家族連結已移除，會自動同步。')),
+        );
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('移除家族連結失敗：$error')),
+        );
+      }
+    }
+  }
+}
+
+class _LineageLabel extends StatelessWidget {
+  const _LineageLabel({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6, bottom: 4),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+          color: AppTokens.muted,
+          letterSpacing: 0.8,
+        ),
+      ),
+    );
+  }
+}
+
+class _LineageRow extends StatelessWidget {
+  const _LineageRow({
+    required this.relative,
+    required this.isOwner,
+    required this.onRemove,
+  });
+
+  final LineageRelative relative;
+  final bool isOwner;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final relativeId = relative.animalId;
+    final accessible = relative.accessible && relativeId != null;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: MossCard(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        onTap: accessible ? () => context.push('/animals/$relativeId') : null,
+        child: Row(
+          children: [
+            accessible
+                ? AnimalAvatar(
+                    label: (relative.name ?? '?').substring(0, 1),
+                    colorHex: relative.avatarColor,
+                    size: 42,
+                  )
+                : Container(
+                    width: 42,
+                    height: 42,
+                    decoration: const BoxDecoration(
+                      color: AppTokens.successBg,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.lock_outline, size: 19, color: AppTokens.muted),
+                  ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    accessible ? (relative.name ?? '未命名') : relative.placeholderLabel,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: accessible ? null : AppTokens.muted,
+                    ),
+                  ),
+                  if (accessible && (relative.speciesLabel ?? '').isNotEmpty)
+                    Text(
+                      relative.speciesLabel!,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                ],
+              ),
+            ),
+            if (isOwner)
+              IconButton(
+                tooltip: '移除家族連結',
+                onPressed: onRemove,
+                icon: const Icon(Icons.link_off, size: 19),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+enum _AnimalAdminAction { transfer, memorialize, archive, delete }
 
 class _AnimalEditSheet extends ConsumerStatefulWidget {
   const _AnimalEditSheet({required this.animal});
@@ -337,6 +730,14 @@ class _AnimalEditSheetState extends ConsumerState<_AnimalEditSheet> {
   late final TextEditingController _name = TextEditingController(text: widget.animal.name);
   late final TextEditingController _morph = TextEditingController(text: widget.animal.morph ?? '');
   late final TextEditingController _notes = TextEditingController(text: widget.animal.notes ?? '');
+  late final TextEditingController _birthDate =
+      TextEditingController(text: widget.animal.birthDate ?? '');
+  late final TextEditingController _adoptionDate =
+      TextEditingController(text: widget.animal.adoptionDate ?? '');
+  late String _speciesId = widget.animal.species;
+  late String _sex = widget.animal.sex;
+  late String _avatarColor = widget.animal.avatarColor;
+  late String _avatarPattern = widget.animal.avatarPattern;
   bool _busy = false;
   String? _error;
 
@@ -345,6 +746,8 @@ class _AnimalEditSheetState extends ConsumerState<_AnimalEditSheet> {
     _name.dispose();
     _morph.dispose();
     _notes.dispose();
+    _birthDate.dispose();
+    _adoptionDate.dispose();
     super.dispose();
   }
 
@@ -367,8 +770,14 @@ class _AnimalEditSheetState extends ConsumerState<_AnimalEditSheet> {
       await ref.read(animalRepositoryProvider).update(
         animal: widget.animal,
         name: name,
+        speciesId: _speciesId,
         morph: _morph.text,
+        sex: _sex,
         notes: _notes.text,
+        birthDate: _birthDate.text.trim(),
+        adoptionDate: _adoptionDate.text.trim(),
+        avatarColor: _avatarColor,
+        avatarPattern: _avatarPattern,
       );
       if (mounted) Navigator.of(context).pop(true);
     } catch (error) {
@@ -400,6 +809,95 @@ class _AnimalEditSheetState extends ConsumerState<_AnimalEditSheet> {
               controller: _morph,
               maxLength: 60,
               decoration: const InputDecoration(labelText: '基因 / 型態（選填）'),
+            ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              initialValue: _speciesId,
+              decoration: const InputDecoration(labelText: '物種'),
+              items: [
+                for (final species in speciesList)
+                  DropdownMenuItem(value: species.id, child: Text(species.name)),
+              ],
+              onChanged: (value) => setState(() => _speciesId = value ?? _speciesId),
+            ),
+            const SizedBox(height: 10),
+            Text('性別', style: Theme.of(context).textTheme.labelLarge),
+            const SizedBox(height: 8),
+            SegmentedButton<String>(
+              segments: const [
+                ButtonSegment(value: 'female', label: Text('母')),
+                ButtonSegment(value: 'male', label: Text('公')),
+                ButtonSegment(value: 'unknown', label: Text('未知')),
+              ],
+              selected: {_sex},
+              onSelectionChanged: (value) => setState(() => _sex = value.first),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _birthDate,
+                    decoration: const InputDecoration(
+                      labelText: '生日（選填）',
+                      hintText: 'YYYY-MM-DD',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    controller: _adoptionDate,
+                    decoration: const InputDecoration(
+                      labelText: '到家日（選填）',
+                      hintText: 'YYYY-MM-DD',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text('圖案', style: Theme.of(context).textTheme.labelLarge),
+            const SizedBox(height: 8),
+            SegmentedButton<String>(
+              segments: const [
+                ButtonSegment(value: 'solid', label: Text('素色')),
+                ButtonSegment(value: 'spots', label: Text('斑點')),
+                ButtonSegment(value: 'stripes', label: Text('條紋')),
+                ButtonSegment(value: 'gradient', label: Text('漸層')),
+              ],
+              selected: {_avatarPattern},
+              onSelectionChanged: (value) => setState(() => _avatarPattern = value.first),
+            ),
+            const SizedBox(height: 12),
+            Text('代表色', style: Theme.of(context).textTheme.labelLarge),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 9,
+              runSpacing: 9,
+              children: [
+                for (final color in AppTokens.avatarPalette)
+                  Semantics(
+                    selected: color == _avatarColor,
+                    label: '代表色 $color',
+                    child: InkWell(
+                      onTap: () => setState(() => _avatarColor = color),
+                      borderRadius: BorderRadius.circular(999),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: AppTokens.colorFromHex(color),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: color == _avatarColor ? AppTokens.ink : Colors.white,
+                            width: color == _avatarColor ? 3 : 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 8),
             TextField(

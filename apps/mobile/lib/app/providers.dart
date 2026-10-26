@@ -96,6 +96,14 @@ final activeAnimalsProvider = Provider<List<Animal>>((ref) {
   return List<Animal>.unmodifiable(animals);
 });
 
+final memorialAnimalsProvider = Provider<List<Animal>>((ref) {
+  final animals = (ref.watch(animalsProvider).value ?? const <Animal>[])
+      .where((animal) => animal.isMemorial)
+      .toList();
+  animals.sort((a, b) => a.name.compareTo(b.name));
+  return List<Animal>.unmodifiable(animals);
+});
+
 final animalProvider = StreamProvider.family<Animal?, String>((ref, animalId) {
   final id = ref.watch(householdIdProvider);
   if (id == null) return Stream<Animal?>.value(null);

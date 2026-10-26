@@ -189,10 +189,14 @@ class Animal {
     required this.avatarColor,
     required this.status,
     required this.revision,
+    this.avatarPattern = 'solid',
     this.morph,
     this.sex = 'unknown',
     this.notes,
     this.birthDate,
+    this.adoptionDate,
+    this.memorialAt,
+    this.memorialNote,
   });
 
   factory Animal.fromMap(String id, Map<String, dynamic> map) {
@@ -203,12 +207,18 @@ class Animal {
       species: readString(map, 'species', 'other'),
       speciesLabel: readString(map, 'speciesLabel'),
       avatarColor: readString(map, 'avatarColor', '#7C9A76'),
+      avatarPattern: readString(map, 'avatarPattern', 'solid'),
       status: readString(map, 'status', 'active'),
       revision: readInt(map, 'revision'),
       morph: (map['morph'] as String?)?.trim().isEmpty == true ? null : map['morph'] as String?,
       sex: readString(map, 'sex', 'unknown'),
       notes: map['notes'] as String?,
       birthDate: map['birthDate'] as String?,
+      adoptionDate: map['adoptionDate'] as String?,
+      memorialAt: readDate(map, 'memorialAt'),
+      memorialNote: (map['memorialNote'] as String?)?.trim().isEmpty == true
+          ? null
+          : map['memorialNote'] as String?,
     );
   }
 
@@ -218,35 +228,170 @@ class Animal {
   final String species;
   final String speciesLabel;
   final String avatarColor;
+  final String avatarPattern;
   final String status;
   final int revision;
   final String? morph;
   final String sex;
   final String? notes;
   final String? birthDate;
+  final String? adoptionDate;
+  final DateTime? memorialAt;
+  final String? memorialNote;
 
   bool get isActive => status == 'active';
+
+  bool get isMemorial => status == 'memorial';
 
   String get displaySpecies => speciesLabel.isNotEmpty ? speciesLabel : species;
 
   String get initial => name.trim().isEmpty ? '?' : name.trim().substring(0, 1);
 
-  Animal copyWith({int? revision, String? name, String? morph, String? notes}) {
+  Animal copyWith({
+    int? revision,
+    String? name,
+    String? species,
+    String? speciesLabel,
+    String? avatarColor,
+    String? avatarPattern,
+    String? status,
+    String? morph,
+    String? sex,
+    String? notes,
+    String? birthDate,
+    String? adoptionDate,
+    DateTime? memorialAt,
+    String? memorialNote,
+  }) {
     return Animal(
       id: id,
       householdId: householdId,
       name: name ?? this.name,
-      species: species,
-      speciesLabel: speciesLabel,
-      avatarColor: avatarColor,
-      status: status,
+      species: species ?? this.species,
+      speciesLabel: speciesLabel ?? this.speciesLabel,
+      avatarColor: avatarColor ?? this.avatarColor,
+      avatarPattern: avatarPattern ?? this.avatarPattern,
+      status: status ?? this.status,
       revision: revision ?? this.revision,
       morph: morph ?? this.morph,
-      sex: sex,
+      sex: sex ?? this.sex,
       notes: notes ?? this.notes,
-      birthDate: birthDate,
+      birthDate: birthDate ?? this.birthDate,
+      adoptionDate: adoptionDate ?? this.adoptionDate,
+      memorialAt: memorialAt ?? this.memorialAt,
+      memorialNote: memorialNote ?? this.memorialNote,
     );
   }
+}
+
+class LineageRelative {
+  const LineageRelative({
+    required this.edgeId,
+    required this.relation,
+    required this.accessible,
+    this.animalId,
+    this.name,
+    this.speciesLabel,
+    this.avatarColor = '#7C9A76',
+    this.status,
+  });
+
+  factory LineageRelative.fromMap(Map<String, dynamic> map) {
+    return LineageRelative(
+      edgeId: readString(map, 'edgeId'),
+      relation: readString(map, 'relation'),
+      accessible: map['accessible'] == true,
+      animalId: readString(map, 'animalId').isEmpty ? null : readString(map, 'animalId'),
+      name: readString(map, 'name').isEmpty ? null : readString(map, 'name'),
+      speciesLabel: readString(map, 'speciesLabel'),
+      avatarColor: readString(map, 'avatarColor', '#7C9A76'),
+      status: readString(map, 'status', 'active'),
+    );
+  }
+
+  final String edgeId;
+  final String relation;
+  final bool accessible;
+  final String? animalId;
+  final String? name;
+  final String? speciesLabel;
+  final String avatarColor;
+  final String? status;
+
+  bool get isParent => relation == 'parent';
+
+  bool get isChild => relation == 'child';
+
+  String get placeholderLabel => '已轉讓／不可存取';
+}
+
+class LineageGraph {
+  const LineageGraph({this.parents = const [], this.children = const []});
+
+  final List<LineageRelative> parents;
+  final List<LineageRelative> children;
+
+  bool get isEmpty => parents.isEmpty && children.isEmpty;
+
+  static LineageGraph fromRows(List<Map<String, dynamic>> rows) {
+    final relatives = rows.map(LineageRelative.fromMap).toList(growable: false);
+    return LineageGraph(
+      parents: relatives.where((relative) => relative.isParent).toList(growable: false),
+      children: relatives.where((relative) => relative.isChild).toList(growable: false),
+    );
+  }
+}
+
+class AnimalTransfer {
+  const AnimalTransfer({
+    required this.id,
+    required this.direction,
+    required this.transferType,
+    required this.status,
+    required this.animalNames,
+    required this.sourceHouseholdName,
+    required this.expiresAt,
+    required this.createdAt,
+  });
+
+  factory AnimalTransfer.fromMap(Map<String, dynamic> map) {
+    return AnimalTransfer(
+      id: readString(map, 'id'),
+      direction: readString(map, 'direction', 'outgoing'),
+      transferType: readString(map, 'transferType', 'other'),
+      status: readString(map, 'status', 'pending'),
+      animalNames: readStringList(map, 'animalNames'),
+      sourceHouseholdName: readString(map, 'sourceHouseholdName', '家庭'),
+      expiresAt: readDate(map, 'expiresAt') ?? DateTime.now().toUtc(),
+      createdAt: readDate(map, 'createdAt') ?? DateTime.now().toUtc(),
+    );
+  }
+
+  final String id;
+  final String direction;
+  final String transferType;
+  final String status;
+  final List<String> animalNames;
+  final String sourceHouseholdName;
+  final DateTime expiresAt;
+  final DateTime createdAt;
+
+  bool get isIncoming => direction == 'incoming';
+
+  bool get isPending => status == 'pending';
+
+  bool get isExpired => status == 'expired' || expiresAt.isBefore(DateTime.now().toUtc());
+
+  String get animalLabel => animalNames.isEmpty ? '居民' : animalNames.join('、');
+
+  String get statusLabel => switch (status) {
+    'pending' => isExpired ? '已過期' : '等待回覆',
+    'accepted' => '已接受',
+    'declined' => '已拒絕',
+    'cancelled' => '已取消',
+    'expired' => '已過期',
+    _ => status,
+  };
 }
 
 enum RecordType {

@@ -94,6 +94,7 @@ export function AnimalDetailPage() {
   }
 
   if (!animal) return <div className="app">載入中…</div>;
+  const isActive = animal.status === 'active';
 
   return (
     <div className="app">
@@ -107,7 +108,16 @@ export function AnimalDetailPage() {
       </div>
       {error && <p className="error">{error}</p>}
 
-      <section className="card stack" style={{ marginTop: 16 }}>
+      {animal.status === 'memorial' && (
+        <section className="card stack" style={{ marginTop: 16 }}>
+          <div style={{ fontWeight: 700 }}>已成為了苔間的回憶</div>
+          {animal.memorial_at && <div className="muted">{new Date(animal.memorial_at).toLocaleDateString('zh-TW')}</div>}
+          {animal.memorial_note && <div>{animal.memorial_note}</div>}
+          <div className="muted">提醒與新增照護已停止，紀錄仍可閱讀。</div>
+        </section>
+      )}
+
+      {isActive && <section className="card stack" style={{ marginTop: 16 }}>
         <div style={{ fontWeight: 700 }}>快速紀錄</div>
         <select className="input" value={type} onChange={(e) => setType(e.target.value)}>
           {RECORD_TYPES.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
@@ -117,7 +127,7 @@ export function AnimalDetailPage() {
         )}
         <textarea className="input" placeholder="備註" value={note} onChange={(e) => setNote(e.target.value)} />
         <button className="btn" onClick={addRecord}>儲存</button>
-      </section>
+      </section>}
 
       <section className="card stack" style={{ marginTop: 12 }}>
         <div style={{ fontWeight: 700 }}>提醒</div>
@@ -127,9 +137,11 @@ export function AnimalDetailPage() {
             <span className="muted">{reminder.schedule.times?.[0]} · {reminder.enabled ? '開啟' : '關閉'}</span>
           </div>
         ))}
-        <input className="input" placeholder="提醒名稱" value={reminderTitle} onChange={(e) => setReminderTitle(e.target.value)} />
-        <input className="input" type="time" value={reminderTime} onChange={(e) => setReminderTime(e.target.value)} />
-        <button className="btn" onClick={addReminder}>新增提醒</button>
+        {isActive && <>
+          <input className="input" placeholder="提醒名稱" value={reminderTitle} onChange={(e) => setReminderTitle(e.target.value)} />
+          <input className="input" type="time" value={reminderTime} onChange={(e) => setReminderTime(e.target.value)} />
+          <button className="btn" onClick={addReminder}>新增提醒</button>
+        </>}
       </section>
 
       <section className="card stack" style={{ marginTop: 12 }}>

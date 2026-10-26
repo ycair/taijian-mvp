@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/time/app_time.dart';
 import 'package:mobile/features/animals/animal_detail_screen.dart';
 import 'package:mobile/features/animals/animals_screen.dart';
 import 'package:mobile/features/today/today_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../support/test_harness.dart';
 
 Future<void> _finish(WidgetTester tester, TestHarness harness) async {
@@ -77,6 +80,63 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('封存居民'), findsOneWidget);
     expect(find.text('刪除居民'), findsOneWidget);
+
+    await _finish(tester, harness);
+  });
+
+  testWidgets('Memorial residents are separated and read-only', (tester) async {
+    final harness = await createTestHarness();
+    addTearDown(harness.dispose);
+    final slow = harness.store.animals['animal_slow']!;
+    harness.store.animals['animal_slow'] = slow.copyWith(
+      status: 'memorial',
+      memorialAt: DateTime.utc(2026, 10, 20),
+      memorialNote: '謝謝慢慢。',
+    );
+
+    await tester.pumpWidget(wrapScreen(harness, const AnimalsScreen()));
+    await tester.pumpAndSettle();
+    expect(find.text('紀念'), findsOneWidget);
+    expect(find.textContaining('慢慢'), findsOneWidget);
+
+    await tester.pumpWidget(
+      wrapScreen(harness, const AnimalDetailScreen(animalId: 'animal_slow')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('已成為了苔間的回憶。', findRichText: true), findsOneWidget);
+    expect(find.text('謝謝慢慢。'), findsOneWidget);
+    expect(find.byTooltip('編輯居民'), findsNothing);
+    expect(find.byTooltip('居民管理'), findsNothing);
+
+    await _finish(tester, harness);
+  });
+
+  testWidgets('Animals searches and filters by a local group', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'animal_list:mock_owner:household_moss': jsonEncode({
+        'groups': ['最愛'],
+        'animalGroups': {'animal_afa': '最愛'},
+        'order': [],
+        'sortMode': 'custom',
+      }),
+    });
+    final harness = await createTestHarness();
+    addTearDown(harness.dispose);
+
+    await tester.pumpWidget(wrapScreen(harness, const AnimalsScreen()));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), '小綠');
+    await tester.pumpAndSettle();
+    expect(find.text('小綠'), findsNWidgets(2));
+    expect(find.text('阿肥'), findsNothing);
+
+    await tester.enterText(find.byType(TextField), '');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('最愛').first);
+    await tester.pumpAndSettle();
+    expect(find.text('阿肥'), findsOneWidget);
+    expect(find.text('小綠'), findsNothing);
 
     await _finish(tester, harness);
   });

@@ -33,6 +33,7 @@ class AppDependencies {
     required this.outbox,
     required this.outboxDatabase,
     this.push,
+    this.rest,
     this.appVersion = '1.0.0',
   });
 
@@ -43,6 +44,7 @@ class AppDependencies {
   final Outbox outbox;
   final OutboxDatabase outboxDatabase;
   final PushService? push;
+  final SupabaseRestClient? rest;
   final String appVersion;
 }
 
@@ -53,6 +55,7 @@ Future<AppDependencies> bootstrap(AppConfig config) async {
   final ReadStore readStore;
   final CommandApi commandApi;
   PushService? push;
+  SupabaseRestClient? rest;
   final appVersion = await _readAppVersion();
 
   if (config.useMock) {
@@ -81,7 +84,7 @@ Future<AppDependencies> bootstrap(AppConfig config) async {
     );
     await supabaseAuth.initialize();
     auth = supabaseAuth;
-    final rest = SupabaseRestClient(
+    rest = SupabaseRestClient(
       baseUrl: config.supabaseUrl,
       apiKey: config.supabaseAnonKey,
       tokenProvider: () => supabaseAuth.token,
@@ -112,6 +115,7 @@ Future<AppDependencies> bootstrap(AppConfig config) async {
     outbox: outbox,
     outboxDatabase: outboxDatabase,
     push: push,
+    rest: rest,
     appVersion: appVersion,
   );
 

@@ -49,37 +49,93 @@ class AnimalAvatar extends StatelessWidget {
     required this.label,
     required this.colorHex,
     this.size = 44,
+    this.pattern = 'solid',
     this.photoUrl,
   });
 
   final String label;
   final String colorHex;
   final double size;
+  final String pattern;
   final String? photoUrl;
 
   @override
   Widget build(BuildContext context) {
     final color = AppTokens.colorFromHex(colorHex);
+    final blended = Color.alphaBlend(Colors.white.withValues(alpha: 0.35), color);
     final initial = label.trim().isEmpty ? '?' : label.trim().substring(0, 1);
     return Container(
       width: size,
       height: size,
-      alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: Color.alphaBlend(Colors.white.withValues(alpha: 0.35), color),
+        color: pattern == 'gradient' ? null : blended,
+        gradient: pattern == 'gradient'
+            ? LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [blended, color],
+              )
+            : null,
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white, width: 2),
       ),
-      child: Text(
-        initial,
-        style: TextStyle(
-          color: AppTokens.ink,
-          fontWeight: FontWeight.w800,
-          fontSize: size * 0.38,
+      child: ClipOval(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (pattern == 'spots' || pattern == 'stripes')
+              CustomPaint(painter: _AvatarPatternPainter(pattern: pattern, color: color)),
+            Center(
+              child: Text(
+                initial,
+                style: TextStyle(
+                  color: AppTokens.ink,
+                  fontWeight: FontWeight.w800,
+                  fontSize: size * 0.38,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
+}
+
+class _AvatarPatternPainter extends CustomPainter {
+  const _AvatarPatternPainter({required this.pattern, required this.color});
+
+  final String pattern;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = Colors.white.withValues(alpha: 0.3);
+    if (pattern == 'spots') {
+      final radius = size.width * 0.11;
+      for (final offset in [
+        Offset(size.width * 0.2, size.height * 0.22),
+        Offset(size.width * 0.72, size.height * 0.18),
+        Offset(size.width * 0.48, size.height * 0.52),
+        Offset(size.width * 0.18, size.height * 0.76),
+        Offset(size.width * 0.78, size.height * 0.7),
+      ]) {
+        canvas.drawCircle(offset, radius, paint);
+      }
+    } else {
+      final stroke = Paint()
+        ..color = Colors.white.withValues(alpha: 0.25)
+        ..strokeWidth = size.width * 0.1;
+      for (var index = -2; index < 6; index++) {
+        final x = size.width * (index * 0.28);
+        canvas.drawLine(Offset(x, 0), Offset(x + size.width * 0.55, size.height), stroke);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _AvatarPatternPainter oldDelegate) =>
+      oldDelegate.pattern != pattern || oldDelegate.color != color;
 }
 
 class PendingAvatar extends StatelessWidget {

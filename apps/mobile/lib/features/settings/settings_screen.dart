@@ -12,6 +12,7 @@ import '../../core/widgets/common.dart';
 import '../../data/command/command_attempt.dart';
 import '../../data/outbox/outbox_database.dart';
 import '../auth/auth_service.dart';
+import '../animals/transfer_repository.dart';
 import '../household/household_repository.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -53,6 +54,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final members = ref.watch(householdMembersProvider).value ?? const <HouseholdMember>[];
     final currentMember = members.where((member) => member.uid == currentUid).firstOrNull;
     final isOwner = currentMember?.role == MemberRole.owner;
+    final transfers = ref.watch(transfersProvider).value ?? const <AnimalTransfer>[];
+    final pendingTransfers = transfers.where((transfer) => transfer.isIncoming && transfer.isPending && !transfer.isExpired).length;
     final outbox = ref.watch(outboxEntriesProvider).value ?? const <OutboxEntry>[];
     final pending = outbox
         .where((entry) => entry.status == OutboxStatus.pending || entry.status == OutboxStatus.sending)
@@ -214,6 +217,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ],
                         ),
                         const Divider(height: 26),
+                        _SettingRow(
+                          icon: Icons.swap_horiz,
+                          title: '轉移邀請',
+                          value: pendingTransfers == 0
+                              ? '查看收到的居民轉移'
+                              : '$pendingTransfers 個邀請等待回覆',
+                          onTap: _busy ? null : () => context.push('/transfers'),
+                        ),
                         if (isOwner)
                           _SettingRow(
                             icon: Icons.group_outlined,

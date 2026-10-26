@@ -20,9 +20,12 @@ export type Animal = {
   species: string;
   species_label: string | null;
   avatar_color: string;
+  avatar_pattern?: string;
   sex: string;
   notes: string | null;
   status: string;
+  memorial_at?: string | null;
+  memorial_note?: string | null;
 };
 
 export type Reminder = {
