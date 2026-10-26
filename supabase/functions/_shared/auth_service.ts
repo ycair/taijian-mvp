@@ -75,6 +75,10 @@ async function createSession(
     insert into public.auth_sessions (id, profile_id, refresh_token_hash, platform, expires_at)
     values (${sessionId}, ${profileId}, ${refreshHash}, ${platform}, ${expiresAt})
   `;
+  await tx`
+    insert into public.auth_refresh_tokens (session_id, token_hash, expires_at)
+    values (${sessionId}, ${refreshHash}, ${expiresAt})
+  `;
   const accessToken = await signAccessToken(profileId, sessionId);
   return { sessionId, refreshToken, accessToken };
 }
@@ -175,16 +179,24 @@ export async function refreshSession(refreshToken: string): Promise<AuthLoginRes
   if (!refreshToken) throw new AuthServiceError('UNAUTHENTICATED');
   const hash = await hashRefreshToken(refreshToken);
 
-  return await sql.begin(async (tx: any) => {
+  const outcome = await sql.begin(async (tx: any) => {
     const [session] = await tx`
-      select s.*, p.status as profile_status, p.display_name, p.avatar_url, p.timezone, p.default_household_id
-      from public.auth_sessions s
+      select t.id as token_row_id, t.used_at as token_used_at,
+             s.id, s.profile_id, s.revoked_at, s.expires_at,
+             p.status as profile_status, p.display_name, p.avatar_url, p.timezone, p.default_household_id
+      from public.auth_refresh_tokens t
+      join public.auth_sessions s on s.id = t.session_id
       join public.profiles p on p.id = s.profile_id
-      where s.refresh_token_hash = ${hash}
-      for update
+      where t.token_hash = ${hash}
+      for update of t, s, p
     `;
+    if (!session) throw new AuthServiceError('UNAUTHENTICATED');
+
+    if (session.token_used_at !== null) {
+      return { replay: { profileId: session.profile_id, sessionId: session.id } };
+    }
+
     if (
-      !session ||
       session.revoked_at !== null ||
       new Date(session.expires_at).getTime() <= Date.now() ||
       session.profile_status !== 'active'
@@ -196,25 +208,53 @@ export async function refreshSession(refreshToken: string): Promise<AuthLoginRes
     const nextHash = await hashRefreshToken(nextRefresh);
     const expiresAt = newSessionExpiry().toISOString();
     await tx`
+      update public.auth_refresh_tokens set used_at = now() where id = ${session.token_row_id}
+    `;
+    await tx`
+      insert into public.auth_refresh_tokens (session_id, token_hash, expires_at)
+      values (${session.id}, ${nextHash}, ${expiresAt})
+    `;
+    await tx`
       update public.auth_sessions
       set refresh_token_hash = ${nextHash}, last_used_at = now(), expires_at = ${expiresAt}
       where id = ${session.id}
     `;
+    await tx`
+      insert into public.audit_logs (actor_id, actor_type, action, target_type, target_id, source)
+      values (${session.profile_id}, 'user', 'auth.refresh', 'session', ${session.id}, 'ios')
+    `;
     const accessToken = await signAccessToken(session.profile_id, session.id);
     return {
-      accessToken,
-      refreshToken: nextRefresh,
-      sessionId: session.id,
-      userId: session.profile_id,
-      profile: {
-        id: session.profile_id,
-        displayName: session.display_name,
-        avatarUrl: session.avatar_url,
-        timezone: session.timezone,
-        defaultHouseholdId: session.default_household_id,
+      result: {
+        accessToken,
+        refreshToken: nextRefresh,
+        sessionId: session.id,
+        userId: session.profile_id,
+        profile: {
+          id: session.profile_id,
+          displayName: session.display_name,
+          avatarUrl: session.avatar_url,
+          timezone: session.timezone,
+          defaultHouseholdId: session.default_household_id,
+        },
       },
     };
   });
+
+  if (outcome.replay) {
+    await sql.begin(async (tx: any) => {
+      await tx`
+        update public.auth_sessions set revoked_at = now()
+        where id = ${outcome.replay.sessionId} and revoked_at is null
+      `;
+      await tx`
+        insert into public.audit_logs (actor_id, actor_type, action, target_type, target_id, source)
+        values (${outcome.replay.profileId}, 'system', 'auth.refresh_replay', 'session', ${outcome.replay.sessionId}, 'ios')
+      `;
+    });
+    throw new AuthServiceError('UNAUTHENTICATED');
+  }
+  return outcome.result;
 }
 
 export async function listIdentities(profileId: string): Promise<string[]> {
@@ -252,6 +292,13 @@ export async function linkIdentity(
       return;
     }
 
+    const [sameProvider] = await tx`
+      select subject from public.auth_identities
+      where profile_id = ${profileId} and provider = ${provider}
+      for update
+    `;
+    if (sameProvider) throw new AuthServiceError('PROVIDER_ALREADY_LINKED');
+
     if (provider === 'line') {
       const [other] = await tx`
         select id from public.profiles where line_sub = ${subject} and id <> ${profileId} limit 1
@@ -280,7 +327,10 @@ export async function unlinkIdentity(profileId: string, provider: LinkProvider):
     const identities = await tx`
       select provider, subject from public.auth_identities where profile_id = ${profileId} for update
     `;
-    if (identities.length <= 1) throw new AuthServiceError('LAST_IDENTITY');
+    const remaining = identities.filter((row: any) => row.provider !== provider);
+    if (remaining.length === 0 || remaining.every((row: any) => row.provider === 'guest')) {
+      throw new AuthServiceError('LAST_IDENTITY');
+    }
     if (!identities.some((row: any) => row.provider === provider)) {
       throw new AuthServiceError('NOT_FOUND');
     }
@@ -300,11 +350,20 @@ export async function unlinkIdentity(profileId: string, provider: LinkProvider):
 }
 
 export async function logout(profileId: string, sessionId: string): Promise<void> {
-  await sql`
-    update public.auth_sessions
-    set revoked_at = now()
-    where id = ${sessionId} and profile_id = ${profileId} and revoked_at is null
-  `;
+  await sql.begin(async (tx: any) => {
+    const [revoked] = await tx`
+      update public.auth_sessions
+      set revoked_at = now()
+      where id = ${sessionId} and profile_id = ${profileId} and revoked_at is null
+      returning id
+    `;
+    if (revoked) {
+      await tx`
+        insert into public.audit_logs (actor_id, actor_type, action, target_type, target_id, source)
+        values (${profileId}, 'user', 'auth.logout', 'session', ${sessionId}, 'ios')
+      `;
+    }
+  });
 }
 
 export async function deleteAccount(profileId: string): Promise<void> {
@@ -316,21 +375,39 @@ export async function deleteAccount(profileId: string): Promise<void> {
     if (profile.status === 'deleted') return;
 
     const owned = await tx`
-      select id from public.households
-      where owner_id = ${profileId} and deleted_at is null
-      for update
+      select h.id,
+             (select count(*)::int from public.household_members m where m.household_id = h.id) as member_count,
+             (select count(*)::int from public.household_members m where m.household_id = h.id and m.role = 'owner') as owner_count
+      from public.households h
+      join public.household_members me on me.household_id = h.id and me.user_id = ${profileId}
+      where me.role = 'owner' and h.deleted_at is null
+      for update of h
     `;
+    const deleteHouseholds: string[] = [];
     for (const household of owned) {
-      const [count] = await tx`
-        select count(*)::int as count from public.household_members where household_id = ${household.id}
-      `;
-      if (count.count > 1) throw new AuthServiceError('LAST_OWNER');
+      if (household.owner_count > 1) continue;
+      if (household.member_count > 1) throw new AuthServiceError('LAST_OWNER');
+      deleteHouseholds.push(household.id);
     }
 
-    for (const household of owned) {
-      await tx`delete from public.households where id = ${household.id}`;
+    for (const householdId of deleteHouseholds) {
+      await tx`delete from public.households where id = ${householdId}`;
     }
     await tx`delete from public.household_members where user_id = ${profileId}`;
+    await tx`
+      update public.households h
+      set owner_id = coalesce(
+        (select m.user_id from public.household_members m
+         where m.household_id = h.id and m.role = 'owner'
+         order by m.joined_at limit 1),
+        h.owner_id
+      )
+      where h.owner_id = ${profileId} and h.deleted_at is null
+        and exists (
+          select 1 from public.household_members m
+          where m.household_id = h.id and m.role = 'owner'
+        )
+    `;
     await tx`
       update public.profiles
       set status = 'deleted', deleted_at = now(), line_sub = null,

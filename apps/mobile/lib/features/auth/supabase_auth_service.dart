@@ -72,17 +72,32 @@ class SupabaseAuthService implements AuthService {
       _current = await _loadUser(userId);
     } on SupabaseApiException catch (error) {
       if (!error.isAuthError) {
-        await _clearSession();
+        _current = AppUser(uid: userId, displayName: '苔友');
         return;
       }
       try {
         _current = await _refreshSession();
-      } catch (_) {
+      } catch (refreshError) {
+        if (_isAuthFailure(refreshError)) {
+          await _clearSession();
+        } else {
+          _current = AppUser(uid: userId, displayName: '苔友');
+        }
+      }
+    } on AuthException catch (error) {
+      if (_isAuthFailure(error)) {
         await _clearSession();
+      } else {
+        _current = AppUser(uid: userId, displayName: '苔友');
       }
     } catch (_) {
-      await _clearSession();
+      _current = AppUser(uid: userId, displayName: '苔友');
     }
+  }
+
+  bool _isAuthFailure(Object error) {
+    return (error is AuthException && error.code == 'UNAUTHENTICATED') ||
+        (error is SupabaseApiException && error.isAuthError);
   }
 
   @override
@@ -254,6 +269,8 @@ class SupabaseAuthService implements AuthService {
     return await _applyAuthResponse(response);
   }
 
+  Future<String?> refreshAccessToken() => _refreshAccessToken();
+
   Future<String?> _refreshAccessToken() {
     final active = _refreshInFlight;
     if (active != null) return active;
@@ -268,8 +285,13 @@ class SupabaseAuthService implements AuthService {
     try {
       await _refreshSession();
       return _accessToken;
+    } on AuthException catch (error) {
+      if (_isAuthFailure(error)) await _clearSession();
+      return null;
+    } on SupabaseApiException catch (error) {
+      if (_isAuthFailure(error)) await _clearSession();
+      return null;
     } catch (_) {
-      await _clearSession();
       return null;
     }
   }

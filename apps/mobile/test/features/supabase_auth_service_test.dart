@@ -328,6 +328,25 @@ void main() {
     expect(store.refreshToken, 'new-refresh');
   });
 
+  test('initialize retains tokens on a transient failure', () async {
+    final store = MemoryTokenStore()
+      ..accessToken = 'access'
+      ..refreshToken = 'refresh'
+      ..userId = 'u1';
+    final service = auth(
+      line: FakeLineSdk(),
+      store: store,
+      handler: (_) async => jsonResponse({'message': 'unavailable'}, 503),
+    );
+
+    await service.initialize();
+
+    expect(service.currentUser?.uid, 'u1');
+    expect(store.accessToken, 'access');
+    expect(store.refreshToken, 'refresh');
+    expect(store.clears, 0);
+  });
+
   test('initialize clears a session that cannot be refreshed', () async {
     final store = MemoryTokenStore()
       ..accessToken = 'expired-jwt'

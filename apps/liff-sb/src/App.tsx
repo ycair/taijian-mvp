@@ -179,11 +179,7 @@ function AppProvider({ children }: { children: ReactNode }) {
         logout(state.token);
         return;
       }
-      saveSession(
-        refreshed.accessToken,
-        refreshed.refreshToken,
-        refreshed.userId ?? state.userId,
-      );
+      saveSession(refreshed.accessToken, refreshed.refreshToken, refreshed.userId ?? state.userId);
       window.location.reload();
     }, delay);
     return () => window.clearTimeout(timer);
@@ -220,7 +216,9 @@ function AppProvider({ children }: { children: ReactNode }) {
 function BottomNav() {
   return (
     <nav className="nav">
-      <NavLink to="/" end>今日</NavLink>
+      <NavLink to="/" end>
+        今日
+      </NavLink>
       <NavLink to="/animals">居民</NavLink>
       <NavLink to="/settings">設定</NavLink>
     </nav>

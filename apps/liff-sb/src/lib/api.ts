@@ -22,18 +22,33 @@ export async function callCommand<T = unknown>(
     payload: Record<string, unknown>;
   },
 ): Promise<CommandResult<T>> {
-  const response = await fetch(`${functionsUrl}/execute-command`, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      apikey: supabaseAnonKey,
-      authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      ...command,
-      client: { platform: 'liff', appVersion: '0.1.0' },
-    }),
-  });
+  const send = (accessToken: string) =>
+    fetch(`${functionsUrl}/execute-command`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        apikey: supabaseAnonKey,
+        authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        ...command,
+        client: { platform: 'liff', appVersion: '0.1.0' },
+      }),
+    });
+
+  let response = await send(token);
+  if (response.status === 401) {
+    const refreshToken = localStorage.getItem('sb_refresh');
+    if (refreshToken) {
+      const refreshed = await refreshSessionToken(refreshToken);
+      if (refreshed.ok && refreshed.accessToken && refreshed.refreshToken) {
+        localStorage.setItem('sb_access', refreshed.accessToken);
+        localStorage.setItem('sb_refresh', refreshed.refreshToken);
+        if (refreshed.userId) localStorage.setItem('sb_user', refreshed.userId);
+        response = await send(refreshed.accessToken);
+      }
+    }
+  }
   return (await response.json()) as CommandResult<T>;
 }
 

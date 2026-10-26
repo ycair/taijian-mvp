@@ -62,3 +62,18 @@ Deno.test('auth HTTP refresh rotates and logout revokes', async () => {
     await sql`delete from public.profiles where id = ${login.userId}`;
   }
 });
+
+Deno.test('sensitive auth actions reject a revoked session', async () => {
+  const login = await service.loginWithProvider('guest', crypto.randomUUID(), { displayName: 'HTTP revoked' }, 'ios');
+  try {
+    await service.logout(login.userId, login.sessionId);
+    const response = await http.handleAuth(
+      request({ action: 'link', provider: 'google', idToken: 'unused' }, login.accessToken),
+    );
+    const body = await response.json() as Record<string, any>;
+    assertEquals(body.ok, false);
+    assertEquals(body.code, 'UNAUTHENTICATED');
+  } finally {
+    await sql`delete from public.profiles where id = ${login.userId}`;
+  }
+});

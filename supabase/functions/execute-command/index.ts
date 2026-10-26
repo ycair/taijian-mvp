@@ -165,7 +165,7 @@ Deno.serve(async (request) => {
           const token = String(payload.token ?? '');
           const [inviteId, secret] = token.split('.');
           if (!inviteId || !secret) throw Object.assign(new Error('invalid token'), { code: 'VALIDATION_ERROR' });
-          const [invite] = await tx`select * from invites where id = ${inviteId}`;
+          const [invite] = await tx`select * from invites where id = ${inviteId} for update`;
           if (!invite) throw Object.assign(new Error('invite not found'), { code: 'NOT_FOUND' });
           if (invite.status !== 'active' || new Date(invite.expires_at).getTime() < Date.now()) {
             throw Object.assign(new Error('invite expired'), { code: 'INVITE_EXPIRED' });
@@ -192,6 +192,7 @@ Deno.serve(async (request) => {
 
         case 'member.updateRole': {
           if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          await tx`select id from households where id = ${householdId} for update`;
           const actor = await requireMember(tx, householdId, userId);
           if (actor.role !== 'owner') throw Object.assign(new Error('owner only'), { code: 'FORBIDDEN' });
           const targetUserId = String(payload.userId ?? '');
@@ -215,6 +216,12 @@ Deno.serve(async (request) => {
             update households h set
               owner_count = (select count(*) from household_members m where m.household_id = h.id and m.role = 'owner'),
               member_count = (select count(*) from household_members m where m.household_id = h.id),
+              owner_id = coalesce(
+                (select m.user_id from household_members m
+                 where m.household_id = h.id and m.role = 'owner'
+                 order by m.joined_at limit 1),
+                h.owner_id
+              ),
               updated_at = now()
             where h.id = ${householdId}
           `;
@@ -228,6 +235,7 @@ Deno.serve(async (request) => {
 
         case 'member.remove': {
           if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          await tx`select id from households where id = ${householdId} for update`;
           const actor = await requireMember(tx, householdId, userId);
           if (actor.role !== 'owner') throw Object.assign(new Error('owner only'), { code: 'FORBIDDEN' });
           const targetUserId = String(payload.userId ?? '');
@@ -250,6 +258,12 @@ Deno.serve(async (request) => {
             update households h set
               owner_count = (select count(*) from household_members m where m.household_id = h.id and m.role = 'owner'),
               member_count = (select count(*) from household_members m where m.household_id = h.id),
+              owner_id = coalesce(
+                (select m.user_id from household_members m
+                 where m.household_id = h.id and m.role = 'owner'
+                 order by m.joined_at limit 1),
+                h.owner_id
+              ),
               updated_at = now()
             where h.id = ${householdId}
           `;
@@ -267,6 +281,7 @@ Deno.serve(async (request) => {
 
         case 'member.leave': {
           if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          await tx`select id from households where id = ${householdId} for update`;
           const member = await requireMember(tx, householdId, userId);
           if (member.role === 'owner') {
             const [owners] = await tx`
@@ -280,6 +295,12 @@ Deno.serve(async (request) => {
             update households h set
               owner_count = (select count(*) from household_members m where m.household_id = h.id and m.role = 'owner'),
               member_count = (select count(*) from household_members m where m.household_id = h.id),
+              owner_id = coalesce(
+                (select m.user_id from household_members m
+                 where m.household_id = h.id and m.role = 'owner'
+                 order by m.joined_at limit 1),
+                h.owner_id
+              ),
               updated_at = now()
             where h.id = ${householdId}
           `;
@@ -395,6 +416,7 @@ Deno.serve(async (request) => {
     return json(result);
   } catch (error) {
     const code = (error as { code?: string }).code ?? 'INTERNAL';
-    return json(fail(envelope.commandId, code, error instanceof Error ? error.message : 'command failed'));
+    const status = code === 'UNAUTHENTICATED' ? 401 : 200;
+    return json(fail(envelope.commandId, code, code === 'INTERNAL' ? 'command failed' : (error instanceof Error ? error.message : 'command failed')), status);
   }
 });

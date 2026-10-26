@@ -36,7 +36,7 @@
 ### Task 1: Schema migration and LINE backfill
 
 **Files:**
-- Create: `supabase/migrations/20261026120000_foundation_identity.sql`
+- Create: `supabase/migrations/20261026065015_foundation_identity.sql`
 - Test: `supabase/tests/foundation_identity.sql` (SQL assertions via `psql`)
 
 **Interfaces:**

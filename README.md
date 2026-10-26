@@ -63,10 +63,10 @@ and reminder; 設定 → owner creates an invite link. The invite can be accepte
 
 1. Create a free project at `supabase.com` (no card required).
 2. `pnpm exec supabase link --project-ref <ref>` and `pnpm exec supabase db push`.
-3. Deploy functions: `pnpm exec supabase functions deploy line-login execute-command line-webhook`.
+3. Deploy functions: `pnpm exec supabase functions deploy auth line-login execute-command line-webhook --no-verify-jwt`.
 4. Set function secrets (never commit them):
-   `JWT_SECRET` = project JWT secret, `LINE_LOGIN_CHANNEL_ID`, `LINE_MESSAGING_CHANNEL_SECRET`,
-   `LINE_CHANNEL_ACCESS_TOKEN`, `LIFF_ID`. Do **not** set `ALLOW_MOCK_LINE` in production;
+   `JWT_SECRET` = project JWT secret, `LINE_LOGIN_CHANNEL_ID`, `GOOGLE_SERVER_CLIENT_ID`,
+   `LINE_MESSAGING_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN`, `LIFF_ID`. Do **not** set `ALLOW_MOCK_LINE` in production;
    only the local demo enables it.
 5. Build the LIFF with `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_LIFF_ID`, and
    `VITE_USE_MOCK_LINE=false`; host it on any free HTTPS static host (Cloudflare Pages,

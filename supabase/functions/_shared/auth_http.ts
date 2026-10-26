@@ -18,9 +18,23 @@ async function allowAttempt(bucket: string, limit: number, windowSeconds = 60): 
     `;
     const now = Date.now();
     if (!row) {
-      await tx`
+      const [inserted] = await tx`
         insert into public.rate_limits (bucket, window_start, counts, expires_at)
         values (${key}, now(), ${tx.json({ count: 1 })}, now() + interval '10 minutes')
+        on conflict (bucket) do nothing
+        returning bucket
+      `;
+      if (inserted) return true;
+      const [raced] = await tx`
+        select window_start, counts from public.rate_limits where bucket = ${key} for update
+      `;
+      if (!raced) return false;
+      const count = Number((raced.counts as { count?: number })?.count ?? 0);
+      if (count >= limit) return false;
+      await tx`
+        update public.rate_limits
+        set counts = ${tx.json({ count: count + 1 })}, expires_at = now() + interval '10 minutes'
+        where bucket = ${key}
       `;
       return true;
     }
@@ -66,6 +80,26 @@ async function loginLine(idToken: string, platformValue: Platform) {
     { displayName: line.name, avatarUrl: line.picture },
     platformValue,
   );
+}
+
+async function requireActiveSession(request: Request) {
+  const claims = await verifyAccessTokenFromRequest(request);
+  if (!claims) return null;
+  const [row] = await sql`
+    select s.revoked_at, s.expires_at, p.status
+    from public.auth_sessions s
+    join public.profiles p on p.id = s.profile_id
+    where s.id = ${claims.sessionId} and s.profile_id = ${claims.profileId}
+  `;
+  if (
+    !row ||
+    row.revoked_at !== null ||
+    new Date(row.expires_at).getTime() <= Date.now() ||
+    row.status !== 'active'
+  ) {
+    return null;
+  }
+  return claims;
 }
 
 export async function handleAuth(request: Request): Promise<Response> {
@@ -128,8 +162,11 @@ export async function handleAuth(request: Request): Promise<Response> {
       }
 
       case 'link': {
-        const claims = await verifyAccessTokenFromRequest(request);
+        const claims = await requireActiveSession(request);
         if (!claims) return json({ ok: false, code: 'UNAUTHENTICATED', message: 'UNAUTHENTICATED' });
+        if (!(await allowAttempt(`auth:link:${ip}:${claims.profileId}`, 20))) {
+          return json({ ok: false, code: 'RATE_LIMITED', message: 'RATE_LIMITED' });
+        }
         const provider = body.provider;
         const idToken = typeof body.idToken === 'string' ? body.idToken : '';
         if ((provider !== 'line' && provider !== 'google') || !idToken) {
@@ -143,8 +180,11 @@ export async function handleAuth(request: Request): Promise<Response> {
       }
 
       case 'unlink': {
-        const claims = await verifyAccessTokenFromRequest(request);
+        const claims = await requireActiveSession(request);
         if (!claims) return json({ ok: false, code: 'UNAUTHENTICATED', message: 'UNAUTHENTICATED' });
+        if (!(await allowAttempt(`auth:unlink:${ip}:${claims.profileId}`, 20))) {
+          return json({ ok: false, code: 'RATE_LIMITED', message: 'RATE_LIMITED' });
+        }
         const provider = body.provider;
         if (provider !== 'line' && provider !== 'google') {
           return json({ ok: false, code: 'VALIDATION_ERROR', message: 'VALIDATION_ERROR' });
@@ -154,8 +194,11 @@ export async function handleAuth(request: Request): Promise<Response> {
       }
 
       case 'identities': {
-        const claims = await verifyAccessTokenFromRequest(request);
+        const claims = await requireActiveSession(request);
         if (!claims) return json({ ok: false, code: 'UNAUTHENTICATED', message: 'UNAUTHENTICATED' });
+        if (!(await allowAttempt(`auth:identities:${ip}:${claims.profileId}`, 120))) {
+          return json({ ok: false, code: 'RATE_LIMITED', message: 'RATE_LIMITED' });
+        }
         return json({ ok: true, providers: await listIdentities(claims.profileId) });
       }
 
@@ -167,8 +210,11 @@ export async function handleAuth(request: Request): Promise<Response> {
       }
 
       case 'delete': {
-        const claims = await verifyAccessTokenFromRequest(request);
+        const claims = await requireActiveSession(request);
         if (!claims) return json({ ok: false, code: 'UNAUTHENTICATED', message: 'UNAUTHENTICATED' });
+        if (!(await allowAttempt(`auth:delete:${ip}:${claims.profileId}`, 5))) {
+          return json({ ok: false, code: 'RATE_LIMITED', message: 'RATE_LIMITED' });
+        }
         if (body.confirm !== 'DELETE') {
           return json({ ok: false, code: 'VALIDATION_ERROR', message: 'confirmation required' });
         }
@@ -186,9 +232,15 @@ export async function handleAuth(request: Request): Promise<Response> {
 
 export async function handleLineLoginCompatibility(request: Request): Promise<Response> {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  if (request.method !== 'POST') return json({ ok: false, code: 'METHOD_NOT_ALLOWED', message: 'METHOD_NOT_ALLOWED' });
   try {
+    if (!(await allowAttempt(`auth:line:${clientIp(request)}`, 30))) {
+      return json({ ok: false, code: 'RATE_LIMITED', message: 'RATE_LIMITED' });
+    }
     const body = (await request.json()) as { idToken?: string };
-    if (!body.idToken) return json({ ok: false, code: 'VALIDATION_ERROR', message: 'idToken required' });
+    if (!body.idToken || body.idToken.length > 4096) {
+      return json({ ok: false, code: 'VALIDATION_ERROR', message: 'idToken required' });
+    }
     const result = await loginLine(body.idToken, 'liff');
     return json({
       ok: true,

@@ -35,7 +35,7 @@ Deno.test('provider login is idempotent for the same identity', async () => {
   }
 });
 
-Deno.test('refresh rotation rejects the old token', async () => {
+  Deno.test('refresh rotation rejects the old token and revokes the session', async () => {
   const login = await auth.loginWithProvider('line', subject('line'), { displayName: 'Rotate' }, 'ios');
   try {
     const rotated = await auth.refreshSession(login.refreshToken);
@@ -46,6 +46,10 @@ Deno.test('refresh rotation rejects the old token', async () => {
       auth.AuthServiceError,
       'UNAUTHENTICATED',
     );
+    const [session] = await sql`
+      select revoked_at from public.auth_sessions where id = ${login.sessionId}
+    `;
+    assert(session.revoked_at !== null);
   } finally {
     await cleanup([login.userId]);
   }
@@ -81,6 +85,62 @@ Deno.test('last identity cannot be unlinked', async () => {
     );
   } finally {
     await cleanup([login.userId]);
+  }
+});
+
+Deno.test('guest cannot unlink its last recoverable non-guest identity', async () => {
+  const guest = await auth.loginAsGuest('ios');
+  try {
+    await auth.linkIdentity(guest.userId, 'line', subject('line'));
+    await assertRejects(
+      () => auth.unlinkIdentity(guest.userId, 'line'),
+      auth.AuthServiceError,
+      'LAST_IDENTITY',
+    );
+  } finally {
+    await cleanup([guest.userId]);
+  }
+});
+
+Deno.test('a profile cannot link two identities for the same provider', async () => {
+  const guest = await auth.loginAsGuest('ios');
+  try {
+    await auth.linkIdentity(guest.userId, 'line', subject('line'));
+    await assertRejects(
+      () => auth.linkIdentity(guest.userId, 'line', subject('line')),
+      auth.AuthServiceError,
+      'PROVIDER_ALREADY_LINKED',
+    );
+  } finally {
+    await cleanup([guest.userId]);
+  }
+});
+
+Deno.test('former owner deletion does not delete a household with another owner', async () => {
+  const a = await auth.loginAsGuest('ios');
+  const b = await auth.loginAsGuest('ios');
+  const householdId = crypto.randomUUID();
+  try {
+    await sql`
+      insert into public.households (id, name, owner_id, timezone)
+      values (${householdId}, 'Owner transition', ${a.userId}, 'Asia/Taipei')
+    `;
+    await sql`
+      insert into public.household_members (household_id, user_id, role)
+      values (${householdId}, ${a.userId}, 'owner'),
+             (${householdId}, ${b.userId}, 'owner')
+    `;
+    await auth.deleteAccount(a.userId);
+    const [household] = await sql`select owner_id from public.households where id = ${householdId}`;
+    assert(household);
+    assertEquals(household.owner_id, b.userId);
+
+    await auth.deleteAccount(b.userId);
+    const [gone] = await sql`select id from public.households where id = ${householdId}`;
+    assertEquals(gone, undefined);
+  } finally {
+    await sql`delete from public.households where id = ${householdId}`;
+    await cleanup([a.userId, b.userId]);
   }
 });
 

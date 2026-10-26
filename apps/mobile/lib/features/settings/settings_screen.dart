@@ -48,8 +48,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final config = ref.watch(appConfigProvider);
     final user = ref.watch(appUserProvider).value;
+    final currentUid = ref.watch(currentUserProvider)?.uid;
     final household = ref.watch(householdProvider).value;
     final members = ref.watch(householdMembersProvider).value ?? const <HouseholdMember>[];
+    final currentMember = members.where((member) => member.uid == currentUid).firstOrNull;
+    final isOwner = currentMember?.role == MemberRole.owner;
     final outbox = ref.watch(outboxEntriesProvider).value ?? const <OutboxEntry>[];
     final pending = outbox
         .where((entry) => entry.status == OutboxStatus.pending || entry.status == OutboxStatus.sending)
@@ -211,6 +214,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ],
                         ),
                         const Divider(height: 26),
+                        if (isOwner)
+                          _SettingRow(
+                            icon: Icons.group_outlined,
+                            title: '管理成員',
+                            value: '轉移屋主或移除代管人',
+                            onTap: _busy ? null : () => _manageMembers(members, currentUid),
+                          ),
                         _SettingRow(
                           icon: Icons.schedule,
                           title: '家庭時區',
@@ -503,7 +513,45 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  Future<void> _manageMembers(List<HouseholdMember> members, String? currentUid) async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('管理成員'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final member in members.where((member) => member.uid != currentUid))
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(member.displayName),
+                subtitle: Text(member.role.label),
+                trailing: TextButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                    _run(
+                      () => member.role == MemberRole.caretaker
+                          ? ref
+                                .read(householdRepositoryProvider)
+                                .updateMemberRole(userId: member.uid, role: 'owner')
+                          : ref.read(householdRepositoryProvider).removeMember(member.uid),
+                      success: member.role == MemberRole.caretaker ? '已轉移屋主。' : '已移除成員。',
+                    );
+                  },
+                  child: Text(member.role == MemberRole.caretaker ? '設為屋主' : '移除'),
+                ),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('關閉')),
+        ],
+      ),
+    );
+  }
+
   Future<void> _deleteAccount() async {
+    final uid = ref.read(currentUserProvider)?.uid;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -528,6 +576,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     setState(() => _busy = true);
     try {
       await ref.read(authServiceProvider).deleteAccount();
+      if (uid != null) {
+        try {
+          await ref.read(outboxProvider).purgeForUid(uid);
+        } catch (_) {
+          // Best effort: the server-side account is already deleted.
+        }
+      }
       if (mounted) _toast('帳號已刪除。');
     } on AuthException catch (error) {
       if (mounted) {
@@ -572,13 +627,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _signOut() async {
+    Set<String> providers = const {};
+    try {
+      providers = await ref.read(authServiceProvider).linkedProviders();
+    } catch (_) {}
+    if (!mounted) return;
+    final guestOnly = providers.length == 1 && providers.contains('guest');
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('登出苔間？'),
-        content: const Text(
-          '登出會清除這台裝置上尚未同步的變更，以及前一個帳號的 Firestore 快取。'
-          '未送出的內容不會保留到下一次登入。',
+        content: Text(
+          guestOnly
+              ? '你目前是訪客。登出後沒有 LINE 或 Google 可以找回這個帳號，資料將無法復原。'
+              : '登出會清除這台裝置上尚未同步的變更，以及前一個帳號的本機快取。'
+                    '未送出的內容不會保留到下一次登入。',
+          style: const TextStyle(height: 1.5),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('取消')),
