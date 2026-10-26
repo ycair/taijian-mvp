@@ -14,6 +14,19 @@ const RECORD_TYPES = [
   ['note', '備註'],
 ];
 
+const RECORD_LABELS: Record<string, string> = {
+  feeding: '餵食',
+  water: '換水',
+  weight: '體重',
+  length: '身長',
+  poop: '排便',
+  shed: '蛻皮',
+  activity: '活動',
+  medical: '醫療',
+  note: '備註',
+  custom: '自訂',
+};
+
 export function AnimalDetailPage() {
   const { id = '' } = useParams();
   const { token, householdId, profile } = useApp();
@@ -149,7 +162,7 @@ export function AnimalDetailPage() {
         {records.length === 0 && <span className="muted">還沒有紀錄。</span>}
         {records.map((record) => (
           <div key={record.id} className="between">
-            <span>{RECORD_TYPES.find(([id]) => id === record.type)?.[1] ?? record.type}</span>
+            <span>{RECORD_LABELS[record.type] ?? record.type}</span>
             <span className="muted">
               {record.value != null ? `${record.value} ${record.unit ?? ''}` : record.note ?? ''}
             </span>

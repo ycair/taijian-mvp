@@ -18,12 +18,17 @@
 6. `20261026072934_auth_hardening`
 7. `20261026120000_care_core_residents`
 8. `20261026130000_care_core_advisors`
+9. `20261026140000_care_core_records_analytics`
 
 2A adds the read-only `species` catalog, resident profile fields
 (`avatar_pattern`, `memorial_at`, `memorial_note`), lineage edges, and transfer
 history. Clients cannot read `animal_lineage` or `animal_transfers` directly;
 privacy-scoped reads go through `lineage_for_animal(uuid)` and
 `list_animal_transfers()`.
+
+2B adds the `length` record type and the household-scoped
+`record_analytics(...)` RPC. Record edits/deletes are owner-or-creator only;
+memorial resident records remain read-only.
 
 Schema notes:
 
@@ -40,7 +45,7 @@ Schema notes:
 
 - `auth` (`verify_jwt=false`; LINE/Google/guest/refresh/link/unlink/logout/delete/identities)
 - `line-login` (`verify_jwt=false`; compatibility wrapper; returns access+refresh+legacy token)
-- `execute-command` (`verify_jwt=false`; verifies access JWT and active session; v7 includes 2A resident/lineage/transfer commands)
+- `execute-command` (`verify_jwt=false`; verifies access JWT and active session; v8 includes 2A resident/lineage/transfer commands and 2B record update/delete)
 - `line-webhook` (`verify_jwt=false`; verifies the LINE signature)
 
 `auth` and `execute-command` require a valid session. `JWT_SECRET` must be the

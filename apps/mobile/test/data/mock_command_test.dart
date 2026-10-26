@@ -119,6 +119,54 @@ void main() {
     expect(off.enabledChangedAt, isNotNull);
   });
 
+  test('record update and delete are revisioned and permissioned', () async {
+    final created = await api.executeCommand(
+      'record.create',
+      recordPayload(),
+      commandId: '018f4f7e-0000-7000-8000-000000000031',
+      householdId: MockSeed.householdId,
+    );
+    final id = created.data!['recordId'] as String;
+    final record = store.records.firstWhere((record) => record.id == id);
+
+    final updated = await api.executeCommand(
+      'record.update',
+      {
+        'recordId': id,
+        'type': 'feeding',
+        'occurredAt': occurredAt,
+        'note': '只吃了兩隻',
+        'metadata': {'food': '蟋蟀'},
+      },
+      commandId: '018f4f7e-0000-7000-8000-000000000032',
+      householdId: MockSeed.householdId,
+      baseRevision: record.revision,
+    );
+    expect(updated.ok, isTrue);
+    final after = store.records.firstWhere((record) => record.id == id);
+    expect(after.note, '只吃了兩隻');
+    expect(after.metadata['food'], '蟋蟀');
+
+    final stale = await api.executeCommand(
+      'record.delete',
+      {'recordId': id},
+      commandId: '018f4f7e-0000-7000-8000-000000000033',
+      householdId: MockSeed.householdId,
+      baseRevision: record.revision,
+    );
+    expect(stale.code, 'CONFLICT');
+
+    final deleted = await api.executeCommand(
+      'record.delete',
+      {'recordId': id},
+      commandId: '018f4f7e-0000-7000-8000-000000000034',
+      householdId: MockSeed.householdId,
+      baseRevision: after.revision,
+    );
+    expect(deleted.ok, isTrue);
+    expect(store.records.where((record) => record.id == id), isEmpty);
+  });
+
   test('caretaker cannot archive or delete an animal', () async {
     final caretakerApi = MockCommandApi(
       store: store,

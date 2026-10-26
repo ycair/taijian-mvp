@@ -8,15 +8,25 @@ import '../../core/theme/app_theme.dart';
 import '../../core/time/app_time.dart';
 import '../../core/widgets/common.dart';
 import 'quick_record_sheet.dart';
+import 'record_action_tile.dart';
+import 'record_date_range.dart';
 
-class RecordsScreen extends ConsumerWidget {
+class RecordsScreen extends ConsumerStatefulWidget {
   const RecordsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RecordsScreen> createState() => _RecordsScreenState();
+}
+
+class _RecordsScreenState extends ConsumerState<RecordsScreen> {
+  RecordDateRange _range = RecordDateRange.lastDays(30);
+
+  @override
+  Widget build(BuildContext context) {
     final householdId = ref.watch(householdIdProvider);
     final recordsAsync = ref.watch(recordsProvider);
-    final animals = ref.watch(activeAnimalsProvider);
+    final allAnimals = ref.watch(animalsProvider).value ?? const <Animal>[];
+    final animals = allAnimals.where((animal) => animal.isActive).toList(growable: false);
     final timezone = ref.watch(householdTimezoneProvider);
 
     if (householdId == null) {
@@ -39,9 +49,19 @@ class RecordsScreen extends ConsumerWidget {
       );
     }
 
-    final byId = {for (final animal in animals) animal.id: animal};
+    final byId = {
+      for (final animal in allAnimals)
+        if (animal.isActive || animal.isMemorial) animal.id: animal,
+    };
+    final from = _range.startUtc(timezone);
+    final to = _range.endExclusiveUtc(timezone);
     final visible = (recordsAsync.value ?? const <CareRecord>[])
-        .where((record) => byId.containsKey(record.animalId))
+        .where(
+          (record) =>
+              byId.containsKey(record.animalId) &&
+              !record.occurredAt.isBefore(from) &&
+              record.occurredAt.isBefore(to),
+        )
         .toList();
 
     final groups = <String, List<CareRecord>>{};
@@ -62,14 +82,28 @@ class RecordsScreen extends ConsumerWidget {
               kicker: 'Timeline',
               title: '照護紀錄',
               subtitle: '所有居民的生活，按照發生時間排好。',
-              trailing: animals.isEmpty
-                  ? null
-                  : TextButton.icon(
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: '家庭分析',
+                    onPressed: () => context.push('/records/analytics'),
+                    icon: const Icon(Icons.insights_outlined),
+                  ),
+                  if (animals.isNotEmpty)
+                    IconButton(
+                      tooltip: '新增紀錄',
                       onPressed: () => _pickAnimal(context, animals),
-                      icon: const Icon(Icons.add, size: 20),
-                      label: const Text('紀錄'),
+                      icon: const Icon(Icons.add, size: 22),
                     ),
+                ],
+              ),
             ),
+            RecordDateRangeBar(
+              range: _range,
+              onChanged: (range) => setState(() => _range = range),
+            ),
+            const SizedBox(height: 8),
             if (recordsAsync.hasError)
               ErrorView(
                 message: '讀取紀錄失敗，請檢查網路後重新整理。',
@@ -79,7 +113,7 @@ class RecordsScreen extends ConsumerWidget {
               const LoadingView()
             else if (visible.isEmpty)
               EmptyState(
-                title: '還沒有紀錄',
+                title: '這段期間還沒有紀錄',
                 body: '從居民頁按一下快速紀錄，第一個照護事實就會出現在這裡。',
                 action: FilledButton(
                   onPressed: () => _pickAnimal(context, animals),
@@ -90,7 +124,7 @@ class RecordsScreen extends ConsumerWidget {
               for (final key in groups.keys.toList()..sort((a, b) => b.compareTo(a)))
                 _RecordGroup(
                   dateKey: key,
-                  label: _dateLabel(key, today, timezone),
+                  label: _dateLabel(key, today),
                   records: groups[key]!,
                   animals: byId,
                   timezone: timezone,
@@ -123,6 +157,7 @@ class RecordsScreen extends ConsumerWidget {
                 leading: AnimalAvatar(
                   label: animal.initial,
                   colorHex: animal.avatarColor,
+                  pattern: animal.avatarPattern,
                 ),
                 title: Text(animal.name),
                 subtitle: Text(animal.displaySpecies),
@@ -137,7 +172,7 @@ class RecordsScreen extends ConsumerWidget {
     }
   }
 
-  static String _dateLabel(String dateKey, String today, String timezone) {
+  static String _dateLabel(String dateKey, String today) {
     if (dateKey == today) return '今天';
     if (dateKey == shiftDateKey(today, -1)) return '昨天';
     final parts = dateKey.split('-');
@@ -182,74 +217,18 @@ class _RecordGroup extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: Column(
               children: [
-                for (final record in records) _RecordTile(record: record, animal: animals[record.animalId], timezone: timezone),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RecordTile extends StatelessWidget {
-  const _RecordTile({required this.record, required this.animal, required this.timezone});
-
-  final CareRecord record;
-  final Animal? animal;
-  final String timezone;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 11),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(color: AppTokens.successBg, shape: BoxShape.circle),
-            child: Icon(_iconFor(record.type), size: 18, color: AppTokens.primaryStrong),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${animal?.name ?? '已刪除居民'} · ${record.type.label}',
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-                if (record.summary.isNotEmpty)
-                  Text(
-                    record.summary,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall,
+                for (final record in records)
+                  RecordActionTile(
+                    record: record,
+                    animal: animals[record.animalId],
+                    timezone: timezone,
+                    showAnimal: true,
                   ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          Text(
-            formatClock(record.occurredAt, timezone),
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
         ],
       ),
     );
   }
-
-  static IconData _iconFor(RecordType type) => switch (type) {
-    RecordType.feeding => Icons.restaurant_outlined,
-    RecordType.water => Icons.water_drop_outlined,
-    RecordType.weight => Icons.monitor_weight_outlined,
-    RecordType.poop => Icons.circle_outlined,
-    RecordType.shed => Icons.change_history,
-    RecordType.activity => Icons.directions_run,
-    RecordType.medical => Icons.medical_services_outlined,
-    RecordType.note => Icons.edit_note,
-    RecordType.custom => Icons.straighten,
-  };
 }

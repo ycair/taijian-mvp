@@ -12,21 +12,28 @@ class QuickRecordSheet extends ConsumerStatefulWidget {
     super.key,
     required this.animal,
     this.initialType = RecordType.feeding,
+    this.record,
   });
 
   final Animal animal;
   final RecordType initialType;
+  final CareRecord? record;
 
   static Future<void> show(
     BuildContext context, {
     required Animal animal,
     RecordType initialType = RecordType.feeding,
+    CareRecord? record,
   }) {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (context) => QuickRecordSheet(animal: animal, initialType: initialType),
+      builder: (context) => QuickRecordSheet(
+        animal: animal,
+        initialType: initialType,
+        record: record,
+      ),
     );
   }
 
@@ -39,29 +46,95 @@ class _QuickRecordSheetState extends ConsumerState<QuickRecordSheet> {
     RecordType.feeding,
     RecordType.water,
     RecordType.weight,
+    RecordType.length,
     RecordType.poop,
     RecordType.shed,
+    RecordType.activity,
+    RecordType.medical,
     RecordType.note,
+    RecordType.custom,
   ];
 
-  late RecordType _type = widget.initialType;
-  late DateTime _occurredAt = _nowMinute();
-  final _valueController = TextEditingController();
-  final _unitController = TextEditingController(text: 'g');
-  final _noteController = TextEditingController();
+  late RecordType _type;
+  late DateTime _occurredAt;
+  late final TextEditingController _valueController;
+  late final TextEditingController _unitController;
+  late final TextEditingController _noteController;
+  late final TextEditingController _foodController;
+  late final TextEditingController _medicationController;
+  late final TextEditingController _dosageController;
+  late final TextEditingController _labelController;
+  late bool _refused;
+  late String _activityLevel;
   bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final record = widget.record;
+    _type = record?.type ?? widget.initialType;
+    final local = (record?.occurredAt ?? DateTime.now()).toLocal();
+    _occurredAt = DateTime(local.year, local.month, local.day, local.hour, local.minute);
+    _valueController = TextEditingController(text: _numberText(record?.value));
+    _unitController = TextEditingController(
+      text: record?.unit ?? (_type == RecordType.length ? 'cm' : 'g'),
+    );
+    _noteController = TextEditingController(text: record?.note ?? '');
+    _foodController = TextEditingController(
+      text: record?.metadata['food'] is String ? record!.metadata['food'] as String : '',
+    );
+    _medicationController = TextEditingController(
+      text: record?.metadata['medication'] is String ? record!.metadata['medication'] as String : '',
+    );
+    _dosageController = TextEditingController(
+      text: record?.metadata['dosage'] is String ? record!.metadata['dosage'] as String : '',
+    );
+    _labelController = TextEditingController(
+      text: record?.metadata['label'] is String ? record!.metadata['label'] as String : '',
+    );
+    _refused = record?.metadata['refused'] == true;
+    _activityLevel = record?.metadata['activityLevel'] is String
+        ? record!.metadata['activityLevel'] as String
+        : 'normal';
+  }
 
   @override
   void dispose() {
     _valueController.dispose();
     _unitController.dispose();
     _noteController.dispose();
+    _foodController.dispose();
+    _medicationController.dispose();
+    _dosageController.dispose();
+    _labelController.dispose();
     super.dispose();
   }
 
-  static DateTime _nowMinute() {
-    final now = DateTime.now();
-    return DateTime(now.year, now.month, now.day, now.hour, now.minute);
+  static String _numberText(double? value) {
+    if (value == null) return '';
+    return value == value.roundToDouble() ? value.toInt().toString() : value.toString();
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _occurredAt,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+      helpText: '紀錄日期',
+      cancelText: '取消',
+      confirmText: '確定',
+    );
+    if (picked == null) return;
+    setState(() {
+      _occurredAt = DateTime(
+        picked.year,
+        picked.month,
+        picked.day,
+        _occurredAt.hour,
+        _occurredAt.minute,
+      );
+    });
   }
 
   Future<void> _pickTime() async {
@@ -73,15 +146,52 @@ class _QuickRecordSheetState extends ConsumerState<QuickRecordSheet> {
       confirmText: '確定',
     );
     if (picked == null) return;
-    final now = DateTime.now();
     setState(() {
-      _occurredAt = DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
+      _occurredAt = DateTime(
+        _occurredAt.year,
+        _occurredAt.month,
+        _occurredAt.day,
+        picked.hour,
+        picked.minute,
+      );
     });
+  }
+
+  Map<String, dynamic> _metadata() {
+    final metadata = <String, dynamic>{};
+    switch (_type) {
+      case RecordType.feeding:
+        if (_foodController.text.trim().isNotEmpty) {
+          metadata['food'] = _foodController.text.trim();
+        }
+        if (_refused) metadata['refused'] = true;
+      case RecordType.activity:
+        metadata['activityLevel'] = _activityLevel;
+      case RecordType.medical:
+        if (_medicationController.text.trim().isNotEmpty) {
+          metadata['medication'] = _medicationController.text.trim();
+        }
+        if (_dosageController.text.trim().isNotEmpty) {
+          metadata['dosage'] = _dosageController.text.trim();
+        }
+      case RecordType.custom:
+        if (_labelController.text.trim().isNotEmpty) {
+          metadata['label'] = _labelController.text.trim();
+        }
+      case RecordType.water:
+      case RecordType.weight:
+      case RecordType.length:
+      case RecordType.poop:
+      case RecordType.shed:
+      case RecordType.note:
+        break;
+    }
+    return metadata;
   }
 
   Future<void> _submit() async {
     if (_busy) return;
-    final needsValue = _type == RecordType.weight || _type == RecordType.custom;
+    final needsValue = _type.needsValue;
     double? value;
     if (needsValue && _valueController.text.trim().isNotEmpty) {
       value = double.tryParse(_valueController.text.trim());
@@ -90,8 +200,8 @@ class _QuickRecordSheetState extends ConsumerState<QuickRecordSheet> {
         return;
       }
     }
-    if (_type == RecordType.weight && value == null) {
-      _toast('量體重時請填寫數字。');
+    if ((_type == RecordType.weight || _type == RecordType.length) && value == null) {
+      _toast(_type == RecordType.weight ? '量體重時請填寫數字。' : '量身長時請填寫數字。');
       return;
     }
     if (_occurredAt.isAfter(DateTime.now().add(const Duration(minutes: 5)))) {
@@ -101,18 +211,32 @@ class _QuickRecordSheetState extends ConsumerState<QuickRecordSheet> {
 
     setState(() => _busy = true);
     try {
-      await ref
-          .read(recordRepositoryProvider)
-          .create(
-            animalId: widget.animal.id,
-            type: _type,
-            occurredAt: _occurredAt,
-            value: value,
-            unit: needsValue ? _unitController.text.trim() : null,
-            note: _noteController.text,
-          );
+      final repository = ref.read(recordRepositoryProvider);
+      if (widget.record != null) {
+        await repository.update(
+          record: widget.record!,
+          type: _type,
+          occurredAt: _occurredAt,
+          value: value,
+          unit: needsValue ? _unitController.text.trim() : null,
+          note: _noteController.text,
+          metadata: _metadata(),
+        );
+      } else {
+        await repository.create(
+          animalId: widget.animal.id,
+          type: _type,
+          occurredAt: _occurredAt,
+          value: value,
+          unit: needsValue ? _unitController.text.trim() : null,
+          note: _noteController.text,
+          metadata: _metadata(),
+        );
+      }
       if (!mounted) return;
-      _toast('已記下 ${widget.animal.name} 的${_type.label}。');
+      _toast(widget.record == null
+          ? '已記下 ${widget.animal.name} 的${_type.label}。'
+          : '已更新 ${widget.animal.name} 的${_type.label}。');
       Navigator.of(context).pop();
     } catch (error) {
       if (!mounted) return;
@@ -128,8 +252,9 @@ class _QuickRecordSheetState extends ConsumerState<QuickRecordSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final needsValue = _type == RecordType.weight || _type == RecordType.custom;
+    final needsValue = _type.needsValue;
     final timezone = ref.watch(householdTimezoneProvider);
+    final editing = widget.record != null;
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
@@ -145,7 +270,7 @@ class _QuickRecordSheetState extends ConsumerState<QuickRecordSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('快速紀錄', style: Theme.of(context).textTheme.titleLarge),
+                      Text(editing ? '編輯紀錄' : '快速紀錄', style: Theme.of(context).textTheme.titleLarge),
                       const SizedBox(height: 2),
                       Text(
                         '${widget.animal.name} · ${widget.animal.displaySpecies}',
@@ -170,34 +295,55 @@ class _QuickRecordSheetState extends ConsumerState<QuickRecordSheet> {
                   ChoiceChip(
                     label: Text(type.label),
                     selected: _type == type,
-                    onSelected: (_) => setState(() => _type = type),
+                    onSelected: (_) => setState(() {
+                      _type = type;
+                      if (type == RecordType.length) _unitController.text = 'cm';
+                      if (type == RecordType.weight) _unitController.text = 'g';
+                    }),
                   ),
               ],
             ),
             const SizedBox(height: 16),
-            Material(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-              child: InkWell(
-                onTap: _pickTime,
-                borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.schedule, size: 20, color: AppTokens.primaryStrong),
-                      const SizedBox(width: 10),
-                      Text(formatClock(_occurredAt.toUtc(), timezone)),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: () => setState(() => _occurredAt = _nowMinute()),
-                        child: const Text('現在'),
-                      ),
-                    ],
+            Row(
+              children: [
+                Expanded(
+                  child: _DateTimeButton(
+                    icon: Icons.calendar_today_outlined,
+                    label: formatDateTime(_occurredAt.toUtc(), timezone).split(' ').first,
+                    onTap: _pickDate,
                   ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _DateTimeButton(
+                    icon: Icons.schedule,
+                    label: formatClock(_occurredAt.toUtc(), timezone),
+                    onTap: _pickTime,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => setState(() => _occurredAt = DateTime.now()),
+                  child: const Text('現在'),
+                ),
+              ],
             ),
+            if (_type == RecordType.feeding) ...[
+              const SizedBox(height: 12),
+              TextField(
+                controller: _foodController,
+                decoration: const InputDecoration(
+                  labelText: '食物（選填）',
+                  hintText: '例如：蟋蟀、杜比亞',
+                ),
+              ),
+              const SizedBox(height: 4),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('這次拒食'),
+                value: _refused,
+                onChanged: (value) => setState(() => _refused = value),
+              ),
+            ],
             if (needsValue) ...[
               const SizedBox(height: 14),
               Row(
@@ -207,7 +353,11 @@ class _QuickRecordSheetState extends ConsumerState<QuickRecordSheet> {
                       controller: _valueController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
-                        labelText: _type == RecordType.weight ? '體重' : '數值',
+                        labelText: _type == RecordType.weight
+                            ? '體重'
+                            : _type == RecordType.length
+                                ? '身長'
+                                : '數值',
                         hintText: _type == RecordType.weight ? '例如 62.4' : '',
                       ),
                     ),
@@ -221,6 +371,45 @@ class _QuickRecordSheetState extends ConsumerState<QuickRecordSheet> {
                     ),
                   ),
                 ],
+              ),
+            ],
+            if (_type == RecordType.custom) ...[
+              const SizedBox(height: 14),
+              TextField(
+                controller: _labelController,
+                decoration: const InputDecoration(
+                  labelText: '測量名稱（選填）',
+                  hintText: '例如：尾長、頭幅',
+                ),
+              ),
+            ],
+            if (_type == RecordType.activity) ...[
+              const SizedBox(height: 14),
+              Text('活動力', style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 8),
+              SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(value: 'normal', label: Text('正常')),
+                  ButtonSegment(value: 'low', label: Text('偏低')),
+                  ButtonSegment(value: 'high', label: Text('偏高')),
+                ],
+                selected: {_activityLevel},
+                onSelectionChanged: (value) => setState(() => _activityLevel = value.first),
+              ),
+            ],
+            if (_type == RecordType.medical) ...[
+              const SizedBox(height: 14),
+              TextField(
+                controller: _medicationController,
+                decoration: const InputDecoration(
+                  labelText: '藥名 / 處置（選填）',
+                  hintText: '例如：驅蟲藥',
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _dosageController,
+                decoration: const InputDecoration(labelText: '劑量（選填）'),
               ),
             ],
             const SizedBox(height: 14),
@@ -243,7 +432,7 @@ class _QuickRecordSheetState extends ConsumerState<QuickRecordSheet> {
                       height: 22,
                       child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
                     )
-                  : const Text('記下來'),
+                  : Text(editing ? '儲存變更' : '記下來'),
             ),
             const SizedBox(height: 8),
             const Center(
@@ -253,6 +442,36 @@ class _QuickRecordSheetState extends ConsumerState<QuickRecordSheet> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DateTimeButton extends StatelessWidget {
+  const _DateTimeButton({required this.icon, required this.label, required this.onTap});
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+          child: Row(
+            children: [
+              Icon(icon, size: 18, color: AppTokens.primaryStrong),
+              const SizedBox(width: 8),
+              Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
+            ],
+          ),
         ),
       ),
     );

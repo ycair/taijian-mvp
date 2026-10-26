@@ -398,6 +398,7 @@ enum RecordType {
   feeding,
   water,
   weight,
+  length,
   poop,
   shed,
   activity,
@@ -425,6 +426,7 @@ enum RecordType {
     RecordType.feeding => '餵食',
     RecordType.water => '換水',
     RecordType.weight => '體重',
+    RecordType.length => '身長',
     RecordType.poop => '排便',
     RecordType.shed => '蛻皮',
     RecordType.activity => '活動',
@@ -432,6 +434,10 @@ enum RecordType {
     RecordType.note => '備註',
     RecordType.custom => '自訂',
   };
+
+  bool get isMeasurement => this == weight || this == length || this == custom;
+
+  bool get needsValue => this == weight || this == length || this == custom;
 }
 
 class CareRecord {
@@ -444,9 +450,11 @@ class CareRecord {
     this.value,
     this.unit,
     this.note,
+    this.metadata = const {},
     this.source = 'ios',
     this.revision = 0,
     this.createdBy,
+    this.animalName,
     this.payloadHash,
   });
 
@@ -460,9 +468,11 @@ class CareRecord {
       value: readDouble(map, 'value'),
       unit: map['unit'] as String?,
       note: (map['note'] as String?)?.trim(),
+      metadata: readMap(map, 'metadata'),
       source: readString(map, 'source', 'ios'),
       revision: readInt(map, 'revision'),
       createdBy: map['createdBy'] as String?,
+      animalName: (map['animalName'] as String?)?.trim(),
       payloadHash: map['payloadHash'] as String?,
     );
   }
@@ -475,19 +485,241 @@ class CareRecord {
   final double? value;
   final String? unit;
   final String? note;
+  final Map<String, dynamic> metadata;
   final String source;
   final int revision;
   final String? createdBy;
+  final String? animalName;
   final String? payloadHash;
 
+  bool get isRefusedFeeding => type == RecordType.feeding && metadata['refused'] == true;
+
+  bool get isAbnormalActivity {
+    if (type != RecordType.activity) return false;
+    final level = metadata['activityLevel'];
+    return level == 'low' || level == 'high';
+  }
+
+  String get activityLevel => switch (metadata['activityLevel']) {
+    'low' => '活動力偏低',
+    'high' => '活動力偏高',
+    _ => '活動力正常',
+  };
+
+  String? get metadataLabel {
+    for (final key in const ['label', 'food', 'medication']) {
+      final value = metadata[key];
+      if (value is String && value.trim().isNotEmpty) return value.trim();
+    }
+    return null;
+  }
+
+  bool canModify({required String? uid, required bool isOwner}) {
+    if (isOwner) return true;
+    return uid != null && uid.isNotEmpty && createdBy == uid;
+  }
+
   String get summary {
-    if (note != null && note!.isNotEmpty) return note!;
+    if (isRefusedFeeding) return '拒食';
+    final metadataLabelValue = metadataLabel;
     final valueText = value == null
         ? ''
         : (value == value!.roundToDouble() ? value!.toInt().toString() : value.toString());
-    return '$valueText ${unit ?? ''}'.trim();
+    final measurement = '$valueText ${unit ?? ''}'.trim();
+    if (measurement.isNotEmpty) {
+      return metadataLabelValue == null ? measurement : '$metadataLabelValue · $measurement';
+    }
+    if (type == RecordType.activity) return activityLevel;
+    if (metadataLabelValue != null) return metadataLabelValue;
+    if (note != null && note!.isNotEmpty) return note!;
+    return '';
+  }
+
+  CareRecord copyWith({
+    RecordType? type,
+    DateTime? occurredAt,
+    double? value,
+    String? unit,
+    String? note,
+    Map<String, dynamic>? metadata,
+    int? revision,
+  }) {
+    return CareRecord(
+      id: id,
+      householdId: householdId,
+      animalId: animalId,
+      type: type ?? this.type,
+      occurredAt: occurredAt ?? this.occurredAt,
+      value: value ?? this.value,
+      unit: unit ?? this.unit,
+      note: note ?? this.note,
+      metadata: metadata ?? this.metadata,
+      source: source,
+      revision: revision ?? this.revision,
+      createdBy: createdBy,
+      animalName: animalName,
+      payloadHash: payloadHash,
+    );
   }
 }
+
+class RecordMeasurementPoint {
+  const RecordMeasurementPoint({
+    required this.type,
+    required this.label,
+    required this.unit,
+    required this.date,
+    required this.value,
+    required this.occurredAt,
+  });
+
+  factory RecordMeasurementPoint.fromMap(Map<String, dynamic> map) {
+    return RecordMeasurementPoint(
+      type: RecordType.parse(map['type']),
+      label: readString(map, 'label'),
+      unit: readString(map, 'unit'),
+      date: readString(map, 'date'),
+      value: readDouble(map, 'value') ?? 0,
+      occurredAt: readDate(map, 'occurredAt') ?? DateTime.now().toUtc(),
+    );
+  }
+
+  final RecordType type;
+  final String label;
+  final String unit;
+  final String date;
+  final double value;
+  final DateTime occurredAt;
+}
+
+class RecordAnalytics {
+  const RecordAnalytics({
+    this.total = 0,
+    this.activeDays = 0,
+    this.counts = const {},
+    this.measurements = const [],
+    this.medicalCount = 0,
+    this.refusedFeedings = 0,
+    this.abnormalActivity = 0,
+    this.recent = const [],
+  });
+
+  factory RecordAnalytics.fromRow(Map<String, dynamic> row) {
+    final counts = <String, int>{};
+    final rawCounts = readMap(row, 'counts');
+    for (final entry in rawCounts.entries) {
+      final value = entry.value;
+      if (value is num) counts[entry.key] = value.toInt();
+    }
+    final rawAttention = readMap(row, 'attention');
+    final rawMeasurements = row['measurements'];
+    final measurements = rawMeasurements is List
+        ? rawMeasurements
+              .whereType<Map>()
+              .map((item) => RecordMeasurementPoint.fromMap(Map<String, dynamic>.from(item)))
+              .toList(growable: false)
+        : const <RecordMeasurementPoint>[];
+    final rawRecent = row['recent'];
+    final recent = rawRecent is List
+        ? rawRecent.whereType<Map>().map((item) {
+            final map = Map<String, dynamic>.from(item);
+            return CareRecord.fromMap(readString(map, 'id'), map);
+          }).toList(growable: false)
+        : const <CareRecord>[];
+    final total = readInt(row, 'total');
+    final activeDays = readInt(row, 'activeDays');
+    return RecordAnalytics(
+      total: total,
+      activeDays: activeDays,
+      counts: counts,
+      measurements: measurements,
+      medicalCount: readInt(rawAttention, 'medical'),
+      refusedFeedings: readInt(rawAttention, 'refusedFeedings'),
+      abnormalActivity: readInt(rawAttention, 'abnormalActivity'),
+      recent: recent,
+    );
+  }
+
+  factory RecordAnalytics.fromRecords({
+    required List<CareRecord> records,
+    required DateTime from,
+    required DateTime to,
+    String? animalId,
+  }) {
+    final filtered = records
+        .where(
+          (record) =>
+              !record.occurredAt.isBefore(from) &&
+              record.occurredAt.isBefore(to) &&
+              (animalId == null || record.animalId == animalId),
+        )
+        .toList();
+    final counts = <String, int>{};
+    final measurements = <RecordMeasurementPoint>[];
+    var medical = 0;
+    var refused = 0;
+    var abnormal = 0;
+    final days = <String>{};
+    for (final record in filtered) {
+      counts[record.type.name] = (counts[record.type.name] ?? 0) + 1;
+      days.add(formatDateKey(record.occurredAt.toUtc().year, record.occurredAt.toUtc().month, record.occurredAt.toUtc().day));
+      if (record.type == RecordType.medical) medical += 1;
+      if (record.isRefusedFeeding) refused += 1;
+      if (record.isAbnormalActivity) abnormal += 1;
+      if (record.type.isMeasurement && record.value != null) {
+        measurements.add(RecordMeasurementPoint(
+          type: record.type,
+          label: record.metadataLabel ?? record.type.label,
+          unit: record.unit ?? '',
+          date: formatDateKey(record.occurredAt.toUtc().year, record.occurredAt.toUtc().month, record.occurredAt.toUtc().day),
+          value: record.value!,
+          occurredAt: record.occurredAt,
+        ));
+      }
+    }
+    measurements.sort((a, b) => a.occurredAt.compareTo(b.occurredAt));
+    final recent = [...filtered]..sort((a, b) => b.occurredAt.compareTo(a.occurredAt));
+    return RecordAnalytics(
+      total: filtered.length,
+      activeDays: days.length,
+      counts: counts,
+      measurements: measurements,
+      medicalCount: medical,
+      refusedFeedings: refused,
+      abnormalActivity: abnormal,
+      recent: recent.take(10).toList(growable: false),
+    );
+  }
+
+  final int total;
+  final int activeDays;
+  final Map<String, int> counts;
+  final List<RecordMeasurementPoint> measurements;
+  final int medicalCount;
+  final int refusedFeedings;
+  final int abnormalActivity;
+  final List<CareRecord> recent;
+
+  int countFor(RecordType type) => counts[type.name] ?? 0;
+
+  double? get weightChange {
+    final weights = measurements
+        .where((point) => point.type == RecordType.weight)
+        .toList(growable: false);
+    if (weights.length < 2) return null;
+    return weights.last.value - weights.first.value;
+  }
+
+  String get weightUnit {
+    final weights = measurements.where((point) => point.type == RecordType.weight);
+    return weights.isEmpty ? 'g' : weights.last.unit;
+  }
+
+  bool get hasAttention =>
+      medicalCount > 0 || refusedFeedings > 0 || abnormalActivity > 0 ||
+      (weightChange?.abs() ?? 0) > 0;
+}
+
 
 class ReminderSchedule {
   const ReminderSchedule({

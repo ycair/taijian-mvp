@@ -82,6 +82,13 @@ final householdMembersProvider = StreamProvider<List<HouseholdMember>>((ref) {
   return ref.watch(readStoreProvider).watchMembers(id);
 });
 
+final householdOwnerProvider = Provider<bool>((ref) {
+  final uid = ref.watch(currentUserProvider)?.uid;
+  if (uid == null) return false;
+  final members = ref.watch(householdMembersProvider).value ?? const <HouseholdMember>[];
+  return members.any((member) => member.uid == uid && member.role == MemberRole.owner);
+});
+
 final animalsProvider = StreamProvider<List<Animal>>((ref) {
   final id = ref.watch(householdIdProvider);
   if (id == null) return Stream<List<Animal>>.value(const []);

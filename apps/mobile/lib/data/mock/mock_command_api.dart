@@ -95,6 +95,10 @@ class MockCommandApi implements CommandApi {
           return _deleteAnimal(commandId, payload, householdId, baseRevision);
         case 'record.create':
           return _createRecord(commandId, payload, householdId);
+        case 'record.update':
+          return _updateRecord(commandId, payload, householdId, baseRevision);
+        case 'record.delete':
+          return _deleteRecord(commandId, payload, householdId, baseRevision);
         case 'reminder.create':
           return _createReminder(commandId, payload, householdId);
         case 'reminder.update':
@@ -385,12 +389,8 @@ class MockCommandApi implements CommandApi {
     final occurredAt = parseDateValue(payload['occurredAt']);
     if (occurredAt == null) throw const _CommandError('VALIDATION_ERROR', 'occurredAt is required');
     final now = DateTime.now().toUtc();
-    if (occurredAt.isAfter(now.add(const Duration(minutes: 5))) ||
-        occurredAt.isBefore(now.subtract(const Duration(days: 365)))) {
-      throw const _CommandError(
-        'VALIDATION_ERROR',
-        'occurredAt must be within the last 365 days and no more than 5 minutes in the future',
-      );
+    if (occurredAt.isAfter(now.add(const Duration(minutes: 5)))) {
+      throw const _CommandError('VALIDATION_ERROR', 'occurredAt cannot be in the future');
     }
     final type = RecordType.tryParse(payload['type']);
     if (type == null) {
@@ -417,6 +417,9 @@ class MockCommandApi implements CommandApi {
       );
     }
     final value = payload['value'];
+    if ((type == RecordType.weight || type == RecordType.length) && value is! num) {
+      throw const _CommandError('VALIDATION_ERROR', 'measurement value required');
+    }
     final record = CareRecord(
       id: id,
       householdId: household.id,
@@ -426,6 +429,7 @@ class MockCommandApi implements CommandApi {
       value: value is num ? value.toDouble() : null,
       unit: _nullableString(payload['unit']),
       note: _nullableString(payload['note']),
+      metadata: _map(payload['metadata']),
       source: 'ios',
       createdBy: member.uid,
       payloadHash: payloadHash,
@@ -435,6 +439,84 @@ class MockCommandApi implements CommandApi {
       commandId: commandId,
       revision: 0,
       data: {'recordId': id},
+    );
+  }
+
+  CommandResult _updateRecord(
+    String commandId,
+    Map<String, dynamic> payload,
+    String? householdId,
+    int? baseRevision,
+  ) {
+    final household = _requireHousehold(householdId);
+    final member = _requireMember(household.id, 'record.update');
+    final recordId = _string(payload['recordId']);
+    final index = store.records.indexWhere((record) => record.id == recordId);
+    if (index < 0) throw const _CommandError('NOT_FOUND', 'record not found');
+    final record = store.records[index];
+    if (member.role != MemberRole.owner && record.createdBy != member.uid) {
+      throw const _CommandError('FORBIDDEN', 'you can only edit your own records');
+    }
+    final animal = _requireAnimal(household.id, record.animalId);
+    if (animal.id != record.animalId) throw const _CommandError('FORBIDDEN', 'animal mismatch');
+    _assertRevision(record.revision, baseRevision, _recordJson(record));
+    final type = RecordType.tryParse(payload['type'] ?? record.type.name);
+    if (type == null) throw const _CommandError('VALIDATION_ERROR', 'unknown record type');
+    final occurredAt = parseDateValue(payload['occurredAt'] ?? record.occurredAt);
+    if (occurredAt == null) throw const _CommandError('VALIDATION_ERROR', 'occurredAt is required');
+    if (occurredAt.isAfter(DateTime.now().toUtc().add(const Duration(minutes: 5)))) {
+      throw const _CommandError('VALIDATION_ERROR', 'occurredAt cannot be in the future');
+    }
+    final rawValue = payload.containsKey('value') ? payload['value'] : record.value;
+    final value = rawValue is num ? rawValue.toDouble() : null;
+    if ((type == RecordType.weight || type == RecordType.length) && value == null) {
+      throw const _CommandError('VALIDATION_ERROR', 'measurement value required');
+    }
+    final next = CareRecord(
+      id: record.id,
+      householdId: record.householdId,
+      animalId: record.animalId,
+      type: type,
+      occurredAt: occurredAt,
+      value: value,
+      unit: payload.containsKey('unit') ? _nullableString(payload['unit']) : record.unit,
+      note: payload.containsKey('note') ? _nullableString(payload['note']) : record.note,
+      metadata: payload.containsKey('metadata') ? _map(payload['metadata']) : record.metadata,
+      source: record.source,
+      revision: record.revision + 1,
+      createdBy: record.createdBy,
+      payloadHash: record.payloadHash,
+    );
+    store.mutate(() => store.records[index] = next);
+    return CommandResult.success(
+      commandId: commandId,
+      revision: next.revision,
+      data: {'recordId': next.id, 'revision': next.revision},
+    );
+  }
+
+  CommandResult _deleteRecord(
+    String commandId,
+    Map<String, dynamic> payload,
+    String? householdId,
+    int? baseRevision,
+  ) {
+    final household = _requireHousehold(householdId);
+    final member = _requireMember(household.id, 'record.delete');
+    final recordId = _string(payload['recordId']);
+    final index = store.records.indexWhere((record) => record.id == recordId);
+    if (index < 0) throw const _CommandError('NOT_FOUND', 'record not found');
+    final record = store.records[index];
+    if (member.role != MemberRole.owner && record.createdBy != member.uid) {
+      throw const _CommandError('FORBIDDEN', 'you can only delete your own records');
+    }
+    _requireAnimal(household.id, record.animalId);
+    _assertRevision(record.revision, baseRevision, _recordJson(record));
+    store.mutate(() => store.records.removeAt(index));
+    return CommandResult.success(
+      commandId: commandId,
+      revision: record.revision + 1,
+      data: {'recordId': record.id, 'deleted': true},
     );
   }
 
@@ -690,6 +772,20 @@ class MockCommandApi implements CommandApi {
       );
     }
   }
+
+  Map<String, dynamic> _recordJson(CareRecord record) => {
+    'id': record.id,
+    'householdId': record.householdId,
+    'animalId': record.animalId,
+    'type': record.type.name,
+    'occurredAt': record.occurredAt.toIso8601String(),
+    'value': record.value,
+    'unit': record.unit,
+    'note': record.note,
+    'metadata': record.metadata,
+    'revision': record.revision,
+    'createdBy': record.createdBy,
+  };
 
   Map<String, dynamic> _animalJson(Animal animal) => {
     'id': animal.id,
