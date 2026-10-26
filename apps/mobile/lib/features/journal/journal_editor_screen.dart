@@ -92,7 +92,7 @@ class _JournalEditorScreenState extends ConsumerState<JournalEditorScreen> {
         for (final file in files.take(remaining)) {
           _drafts.add(_PhotoDraft.pending(file));
         }
-        _coverToken ??= 'pending:0';
+        _coverToken ??= _drafts.first.token;
       });
     } catch (error) {
       if (mounted) {
@@ -131,10 +131,10 @@ class _JournalEditorScreenState extends ConsumerState<JournalEditorScreen> {
           final uploaded = await repository.uploadPhoto(journalId, draft.pending!);
           uploadedPaths.add(uploaded.path);
           photos.add(JournalPhoto(path: uploaded.path, caption: draft.caption.text.trim()));
-          if (_coverToken == 'pending:$index') coverPath = uploaded.path;
+          if (_coverToken == draft.token) coverPath = uploaded.path;
         } else if (draft.existing != null) {
           photos.add(JournalPhoto(path: draft.existing!.path, caption: draft.caption.text.trim()));
-          if (_coverToken == draft.existing!.path) coverPath = draft.existing!.path;
+          if (_coverToken == draft.token) coverPath = draft.existing!.path;
         }
       }
       coverPath ??= photos.isEmpty ? null : photos.first.path;
