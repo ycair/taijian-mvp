@@ -16,6 +16,8 @@ class AppConfig {
     this.supabaseUrl = '',
     this.supabaseAnonKey = '',
     this.lineChannelId = '',
+    this.googleIosClientId = '',
+    this.googleServerClientId = '',
   });
 
   factory AppConfig.fromEnvironment() {
@@ -44,6 +46,8 @@ class AppConfig {
       ),
       supabaseAnonKey: const String.fromEnvironment('SUPABASE_ANON_KEY'),
       lineChannelId: const String.fromEnvironment('LINE_CHANNEL_ID'),
+      googleIosClientId: const String.fromEnvironment('GOOGLE_IOS_CLIENT_ID'),
+      googleServerClientId: const String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID'),
     );
   }
 
@@ -56,12 +60,17 @@ class AppConfig {
   final String supabaseUrl;
   final String supabaseAnonKey;
   final String lineChannelId;
+  final String googleIosClientId;
+  final String googleServerClientId;
 
   bool get supabaseConfigured =>
       useSupabase &&
       supabaseUrl.isNotEmpty &&
       supabaseAnonKey.isNotEmpty &&
       lineChannelId.isNotEmpty;
+
+  bool get googleConfigured =>
+      googleIosClientId.isNotEmpty && googleServerClientId.isNotEmpty;
 
   bool get liffConfigured => !liffUrl.contains('0000000000-taijian');
 

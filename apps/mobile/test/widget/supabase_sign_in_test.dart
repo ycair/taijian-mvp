@@ -35,6 +35,19 @@ class FakeAuthService implements AuthService {
       const AppUser(uid: 'u1', displayName: '小苔');
 
   @override
+  Future<AppUser> signInAsGuest() async =>
+      const AppUser(uid: 'u1', displayName: '苔友');
+
+  @override
+  Future<void> linkProvider(String provider) async {}
+
+  @override
+  Future<void> unlinkProvider(String provider) async {}
+
+  @override
+  Future<void> deleteAccount() async {}
+
+  @override
   Future<void> signOut() async {}
 
   @override

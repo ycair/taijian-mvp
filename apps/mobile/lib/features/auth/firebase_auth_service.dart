@@ -115,6 +115,26 @@ class FirebaseAuthService implements AuthService {
   }
 
   @override
+  Future<AppUser> signInAsGuest() async {
+    throw const AuthException('Firebase 版本不支援訪客登入。', code: 'UNSUPPORTED');
+  }
+
+  @override
+  Future<void> linkProvider(String provider) async {
+    throw const AuthException('Firebase 版本不支援帳號綁定。', code: 'UNSUPPORTED');
+  }
+
+  @override
+  Future<void> unlinkProvider(String provider) async {
+    throw const AuthException('Firebase 版本不支援解除綁定。', code: 'UNSUPPORTED');
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    throw const AuthException('Firebase 版本不支援刪除帳號。', code: 'UNSUPPORTED');
+  }
+
+  @override
   Future<void> signOut() async {
     try {
       await GoogleSignIn.instance.signOut();

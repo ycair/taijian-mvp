@@ -31,6 +31,18 @@ class MockAuthService implements AuthService {
   @override
   Future<AppUser> signInWithLine() => _signIn();
 
+  @override
+  Future<AppUser> signInAsGuest() => _signIn();
+
+  @override
+  Future<void> linkProvider(String provider) async {}
+
+  @override
+  Future<void> unlinkProvider(String provider) async {}
+
+  @override
+  Future<void> deleteAccount() async {}
+
   Future<AppUser> _signIn() async {
     await Future<void>.delayed(const Duration(milliseconds: 220));
     final user =
