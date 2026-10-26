@@ -14,7 +14,7 @@
 2. `20261025153657_profile_visibility`
 3. `20261025153808_api_hardening`
 4. `20261025153837_function_execute_hardening`
-5. `20261026120000_foundation_identity` (local; apply to cloud in Task 10)
+5. `20261026065015_foundation_identity`
 
 Schema notes:
 
