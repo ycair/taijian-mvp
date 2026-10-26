@@ -68,6 +68,14 @@ for multiple caregivers, not as a single-device notebook:
 - J3 currently has no likes, comments, follow graph, or public moderation/report UI.
 - System share sheet; no public storage bucket and no direct client writes.
 
+### Map / dens
+
+- Shared household map with default zones (苔庭/水盆/躲藏/曬台).
+- Drag active residents to normalized positions; positions are stored through
+  server commands and shared with household members.
+- Add/delete zones; memorial residents stay off the map.
+- Warm hand-drawn vector backdrop, no copied map tiles or sprites.
+
 ### Commerce sandbox
 
 - Demo catalog and stock, in-memory cart, order creation/cancellation.
@@ -218,7 +226,6 @@ GitHub `test` check.
 - Supabase Realtime cross-device subscriptions.
 - Journal reactions, comments, follow graph, and moderation/reporting.
 - Journal photo crop, stickers, freeform collage, photo quota, and external social posting.
-- Map/dens/zones.
 - Proposals/upvotes.
 - Real StoreKit/IAP, payments, shipping, order fulfillment, and admin shop console.
 - APNs/FCM remote push, Widgets, Share Extension.
@@ -234,6 +241,8 @@ GitHub `test` check.
 - [Supabase cloud operations](docs/operations/supabase-cloud.md)
 - [iOS native LINE/Profile](docs/operations/ios-native-line.md)
 - [Journal photo operations](docs/operations/journal-photo-core.md)
+- [Map core design](docs/superpowers/specs/2026-10-27-map-core-design.md)
+- [Map operations](docs/operations/map-core.md)
 - [Commerce sandbox](docs/operations/commerce-sandbox.md)
 
 苔間 is an original product direction. It does not include the original app's
