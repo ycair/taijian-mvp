@@ -11,6 +11,7 @@ coverage/
 .env.*
 !.env.example
 !apps/liff-sb/.env.production.example
+!apps/liff-sb/.env.production
 
 .DS_Store
 *.log

@@ -163,6 +163,13 @@ pnpm build
 The build includes `public/_redirects` (`/* /index.html 200`) so LIFF invite
 links and client-side routes work on Netlify/Cloudflare Pages.
 
+`apps/liff-sb/.env.production` is committed deliberately: it contains only the
+public cloud Supabase URL/publishable key and the LIFF ID. The Vite production
+build fails if `VITE_SUPABASE_URL` is missing or points at loopback, which
+prevents shipping a bundle that asks third-party browsers to call
+`127.0.0.1:54321`. If Netlify project-level variables are set, they must contain
+the same cloud values.
+
 Upload the `dist` folder (or its zip) at `https://app.netlify.com/drop`, then:
 
 1. Copy the generated `https://<name>.netlify.app` URL.
