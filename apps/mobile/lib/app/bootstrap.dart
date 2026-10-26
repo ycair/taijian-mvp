@@ -15,8 +15,14 @@ import '../data/outbox/outbox_database.dart';
 import '../data/read/firestore_read_store.dart';
 import '../data/read/mock_read_store.dart';
 import '../data/read/read_store.dart';
+import '../data/supabase/line_sdk_adapter.dart';
+import '../data/supabase/secure_token_store.dart';
+import '../data/supabase/supabase_command_api.dart';
+import '../data/supabase/supabase_read_store.dart';
+import '../data/supabase/supabase_rest_client.dart';
 import '../features/auth/auth_service.dart';
 import '../features/auth/firebase_auth_service.dart';
+import '../features/auth/supabase_auth_service.dart';
 
 class AppDependencies {
   const AppDependencies({
@@ -62,6 +68,26 @@ Future<AppDependencies> bootstrap(AppConfig config) async {
       uid: () => mockAuth.currentUser?.uid ?? '',
       latency: const Duration(milliseconds: 60),
     );
+  } else if (config.useSupabase) {
+    if (!config.supabaseConfigured) {
+      throw StateError(
+        'Supabase mode requires SUPABASE_URL, SUPABASE_ANON_KEY, and LINE_CHANNEL_ID.',
+      );
+    }
+    final supabaseAuth = SupabaseAuthService(
+      config: config,
+      tokenStore: SecureTokenStore(),
+      lineSdk: NativeLineSdkAdapter(),
+    );
+    await supabaseAuth.initialize();
+    auth = supabaseAuth;
+    final rest = SupabaseRestClient(
+      baseUrl: config.supabaseUrl,
+      apiKey: config.supabaseAnonKey,
+      tokenProvider: () => supabaseAuth.token,
+    );
+    readStore = SupabaseReadStore(rest);
+    commandApi = SupabaseCommandApi(rest, appVersion: appVersion);
   } else {
     final firebase = await FirebaseBootstrap(config: config).initialize();
     push = firebase;
@@ -89,10 +115,12 @@ Future<AppDependencies> bootstrap(AppConfig config) async {
   );
 
   // Drain anything left over from a previous launch, without blocking startup.
-  unawaited(outbox.flush().catchError((Object error) {
-    debugPrint('Outbox startup flush failed (${error.runtimeType})');
-    return const OutboxFlushResult();
-  }));
+  unawaited(
+    outbox.flush().catchError((Object error) {
+      debugPrint('Outbox startup flush failed (${error.runtimeType})');
+      return const OutboxFlushResult();
+    }),
+  );
 
   return deps;
 }

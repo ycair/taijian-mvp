@@ -110,6 +110,11 @@ class FirebaseAuthService implements AuthService {
   }
 
   @override
+  Future<AppUser> signInWithLine() async {
+    throw const AuthException('Firebase 版本請使用 Apple 或 Google 登入。', code: 'UNSUPPORTED');
+  }
+
+  @override
   Future<void> signOut() async {
     try {
       await GoogleSignIn.instance.signOut();

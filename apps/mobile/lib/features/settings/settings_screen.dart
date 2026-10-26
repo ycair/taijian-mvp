@@ -240,7 +240,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     icon: Icons.info_outline,
                     title: '版本',
                     value: '${ref.watch(appVersionProvider)} · '
-                        '${config.useMock ? 'mock' : 'firebase'}',
+                        '${config.useMock
+                            ? 'mock'
+                            : config.useSupabase
+                            ? 'supabase'
+                            : 'firebase'}',
                   ),
                   ListTile(
                     contentPadding: EdgeInsets.zero,

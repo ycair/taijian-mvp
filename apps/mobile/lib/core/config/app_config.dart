@@ -12,6 +12,10 @@ class AppConfig {
     required this.appCheckDebugToken,
     required this.enableAppCheck,
     required this.mockStartSignedIn,
+    this.useSupabase = false,
+    this.supabaseUrl = '',
+    this.supabaseAnonKey = '',
+    this.lineChannelId = '',
   });
 
   factory AppConfig.fromEnvironment() {
@@ -26,8 +30,20 @@ class AppConfig {
         ),
       ),
       appCheckDebugToken: const String.fromEnvironment('APP_CHECK_DEBUG_TOKEN'),
-      enableAppCheck: const bool.fromEnvironment('ENABLE_APP_CHECK', defaultValue: true),
-      mockStartSignedIn: const bool.fromEnvironment('MOCK_START_SIGNED_IN', defaultValue: true),
+      enableAppCheck: const bool.fromEnvironment(
+        'ENABLE_APP_CHECK',
+        defaultValue: true,
+      ),
+      mockStartSignedIn: const bool.fromEnvironment(
+        'MOCK_START_SIGNED_IN',
+        defaultValue: true,
+      ),
+      useSupabase: const bool.fromEnvironment('USE_SUPABASE'),
+      supabaseUrl: _trimTrailingSlash(
+        const String.fromEnvironment('SUPABASE_URL'),
+      ),
+      supabaseAnonKey: const String.fromEnvironment('SUPABASE_ANON_KEY'),
+      lineChannelId: const String.fromEnvironment('LINE_CHANNEL_ID'),
     );
   }
 
@@ -36,6 +52,16 @@ class AppConfig {
   final String appCheckDebugToken;
   final bool enableAppCheck;
   final bool mockStartSignedIn;
+  final bool useSupabase;
+  final String supabaseUrl;
+  final String supabaseAnonKey;
+  final String lineChannelId;
+
+  bool get supabaseConfigured =>
+      useSupabase &&
+      supabaseUrl.isNotEmpty &&
+      supabaseAnonKey.isNotEmpty &&
+      lineChannelId.isNotEmpty;
 
   bool get liffConfigured => !liffUrl.contains('0000000000-taijian');
 
