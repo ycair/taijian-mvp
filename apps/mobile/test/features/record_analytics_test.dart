@@ -60,5 +60,16 @@ void main() {
     expect(record.isAbnormalActivity, isTrue);
     expect(record.canModify(uid: 'u1', isOwner: false), isTrue);
     expect(record.canModify(uid: 'u2', isOwner: false), isFalse);
+
+    final feeding = CareRecord(
+      id: 'r2',
+      householdId: 'h1',
+      animalId: 'a1',
+      type: RecordType.feeding,
+      occurredAt: DateTime.utc(2026, 10, 1),
+      metadata: const {'food': '蟋蟀', 'quantity': 3},
+      revision: 0,
+    );
+    expect(feeding.summary, '蟋蟀 · 3 隻／份');
   });
 }

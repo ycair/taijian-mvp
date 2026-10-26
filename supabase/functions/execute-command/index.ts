@@ -59,6 +59,14 @@ async function requireMember(tx: any, householdId: string, userId: string) {
   return rows[0] as { role: string };
 }
 
+async function pointsBalance(tx: any, userId: string): Promise<number> {
+  const [row] = await tx`
+    select coalesce(sum(delta), 0)::int as balance
+    from points_ledger where profile_id = ${userId}
+  `;
+  return Number(row?.balance ?? 0);
+}
+
 const RECORD_TYPES = new Set([
   'feeding', 'water', 'weight', 'length', 'poop', 'shed',
   'activity', 'medical', 'note', 'custom',
@@ -1026,6 +1034,176 @@ Deno.serve(async (request) => {
             completedByName: completion.completed_by_name,
             alreadyCompleted: completion.completed_by !== userId,
           });
+          break;
+        }
+
+        case 'points.checkIn': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          await requireMember(tx, householdId, userId);
+          const [household] = await tx`select timezone from households where id = ${householdId}`;
+          if (!household) throw Object.assign(new Error('household not found'), { code: 'NOT_FOUND' });
+          const [day] = await tx`select (now() at time zone ${household.timezone})::date as checkin_date`;
+          const [existing] = await tx`
+            select id from points_ledger
+            where profile_id = ${userId} and checkin_date = ${day.checkin_date} and reason = 'check_in'
+          `;
+          if (!existing) {
+            await tx`insert into points_ledger (profile_id, household_id, delta, reason, checkin_date)
+                     values (${userId}, ${householdId}, 10, 'check_in', ${day.checkin_date})`;
+          }
+          response = ok(envelope.commandId, {
+            alreadyCheckedIn: !!existing,
+            date: String(day.checkin_date),
+            balance: await pointsBalance(tx, userId),
+          });
+          break;
+        }
+
+        case 'shop.order.create': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          await requireMember(tx, householdId, userId);
+          await tx`select id from profiles where id = ${userId} for update`;
+          const rawItems = Array.isArray(payload.items) ? payload.items : [];
+          if (!rawItems.length || rawItems.length > 20) {
+            throw Object.assign(new Error('order must contain 1-20 items'), { code: 'VALIDATION_ERROR' });
+          }
+          const wanted = new Map<string, number>();
+          for (const item of rawItems) {
+            const productId = String((item as Record<string, unknown>).productId ?? '');
+            const quantity = Number((item as Record<string, unknown>).quantity ?? 0);
+            if (!productId || !Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
+              throw Object.assign(new Error('invalid order item'), { code: 'VALIDATION_ERROR' });
+            }
+            wanted.set(productId, (wanted.get(productId) ?? 0) + quantity);
+          }
+          const products = await tx`
+            select id, name, price_cents, stock from shop_products
+            where id = any(${[...wanted.keys()]}::text[]) and active = true
+            order by id for update
+          `;
+          if (products.length !== wanted.size) {
+            throw Object.assign(new Error('product not found'), { code: 'NOT_FOUND' });
+          }
+          let subtotal = 0;
+          const snapshots: Record<string, unknown>[] = [];
+          for (const product of products) {
+            const quantity = wanted.get(product.id)!;
+            if (product.stock < quantity) {
+              throw Object.assign(new Error(`${product.name} is out of stock`), { code: 'OUT_OF_STOCK' });
+            }
+            subtotal += product.price_cents * quantity;
+            snapshots.push({
+              productId: product.id,
+              name: product.name,
+              unitPriceCents: product.price_cents,
+              quantity,
+            });
+          }
+          const requestedPoints = Math.max(0, Math.floor(Number(payload.pointsUsed ?? 0)));
+          const maxPoints = Math.floor(subtotal / 100);
+          if (!Number.isFinite(requestedPoints) || requestedPoints > maxPoints) {
+            throw Object.assign(new Error('points exceed order total'), { code: 'VALIDATION_ERROR' });
+          }
+          const balance = await pointsBalance(tx, userId);
+          if (requestedPoints > balance) {
+            throw Object.assign(new Error('not enough points'), { code: 'INSUFFICIENT_POINTS' });
+          }
+          const orderId = crypto.randomUUID();
+          const totalCents = subtotal - requestedPoints * 100;
+          for (const product of products) {
+            const quantity = wanted.get(product.id)!;
+            await tx`update shop_products set stock = stock - ${quantity} where id = ${product.id}`;
+          }
+          if (requestedPoints > 0) {
+            await tx`insert into points_ledger (profile_id, household_id, delta, reason)
+                     values (${userId}, ${householdId}, ${-requestedPoints}, ${`order:${orderId}`})`;
+          }
+          await tx`insert into shop_orders
+                   (id, household_id, profile_id, items, subtotal_cents, points_used, total_cents, status, payment_method)
+                   values (${orderId}, ${householdId}, ${userId}, ${tx.json(snapshots)},
+                   ${subtotal}, ${requestedPoints}, ${totalCents}, 'confirmed', 'sandbox')`;
+          await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, after, command_id, source)
+                   values (${householdId}, ${userId}, 'shop.order.create', 'shop_order', ${orderId},
+                   ${tx.json({ subtotal, requestedPoints, totalCents })}, ${envelope.commandId}, 'ios')`;
+          response = ok(envelope.commandId, {
+            orderId,
+            subtotalCents: subtotal,
+            pointsUsed: requestedPoints,
+            totalCents,
+            balance: balance - requestedPoints,
+          });
+          break;
+        }
+
+        case 'shop.order.cancel': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          const member = await requireMember(tx, householdId, userId);
+          const orderId = String(payload.orderId ?? '');
+          const [order] = await tx`
+            select * from shop_orders
+            where id = ${orderId} and household_id = ${householdId}
+            for update
+          `;
+          if (!order) throw Object.assign(new Error('order not found'), { code: 'NOT_FOUND' });
+          if (member.role !== 'owner' && order.profile_id !== userId) {
+            throw Object.assign(new Error('cannot cancel this order'), { code: 'FORBIDDEN' });
+          }
+          if (order.status !== 'confirmed') {
+            throw Object.assign(new Error('order is not cancellable'), { code: 'INVALID_STATE' });
+          }
+          const items = order.items as Array<{ productId: string; quantity: number }>;
+          for (const item of items) {
+            await tx`update shop_products set stock = stock + ${Number(item.quantity)} where id = ${item.productId}`;
+          }
+          if (Number(order.points_used) > 0) {
+            await tx`insert into points_ledger (profile_id, household_id, delta, reason)
+                     values (${order.profile_id}, ${householdId}, ${Number(order.points_used)}, ${`order_cancel:${orderId}`})`;
+          }
+          await tx`update shop_orders set status = 'cancelled', updated_at = now() where id = ${orderId}`;
+          await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, command_id, source)
+                   values (${householdId}, ${userId}, 'shop.order.cancel', 'shop_order', ${orderId}, ${envelope.commandId}, 'ios')`;
+          response = ok(envelope.commandId, {
+            orderId,
+            status: 'cancelled',
+            balance: await pointsBalance(tx, order.profile_id),
+          });
+          break;
+        }
+
+        case 'subscription.activate': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          await requireMember(tx, householdId, userId);
+          const planId = String(payload.planId ?? '');
+          const [plan] = await tx`select id, name from subscription_plans where id = ${planId} and active = true`;
+          if (!plan) throw Object.assign(new Error('plan not found'), { code: 'NOT_FOUND' });
+          const [subscription] = await tx`
+            insert into profile_subscriptions (profile_id, plan_id, status, started_at, expires_at, sandbox, updated_at)
+            values (${userId}, ${planId}, 'active', now(), now() + interval '30 days', true, now())
+            on conflict (profile_id) do update set
+              plan_id = excluded.plan_id,
+              status = 'active',
+              started_at = excluded.started_at,
+              expires_at = excluded.expires_at,
+              sandbox = true,
+              updated_at = now()
+            returning plan_id, status, started_at, expires_at, sandbox
+          `;
+          await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, after, command_id, source)
+                   values (${householdId}, ${userId}, 'subscription.activate', 'profile_subscription', ${userId},
+                   ${tx.json({ planId })}, ${envelope.commandId}, 'ios')`;
+          response = ok(envelope.commandId, subscription);
+          break;
+        }
+
+        case 'subscription.cancel': {
+          const plan = await tx`
+            update profile_subscriptions
+            set status = 'cancelled', updated_at = now()
+            where profile_id = ${userId} and status = 'active'
+            returning plan_id, status, expires_at
+          `;
+          if (!plan.length) throw Object.assign(new Error('active subscription not found'), { code: 'NOT_FOUND' });
+          response = ok(envelope.commandId, plan[0]);
           break;
         }
 

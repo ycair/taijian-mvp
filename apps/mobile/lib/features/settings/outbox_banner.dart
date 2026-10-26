@@ -93,8 +93,11 @@ class OutboxFailedStrip extends ConsumerWidget {
     final entries = ref.watch(outboxEntriesProvider).value ?? const <OutboxEntry>[];
     final failed = entries.where((entry) => entry.status == OutboxStatus.failed).toList();
     if (failed.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+    return SafeArea(
+      top: true,
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Material(
         color: AppTokens.butter,
         borderRadius: BorderRadius.circular(AppTokens.radiusMd),
@@ -122,6 +125,7 @@ class OutboxFailedStrip extends ConsumerWidget {
             ),
           ),
         ),
+      ),
       ),
     );
   }

@@ -522,6 +522,14 @@ class CareRecord {
   String get summary {
     if (isRefusedFeeding) return '拒食';
     final metadataLabelValue = metadataLabel;
+    if (type == RecordType.feeding) {
+      final quantity = metadata['quantity'];
+      final quantityText = quantity is num ? '${quantity.toInt()} 隻／份' : null;
+      if (metadataLabelValue != null && quantityText != null) {
+        return '$metadataLabelValue · $quantityText';
+      }
+      if (quantityText != null) return quantityText;
+    }
     final valueText = value == null
         ? ''
         : (value == value!.roundToDouble() ? value!.toInt().toString() : value.toString());
