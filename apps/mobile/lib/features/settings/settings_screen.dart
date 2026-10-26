@@ -13,6 +13,7 @@ import '../../data/command/command_attempt.dart';
 import '../../data/outbox/outbox_database.dart';
 import '../auth/auth_service.dart';
 import '../animals/transfer_repository.dart';
+import '../reminders/notification_service.dart';
 import '../household/household_repository.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -54,6 +55,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final members = ref.watch(householdMembersProvider).value ?? const <HouseholdMember>[];
     final currentMember = members.where((member) => member.uid == currentUid).firstOrNull;
     final isOwner = currentMember?.role == MemberRole.owner;
+    final notificationSettings = ref.watch(notificationSettingsProvider);
     final transfers = ref.watch(transfersProvider).value ?? const <AnimalTransfer>[];
     final pendingTransfers = transfers.where((transfer) => transfer.isIncoming && transfer.isPending && !transfer.isExpired).length;
     final outbox = ref.watch(outboxEntriesProvider).value ?? const <OutboxEntry>[];
@@ -250,6 +252,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           const SizedBox(height: 20),
           _Section(
+            title: '提醒通知',
+            child: MossCard(
+              child: Column(
+                children: [
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    secondary: const Icon(Icons.notifications_active_outlined),
+                    title: const Text('本機提醒通知'),
+                    subtitle: const Text('在這個裝置排程照護提醒；不使用遠端推播。'),
+                    value: notificationSettings.value ?? false,
+                    onChanged: notificationSettings.isLoading
+                        ? null
+                        : (value) => _toggleNotifications(value),
+                  ),
+                  const Divider(height: 12),
+                  _SettingRow(
+                    icon: Icons.calendar_view_week_outlined,
+                    title: '本週提醒',
+                    value: '查看接下來 7 天的照護排程',
+                    onTap: () => context.push('/reminders/weekly'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          _Section(
             title: '同步',
             child: MossCard(
               child: Column(
@@ -325,6 +354,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _toggleNotifications(bool enabled) async {
+    final accepted = await ref
+        .read(notificationSettingsProvider.notifier)
+        .setEnabled(enabled);
+    if (!accepted && mounted) {
+      _toast('需要允許系統通知權限，才能接收提醒。');
+    } else if (mounted) {
+      _toast(enabled ? '提醒通知已開啟。' : '提醒通知已關閉。');
+    }
   }
 
   Future<void> _editDisplayName(AppUser user) async {

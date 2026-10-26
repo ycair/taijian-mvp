@@ -348,7 +348,7 @@ class _ReminderFormScreenState extends ConsumerState<ReminderFormScreen> {
                           SwitchListTile(
                             contentPadding: EdgeInsets.zero,
                             title: const Text('啟用提醒'),
-                            subtitle: const Text('關閉後不會出現在今日任務，也不會推播。'),
+                            subtitle: const Text('關閉後不會出現在今日任務，也不會發出提醒通知。'),
                             value: _enabled,
                             onChanged: (value) => setState(() => _enabled = value),
                           ),

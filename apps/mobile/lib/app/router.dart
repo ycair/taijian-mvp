@@ -13,6 +13,7 @@ import '../features/records/animal_analytics_screen.dart';
 import '../features/records/household_analytics_screen.dart';
 import '../features/records/records_screen.dart';
 import '../features/reminders/reminder_form_screen.dart';
+import '../features/reminders/weekly_overview_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/today/today_screen.dart';
 import 'auth_refresh.dart';
@@ -60,6 +61,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/household/new',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const CreateHouseholdScreen(),
+      ),
+      GoRoute(
+        path: '/reminders/weekly',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const WeeklyOverviewScreen(),
       ),
       GoRoute(
         path: '/records/analytics',
