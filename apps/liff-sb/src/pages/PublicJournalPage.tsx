@@ -15,6 +15,7 @@ type PublicEntry = {
   publishedAt: string | null;
   photos: PublicPhoto[];
   coverUrl: string | null;
+  residents: Array<{ name: string; speciesLabel: string | null; avatarColor: string; token: string }>;
   likeCount: number;
   liked: boolean;
 };
@@ -68,6 +69,20 @@ function EntryView({
       <div className="muted" style={{ fontSize: 12 }}>{entry.journalDate} · {entry.authorName}</div>
       <h1 className="h1" style={{ fontSize: 24 }}>{entry.title}</h1>
       {entry.body && <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>{entry.body}</p>}
+      {entry.residents.length > 0 && (
+        <div className="row" style={{ flexWrap: 'wrap', marginTop: 12 }}>
+          {entry.residents.map((resident) => (
+            <Link
+              key={resident.token}
+              to={`/r/${resident.token}`}
+              className="badge"
+              style={{ textDecoration: 'none' }}
+            >
+              {resident.name} · {resident.speciesLabel ?? '居民'}
+            </Link>
+          ))}
+        </div>
+      )}
       <div className="stack" style={{ marginTop: 16 }}>
         <PhotoGrid entry={entry} />
       </div>

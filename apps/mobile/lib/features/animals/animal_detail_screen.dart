@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -178,6 +179,10 @@ class AnimalDetailScreen extends ConsumerWidget {
             MossCard(
               child: Text(animal.notes!, style: const TextStyle(height: 1.5)),
             ),
+          ],
+          if (isOwner && animal.isActive) ...[
+            const SizedBox(height: 14),
+            _RecordVisibilityCard(animal: animal),
           ],
           const SizedBox(height: 22),
           _LineageSection(animal: animal, isOwner: isOwner, lineage: lineageAsync),
@@ -451,6 +456,108 @@ class AnimalDetailScreen extends ConsumerWidget {
   }
 }
 
+
+
+class _RecordVisibilityCard extends ConsumerStatefulWidget {
+  const _RecordVisibilityCard({required this.animal});
+
+  final Animal animal;
+
+  @override
+  ConsumerState<_RecordVisibilityCard> createState() => _RecordVisibilityCardState();
+}
+
+class _RecordVisibilityCardState extends ConsumerState<_RecordVisibilityCard> {
+  bool _busy = false;
+
+  Future<void> _toggle(bool value) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      await ref.read(animalRepositoryProvider).setRecordVisibility(widget.animal, isPublic: value);
+      ref.invalidate(animalsProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(value ? '已公開居民的照護紀錄。' : '已隱藏居民的照護紀錄。')),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('更新失敗：$error')));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _copyLink() async {
+    final url = widget.animal.publicUrl;
+    if (url == null) return;
+    await Clipboard.setData(ClipboardData(text: url));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('公開連結已複製。')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isPublic = widget.animal.recordsPublic;
+    return MossCard(
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(
+                isPublic ? Icons.public : Icons.lock_outline,
+                size: 20,
+                color: isPublic ? AppTokens.primaryStrong : AppTokens.muted,
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('照護紀錄公開', style: TextStyle(fontWeight: FontWeight.w800)),
+                    SizedBox(height: 2),
+                    Text('公開後，拿到連結的人可以唯讀查看這個居民的全部紀錄。', style: TextStyle(fontSize: 11, color: AppTokens.muted, height: 1.4)),
+                  ],
+                ),
+              ),
+              Switch(
+                value: isPublic,
+                onChanged: _busy ? null : _toggle,
+              ),
+            ],
+          ),
+          if (isPublic && widget.animal.publicUrl != null) ...[
+            const Divider(height: 16),
+            Row(
+              children: [
+                const Icon(Icons.link, size: 16, color: AppTokens.primaryStrong),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    widget.animal.publicUrl!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 11, color: AppTokens.muted),
+                  ),
+                ),
+                TextButton(
+                  onPressed: _copyLink,
+                  child: const Text('複製'),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
 
 class _LineageSection extends ConsumerWidget {
   const _LineageSection({

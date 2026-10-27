@@ -56,6 +56,13 @@ for multiple caregivers, not as a single-device notebook:
 - No APNs/FCM remote push and no Widgets; local notifications are rescheduled by
   the app when data changes.
 
+### Public resident records
+
+- Owner opt-in per resident; default private.
+- Public residents expose a read-only `/r/<token>` page with all care records.
+- Public Journal tags and public lineage can link to public residents; private relatives remain hidden.
+- No household/UID data is returned; reverting to private invalidates the link.
+
 ### Journal
 
 - Household photo journeys: title, body, date, resident tags, up to five photos,
@@ -245,6 +252,8 @@ GitHub `test` check.
 - [Supabase cloud operations](docs/operations/supabase-cloud.md)
 - [iOS native LINE/Profile](docs/operations/ios-native-line.md)
 - [Journal photo operations](docs/operations/journal-photo-core.md)
+- [Public resident records](docs/operations/public-resident-records.md)
+- [Security audit 2026-10-28](docs/security/2026-10-28-security-audit.md)
 - [Map core design](docs/superpowers/specs/2026-10-27-map-core-design.md)
 - [Map operations](docs/operations/map-core.md)
 - [Commerce sandbox](docs/operations/commerce-sandbox.md)

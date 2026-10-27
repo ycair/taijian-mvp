@@ -197,6 +197,9 @@ class Animal {
     this.adoptionDate,
     this.memorialAt,
     this.memorialNote,
+    this.recordVisibility = 'private',
+    this.publicToken,
+    this.publicAt,
   });
 
   factory Animal.fromMap(String id, Map<String, dynamic> map) {
@@ -219,6 +222,9 @@ class Animal {
       memorialNote: (map['memorialNote'] as String?)?.trim().isEmpty == true
           ? null
           : map['memorialNote'] as String?,
+      recordVisibility: readString(map, 'recordVisibility', 'private'),
+      publicToken: readString(map, 'publicToken').isEmpty ? null : readString(map, 'publicToken'),
+      publicAt: readDate(map, 'publicAt'),
     );
   }
 
@@ -238,10 +244,19 @@ class Animal {
   final String? adoptionDate;
   final DateTime? memorialAt;
   final String? memorialNote;
+  final String recordVisibility;
+  final String? publicToken;
+  final DateTime? publicAt;
 
   bool get isActive => status == 'active';
 
   bool get isMemorial => status == 'memorial';
+
+  bool get recordsPublic => recordVisibility == 'public' && publicToken != null;
+
+  String? get publicUrl => publicToken == null
+      ? null
+      : 'https://heartfelt-sherbet-c689e3.netlify.app/r/$publicToken';
 
   String get displaySpecies => speciesLabel.isNotEmpty ? speciesLabel : species;
 
@@ -262,6 +277,8 @@ class Animal {
     String? adoptionDate,
     DateTime? memorialAt,
     String? memorialNote,
+    String? recordVisibility,
+    String? publicToken,
   }) {
     return Animal(
       id: id,
@@ -280,6 +297,9 @@ class Animal {
       adoptionDate: adoptionDate ?? this.adoptionDate,
       memorialAt: memorialAt ?? this.memorialAt,
       memorialNote: memorialNote ?? this.memorialNote,
+      recordVisibility: recordVisibility ?? this.recordVisibility,
+      publicToken: publicToken ?? this.publicToken,
+      publicAt: publicAt,
     );
   }
 }

@@ -693,6 +693,48 @@ Deno.serve(async (request) => {
           break;
         }
 
+        case 'animal.setRecordVisibility': {
+          if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
+          const member = await requireMember(tx, householdId, userId);
+          if (member.role !== 'owner') throw Object.assign(new Error('owner only'), { code: 'FORBIDDEN' });
+          const animalId = String(payload.animalId ?? '');
+          const isPublic = payload.isPublic === true;
+          const [animal] = await tx`
+            select id, revision, status, public_token from animals
+            where id = ${animalId} and household_id = ${householdId} and deleted_at is null
+            for update
+          `;
+          if (!animal) throw Object.assign(new Error('animal not found'), { code: 'NOT_FOUND' });
+          if (animal.status === 'memorial') {
+            throw Object.assign(new Error('memorial resident cannot be made public'), { code: 'INVALID_STATE' });
+          }
+          if (envelope.baseRevision !== undefined && envelope.baseRevision !== animal.revision) {
+            throw Object.assign(new Error('revision conflict'), { code: 'CONFLICT', currentRevision: animal.revision });
+          }
+          const publicToken = isPublic
+            ? (animal.public_token ?? crypto.randomUUID().replaceAll('-', ''))
+            : null;
+          await tx`update animals set
+                     record_visibility = ${isPublic ? 'public' : 'private'},
+                     public_token = ${publicToken},
+                     public_at = ${isPublic ? new Date().toISOString() : null},
+                     revision = revision + 1,
+                     last_changed_fields = array['recordVisibility','publicToken'],
+                     updated_by = ${userId},
+                     updated_at = now()
+                   where id = ${animalId}`;
+          await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, after, command_id, source)
+                   values (${householdId}, ${userId}, 'animal.setRecordVisibility', 'animal', ${animalId},
+                   ${tx.json({ isPublic })}, ${envelope.commandId}, 'ios')`;
+          response = ok(envelope.commandId, {
+            animalId,
+            isPublic,
+            publicToken,
+            revision: animal.revision + 1,
+          }, animal.revision + 1);
+          break;
+        }
+
         case 'animal.memorialize': {
           if (!householdId) throw Object.assign(new Error('householdId required'), { code: 'VALIDATION_ERROR' });
           const member = await requireMember(tx, householdId, userId);

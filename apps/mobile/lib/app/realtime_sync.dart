@@ -118,12 +118,6 @@ class _RealtimeSyncState extends ConsumerState<RealtimeSync> {
         table: 'proposals',
         callback: changed,
       );
-      channel.onPostgresChanges(
-        event: PostgresChangeEvent.all,
-        schema: 'public',
-        table: 'proposal_votes',
-        callback: changed,
-      );
       channel.subscribe((status, error) {
         if (status == RealtimeSubscribeStatus.channelError) {
           debugPrint('Realtime channel error: $error');
