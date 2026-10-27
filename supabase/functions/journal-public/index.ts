@@ -1,5 +1,6 @@
 import { corsHeaders, json } from '../_shared/http.ts';
 import { sql } from '../_shared/db.ts';
+import { verifyAccessTokenFromRequest } from '../_shared/auth_tokens.ts';
 
 const PUBLIC_FIELDS = `
   e.id, e.title, e.body, e.journal_date, e.photos, e.cover_path,
@@ -33,7 +34,7 @@ async function signedPhotoUrl(path: string): Promise<string | null> {
   return typeof signed === 'string' ? `${base}/storage/v1${signed}` : null;
 }
 
-async function hydrate(row: any): Promise<Record<string, unknown> | null> {
+async function hydrate(row: any, viewerId: string | null): Promise<Record<string, unknown> | null> {
   if (!row) return null;
   const rawPhotos = Array.isArray(row.photos) ? row.photos : [];
   const photos = [];
@@ -47,7 +48,12 @@ async function hydrate(row: any): Promise<Record<string, unknown> | null> {
     });
   }
   const cover = typeof row.cover_path === 'string' ? row.cover_path : photos[0]?.path;
+  const [likeCount] = await sql`select count(*)::int as count from journal_likes where entry_id = ${row.id}`;
+  const [liked] = viewerId
+    ? await sql`select 1 from journal_likes where entry_id = ${row.id} and profile_id = ${viewerId}`
+    : [null];
   return {
+    id: row.id,
     title: row.title,
     body: row.body,
     journalDate: row.journal_date,
@@ -57,6 +63,8 @@ async function hydrate(row: any): Promise<Record<string, unknown> | null> {
     publishedAt: row.published_at,
     photos,
     coverUrl: cover ? await signedPhotoUrl(cover) : null,
+    likeCount: likeCount?.count ?? 0,
+    liked: !!liked,
   };
 }
 
@@ -67,6 +75,8 @@ Deno.serve(async (request) => {
   }
   try {
     const url = new URL(request.url);
+    const claims = await verifyAccessTokenFromRequest(request);
+    const viewerId = claims?.profileId ?? null;
     const token = url.searchParams.get('token');
     if (token) {
       const [row] = await sql`
@@ -79,7 +89,7 @@ Deno.serve(async (request) => {
         limit 1
       `;
       if (!row) return json({ ok: false, code: 'NOT_FOUND', message: 'not found' }, 404);
-      return json({ ok: true, entry: await hydrate(row) });
+      return json({ ok: true, entry: await hydrate(row, viewerId) });
     }
 
     const limit = Math.min(50, Math.max(1, Number(url.searchParams.get('limit') ?? 20)));
@@ -92,7 +102,7 @@ Deno.serve(async (request) => {
       limit ${limit}
     `;
     const entries = [];
-    for (const row of rows) entries.push(await hydrate(row));
+    for (const row of rows) entries.push(await hydrate(row, viewerId));
     return json({ ok: true, entries });
   } catch (error) {
     console.error('journal-public failed', error);

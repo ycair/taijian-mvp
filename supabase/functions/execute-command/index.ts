@@ -612,6 +612,8 @@ Deno.serve(async (request) => {
                    where animal_id = ${animalId} and household_id = ${householdId} and deleted_at is null`;
           await tx`update records set deleted_at = now(), updated_at = now()
                    where animal_id = ${animalId} and household_id = ${householdId} and deleted_at is null`;
+          await tx`delete from animal_lineage
+                   where parent_id = ${animalId} or child_id = ${animalId}`;
           await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, command_id, source)
                    values (${householdId}, ${userId}, 'animal.delete', 'animal', ${animalId}, ${envelope.commandId}, 'liff')`;
           response = ok(envelope.commandId, { animalId, revision: animal.revision + 1 }, animal.revision + 1);
@@ -1239,6 +1241,32 @@ Deno.serve(async (request) => {
           await tx`insert into audit_logs (household_id, actor_id, action, target_type, target_id, command_id, source)
                    values (${householdId}, ${userId}, 'journal.delete', 'journal_entry', ${journalId}, ${envelope.commandId}, 'ios')`;
           response = ok(envelope.commandId, { journalId, revision: entry.revision + 1 }, entry.revision + 1);
+          break;
+        }
+
+        case 'journal.like': {
+          const entryId = String(payload.entryId ?? '');
+          const [entry] = await tx`
+            select id from journal_entries
+            where id = ${entryId} and visibility in ('link', 'public') and deleted_at is null
+          `;
+          if (!entry) throw Object.assign(new Error('journal not found'), { code: 'NOT_FOUND' });
+          const [existing] = await tx`
+            select 1 from journal_likes where entry_id = ${entryId} and profile_id = ${userId}
+          `;
+          if (existing) {
+            await tx`delete from journal_likes where entry_id = ${entryId} and profile_id = ${userId}`;
+          } else {
+            await tx`insert into journal_likes (entry_id, profile_id) values (${entryId}, ${userId})`;
+          }
+          const [count] = await tx`
+            select count(*)::int as count from journal_likes where entry_id = ${entryId}
+          `;
+          response = ok(envelope.commandId, {
+            entryId,
+            liked: !existing,
+            likeCount: count.count,
+          });
           break;
         }
 
