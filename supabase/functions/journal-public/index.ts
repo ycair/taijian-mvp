@@ -48,6 +48,17 @@ async function hydrate(row: any, viewerId: string | null): Promise<Record<string
     });
   }
   const cover = typeof row.cover_path === 'string' ? row.cover_path : photos[0]?.path;
+  const animalIds = Array.isArray(row.animal_ids) ? row.animal_ids : [];
+  const residents = animalIds.length
+    ? await sql`
+        select name, species_label, avatar_color, avatar_pattern, public_token
+        from animals
+        where id = any(${animalIds}::uuid[])
+          and record_visibility = 'public'
+          and public_token is not null
+          and deleted_at is null
+      `
+    : [];
   const [likeCount] = await sql`select count(*)::int as count from journal_likes where entry_id = ${row.id}`;
   const [liked] = viewerId
     ? await sql`select 1 from journal_likes where entry_id = ${row.id} and profile_id = ${viewerId}`
@@ -61,6 +72,13 @@ async function hydrate(row: any, viewerId: string | null): Promise<Record<string
     authorAvatar: row.author_avatar,
     shareToken: row.share_token,
     publishedAt: row.published_at,
+    residents: residents.map((resident: any) => ({
+      name: resident.name,
+      speciesLabel: resident.species_label,
+      avatarColor: resident.avatar_color,
+      avatarPattern: resident.avatar_pattern,
+      token: resident.public_token,
+    })),
     photos,
     coverUrl: cover ? await signedPhotoUrl(cover) : null,
     likeCount: likeCount?.count ?? 0,

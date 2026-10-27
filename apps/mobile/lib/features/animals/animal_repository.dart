@@ -102,6 +102,17 @@ class AnimalRepository {
     );
   }
 
+  Future<void> setRecordVisibility(Animal animal, {required bool isPublic}) async {
+    if (householdId == null) throw StateError('No household');
+    await commands.submit(
+      'animal.setRecordVisibility',
+      {'animalId': animal.id, 'isPublic': isPublic},
+      householdId: householdId,
+      baseRevision: animal.revision,
+      targetId: 'animal:${animal.id}',
+    );
+  }
+
   Future<void> memorialize(Animal animal, {String? note}) async {
     if (householdId == null) throw StateError('No household');
     await commands.submit(
