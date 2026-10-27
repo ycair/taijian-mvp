@@ -253,6 +253,7 @@ GitHub `test` check.
 - [iOS native LINE/Profile](docs/operations/ios-native-line.md)
 - [Journal photo operations](docs/operations/journal-photo-core.md)
 - [Public resident records](docs/operations/public-resident-records.md)
+- [Security audit 2026-10-28](docs/security/2026-10-28-security-audit.md)
 - [Map core design](docs/superpowers/specs/2026-10-27-map-core-design.md)
 - [Map operations](docs/operations/map-core.md)
 - [Commerce sandbox](docs/operations/commerce-sandbox.md)
