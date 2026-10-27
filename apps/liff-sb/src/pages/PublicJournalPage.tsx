@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { callCommand, newCommandId } from '../lib/api';
 import { functionsUrl } from '../lib/supabase';
 
 type PublicPhoto = { path: string; caption: string; url: string | null };
 type PublicEntry = {
+  id: string;
   title: string;
   body: string;
   journalDate: string;
@@ -13,6 +15,8 @@ type PublicEntry = {
   publishedAt: string | null;
   photos: PublicPhoto[];
   coverUrl: string | null;
+  likeCount: number;
+  liked: boolean;
 };
 
 function PublicHeader() {
@@ -43,7 +47,15 @@ function PhotoGrid({ entry }: { entry: PublicEntry }) {
   );
 }
 
-function EntryView({ entry, showLink = false }: { entry: PublicEntry; showLink?: boolean }) {
+function EntryView({
+  entry,
+  showLink = false,
+  onLike,
+}: {
+  entry: PublicEntry;
+  showLink?: boolean;
+  onLike?: (entry: PublicEntry) => void;
+}) {
   return (
     <article className="card" style={{ marginTop: 16 }}>
       {entry.coverUrl && (
@@ -59,6 +71,17 @@ function EntryView({ entry, showLink = false }: { entry: PublicEntry; showLink?:
       <div className="stack" style={{ marginTop: 16 }}>
         <PhotoGrid entry={entry} />
       </div>
+      <div className="row" style={{ marginTop: 14 }}>
+        <button
+          className={entry.liked ? 'btn' : 'btn-ghost'}
+          style={{ padding: '0 14px', minHeight: 40 }}
+          onClick={() => onLike?.(entry)}
+          disabled={!onLike}
+        >
+          {entry.liked ? '♥' : '♡'} {entry.likeCount}
+        </button>
+        <span className="muted" style={{ fontSize: 11 }}>登入苔間後可以按讚</span>
+      </div>
       {showLink && (
         <Link className="btn-ghost" to={`/s/${entry.shareToken}`} style={{ textDecoration: 'none' }}>
           開啟這篇旅程 →
@@ -66,6 +89,26 @@ function EntryView({ entry, showLink = false }: { entry: PublicEntry; showLink?:
       )}
     </article>
   );
+}
+
+async function toggleLike(entry: PublicEntry): Promise<PublicEntry | null> {
+  const token = localStorage.getItem('sb_access');
+  if (!token) {
+    window.location.href = '/';
+    return null;
+  }
+  const result = await callCommand(token, {
+    commandId: newCommandId(),
+    type: 'journal.like',
+    payload: { entryId: entry.id },
+  });
+  if (!result.ok) return null;
+  const data = result.data as { liked?: boolean; likeCount?: number } | undefined;
+  return {
+    ...entry,
+    liked: Boolean(data?.liked),
+    likeCount: Number(data?.likeCount ?? entry.likeCount),
+  };
 }
 
 export function PublicJournalPage() {
@@ -91,7 +134,16 @@ export function PublicJournalPage() {
       <main className="app">
         {error && <p className="error">{error}</p>}
         {!entry && !error && <p className="muted">載入旅程中…</p>}
-        {entry && <EntryView entry={entry} />}
+        {entry && (
+          <EntryView
+            entry={entry}
+            onLike={(current) => {
+              void toggleLike(current).then((next) => {
+                if (next) setEntry(next);
+              });
+            }}
+          />
+        )}
         <div style={{ marginTop: 18 }}>
           <Link to="/feed" className="btn-ghost" style={{ textDecoration: 'none' }}>看更多公開旅程 →</Link>
         </div>
@@ -127,7 +179,18 @@ export function PublicJournalFeedPage() {
         {loading && <p className="muted">載入中…</p>}
         {!loading && entries.length === 0 && <p className="muted">目前沒有公開旅程。</p>}
         {entries.map((entry) => (
-          <EntryView key={entry.shareToken} entry={entry} showLink />
+          <EntryView
+            key={entry.shareToken}
+            entry={entry}
+            showLink
+            onLike={(current) => {
+              void toggleLike(current).then((next) => {
+                if (next) {
+                  setEntries((items) => items.map((item) => item.shareToken === next.shareToken ? next : item));
+                }
+              });
+            }}
+          />
         ))}
       </main>
     </div>

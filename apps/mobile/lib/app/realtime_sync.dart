@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:realtime_client/realtime_client.dart';
 
+import '../features/animals/lineage_repository.dart';
 import '../features/animals/transfer_repository.dart';
 import '../features/journal/journal_repository.dart';
 import '../features/map/map_repository.dart';
@@ -160,6 +161,7 @@ class _RealtimeSyncState extends ConsumerState<RealtimeSync> {
     ref.invalidate(remindersProvider);
     ref.invalidate(todayCompletionsProvider);
     ref.invalidate(transfersProvider);
+    ref.invalidate(lineageProvider);
     ref.invalidate(shopProductsProvider);
     ref.invalidate(shopOrdersProvider);
     ref.invalidate(pointsLedgerProvider);

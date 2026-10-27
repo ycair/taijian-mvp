@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../features/animals/lineage_repository.dart';
 import '../features/animals/transfer_repository.dart';
 import '../features/shop/commerce_repository.dart';
 import '../features/species/species_repository.dart';
@@ -55,6 +56,7 @@ class _OutboxAutoSyncState extends ConsumerState<OutboxAutoSync>
     ref.invalidate(todayCompletionsProvider);
     ref.invalidate(speciesCatalogProvider);
     ref.invalidate(transfersProvider);
+    ref.invalidate(lineageProvider);
     ref.invalidate(shopProductsProvider);
     ref.invalidate(shopOrdersProvider);
     ref.invalidate(pointsLedgerProvider);

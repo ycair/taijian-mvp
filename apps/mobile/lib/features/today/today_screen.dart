@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/providers.dart';
+import '../../core/models/models.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/time/app_time.dart';
 import '../../core/widgets/common.dart';
@@ -88,6 +89,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
     final household = ref.watch(householdProvider).value;
     final householdId = ref.watch(householdIdProvider);
     final tasks = ref.watch(todayTasksProvider);
+    final animals = ref.watch(activeAnimalsProvider);
     final timezone = ref.watch(householdTimezoneProvider);
     final now = DateTime.now();
 
@@ -169,6 +171,11 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                   ),
                 ],
               ),
+            ),
+            const SizedBox(height: 14),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _MapEntryCard(animals: animals),
             ),
             const SizedBox(height: 16),
             if (tasks.hasError)
@@ -312,6 +319,73 @@ class _TaskSection extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+
+class _MapEntryCard extends StatelessWidget {
+  const _MapEntryCard({required this.animals});
+
+  final List<Animal> animals;
+
+  @override
+  Widget build(BuildContext context) {
+    return MossCard(
+      padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+      onTap: () => context.push('/map'),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppTokens.successBg, AppTokens.butter],
+              ),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: const Icon(Icons.map_outlined, color: AppTokens.primaryStrong),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('苔間地圖', style: TextStyle(fontWeight: FontWeight.w800)),
+                const SizedBox(height: 2),
+                Text(
+                  animals.isEmpty ? '把居民放進喜歡的角落' : '${animals.length} 位居民正在地圖上生活',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          if (animals.isNotEmpty)
+            SizedBox(
+              width: 54,
+              height: 34,
+              child: Stack(
+                children: [
+                  for (var index = 0; index < animals.take(3).length; index++)
+                    Positioned(
+                      left: index * 15,
+                      child: AnimalAvatar(
+                        label: animals[index].initial,
+                        colorHex: animals[index].avatarColor,
+                        pattern: animals[index].avatarPattern,
+                        size: 34,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          const SizedBox(width: 4),
+          const Icon(Icons.chevron_right, color: AppTokens.muted),
+        ],
       ),
     );
   }
