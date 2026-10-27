@@ -65,7 +65,7 @@ for multiple caregivers, not as a single-device notebook:
 - Public read-only web pages:
   - `/s/<token>` — one unlisted journey
   - `/feed` — public journeys
-- J3 currently has no likes, comments, follow graph, or public moderation/report UI.
+- J3 currently has public likes (one per profile). Comments, follows, reports/blocks, and moderation UI are still deferred.
 - System share sheet; no public storage bucket and no direct client writes.
 
 ### Proposals
@@ -76,7 +76,7 @@ for multiple caregivers, not as a single-device notebook:
 
 ### Map / dens
 
-- Shared household map with default zones (苔庭/水盆/躲藏/曬台).
+- Shared household map with default zones (苔庭/水盆/躲藏/曬台); Today has a map entry card.
 - Drag active residents to normalized positions; positions are stored through
   server commands and shared with household members.
 - Add/delete zones; memorial residents stay off the map.

@@ -56,3 +56,10 @@ surface is the `journal-public` Edge Function:
 The function only returns safe entry/author fields and creates short-lived signed
 photo URLs with the service role. Switching an entry back to `household` clears
 the share token and invalidates previous links.
+
+## J3 likes
+
+`journal_likes` stores one like per profile per entry. The authenticated
+`journal.like` command toggles it only for `link`/`public` entries. The public
+page and `journal-public` response include `likeCount` and, when signed in,
+`liked`. Comments, follows, reports/blocks, and moderation remain deferred.
