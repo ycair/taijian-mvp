@@ -109,7 +109,7 @@ class _ModerationScreenState extends ConsumerState<ModerationScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 36),
           children: [
-            const Text(
+            Text(
               '只有管理員能查看與處理公開旅程檢舉。',
               style: TextStyle(color: AppTokens.muted, height: 1.5),
             ),

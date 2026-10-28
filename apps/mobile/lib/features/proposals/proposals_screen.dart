@@ -59,7 +59,7 @@ class _ProposalsScreenState extends ConsumerState<ProposalsScreen> {
               : ListView(
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 36),
                   children: [
-                    const Text(
+                    Text(
                       '提案會公開顯示你的家庭顯示名稱；一人一票，可隨時取消附議。',
                       style: TextStyle(color: AppTokens.muted, fontSize: 13, height: 1.5),
                     ),
@@ -179,7 +179,7 @@ class _ProposalCard extends StatelessWidget {
                 ),
                 child: Text(
                   proposal.statusLabel,
-                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTokens.primaryStrong),
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTokens.primaryStrong),
                 ),
               ),
             ],

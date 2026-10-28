@@ -161,7 +161,7 @@ class _FailedOutboxSheet extends ConsumerWidget {
             ...failed.map(
               (entry) => ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.error_outline, color: AppTokens.overdue),
+                leading: Icon(Icons.error_outline, color: AppTokens.overdue),
                 title: Text(_commandLabel(entry.type)),
                 subtitle: Text(
                   entry.lastError ?? '未知錯誤',

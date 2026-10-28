@@ -84,8 +84,8 @@ class AnimalDetailScreen extends ConsumerWidget {
                     _deleteAnimal(context, ref, animal);
                 }
               },
-              itemBuilder: (context) => const [
-                PopupMenuItem(
+              itemBuilder: (context) => [
+                const PopupMenuItem(
                   value: _AnimalAdminAction.transfer,
                   child: Text('轉移居民'),
                 ),
@@ -145,7 +145,7 @@ class AnimalDetailScreen extends ConsumerWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.local_florist_outlined, color: AppTokens.primaryStrong),
+                  Icon(Icons.local_florist_outlined, color: AppTokens.primaryStrong),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -248,7 +248,7 @@ class AnimalDetailScreen extends ConsumerWidget {
             InlineBanner(
               icon: Icons.cloud_off_outlined,
               message: '讀取提醒失敗，請稍後重新整理。',
-              color: const Color(0xFFFFE7D6),
+              color: AppTokens.warningBg,
             )
           else if (reminders.isEmpty)
             MossCard(
@@ -280,7 +280,7 @@ class AnimalDetailScreen extends ConsumerWidget {
             InlineBanner(
               icon: Icons.cloud_off_outlined,
               message: '讀取紀錄失敗，請稍後重新整理。',
-              color: const Color(0xFFFFE7D6),
+              color: AppTokens.warningBg,
             )
           else if (records.isEmpty)
             MossCard(
@@ -516,7 +516,7 @@ class _RecordVisibilityCardState extends ConsumerState<_RecordVisibilityCard> {
                 color: isPublic ? AppTokens.primaryStrong : AppTokens.muted,
               ),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -536,14 +536,14 @@ class _RecordVisibilityCardState extends ConsumerState<_RecordVisibilityCard> {
             const Divider(height: 16),
             Row(
               children: [
-                const Icon(Icons.link, size: 16, color: AppTokens.primaryStrong),
+                Icon(Icons.link, size: 16, color: AppTokens.primaryStrong),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     widget.animal.publicUrl!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 11, color: AppTokens.muted),
+                    style: TextStyle(fontSize: 11, color: AppTokens.muted),
                   ),
                 ),
                 TextButton(
@@ -597,7 +597,7 @@ class _LineageSection extends ConsumerWidget {
           InlineBanner(
             icon: Icons.lock_outline,
             message: '家族資料暫時無法讀取。',
-            color: const Color(0xFFFFE7D6),
+            color: AppTokens.warningBg,
           )
         else if (lineage.isLoading && graph.isEmpty)
           const Padding(
@@ -755,7 +755,7 @@ class _LineageLabel extends StatelessWidget {
       padding: const EdgeInsets.only(top: 6, bottom: 4),
       child: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w800,
           color: AppTokens.muted,
@@ -797,11 +797,11 @@ class _LineageRow extends StatelessWidget {
                 : Container(
                     width: 42,
                     height: 42,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: AppTokens.successBg,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.lock_outline, size: 19, color: AppTokens.muted),
+                    child: Icon(Icons.lock_outline, size: 19, color: AppTokens.muted),
                   ),
             const SizedBox(width: 12),
             Expanded(
@@ -1029,7 +1029,7 @@ class _AnimalEditSheetState extends ConsumerState<_AnimalEditSheet> {
             ),
             if (_error != null) ...[
               const SizedBox(height: 8),
-              Text(_error!, style: const TextStyle(color: AppTokens.overdue)),
+              Text(_error!, style: TextStyle(color: AppTokens.overdue)),
             ],
             const SizedBox(height: 12),
             FilledButton(
@@ -1043,7 +1043,7 @@ class _AnimalEditSheetState extends ConsumerState<_AnimalEditSheet> {
                   : const Text('儲存變更'),
             ),
             const SizedBox(height: 8),
-            const Center(
+            Center(
               child: Text(
                 '若家人同時修改，儲存後會出現衝突提示。',
                 style: TextStyle(fontSize: 11, color: AppTokens.muted),
@@ -1071,7 +1071,7 @@ class _MetaChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTokens.primaryStrong),
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTokens.primaryStrong),
       ),
     );
   }
@@ -1186,8 +1186,8 @@ class _ReminderCardState extends ConsumerState<_ReminderCard> {
           Container(
             width: 40,
             height: 40,
-            decoration: const BoxDecoration(color: AppTokens.successBg, shape: BoxShape.circle),
-            child: const Icon(Icons.alarm, size: 20, color: AppTokens.primaryStrong),
+            decoration: BoxDecoration(color: AppTokens.successBg, shape: BoxShape.circle),
+            child: Icon(Icons.alarm, size: 20, color: AppTokens.primaryStrong),
           ),
           const SizedBox(width: 12),
           Expanded(

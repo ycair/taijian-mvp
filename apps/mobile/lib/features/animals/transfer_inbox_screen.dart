@@ -248,7 +248,7 @@ class _TransferCard extends StatelessWidget {
                 Container(
                   width: 38,
                   height: 38,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: AppTokens.successBg,
                     shape: BoxShape.circle,
                   ),

@@ -40,7 +40,7 @@ class TodayTaskRow extends StatelessWidget {
                   ),
                 ),
                 child: busy
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 14,
                         height: 14,
                         child: CircularProgressIndicator(strokeWidth: 2, color: AppTokens.primary),

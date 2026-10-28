@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme/app_theme.dart';
+import '../core/theme/theme_controller.dart';
 import 'notification_sync.dart';
 import 'outbox_sync.dart';
 import 'realtime_sync.dart';
@@ -14,6 +15,8 @@ class TaijianApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    final darkMode = ref.watch(darkModeProvider);
+    AppTokens.setDark(darkMode);
     return LocalNotificationSync(
       child: RealtimeSync(
         child: OutboxAutoSync(

@@ -25,7 +25,7 @@ class PublicJournalPhotoImage extends StatelessWidget {
       value,
       fit: fit,
       loadingBuilder: (context, child, progress) =>
-          progress == null ? child : const ColoredBox(color: AppTokens.successBg),
+          progress == null ? child : ColoredBox(color: AppTokens.successBg),
       errorBuilder: (context, error, stackTrace) => _Placeholder(icon: icon),
     );
   }
@@ -39,7 +39,7 @@ class _Placeholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -197,7 +197,7 @@ class PublicJournalEntryCard extends StatelessWidget {
                               if (value == 'report') onReport();
                               if (value == 'block') onBlock();
                             },
-                            itemBuilder: (context) => const [
+                            itemBuilder: (context) => [
                               PopupMenuItem(value: 'report', child: Text('檢舉這篇旅程')),
                               PopupMenuItem(
                                 value: 'block',
@@ -239,7 +239,7 @@ class _ResidentChip extends StatelessWidget {
           ),
           child: Text(
             '${resident.name} · ${resident.speciesLabel ?? '居民'}${canOpen ? ' ›' : ''}',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w700,
               color: AppTokens.primaryStrong,

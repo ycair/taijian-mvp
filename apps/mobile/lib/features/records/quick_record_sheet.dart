@@ -456,7 +456,7 @@ class _QuickRecordSheetState extends ConsumerState<QuickRecordSheet> {
                   : Text(editing ? '儲存變更' : '記下來'),
             ),
             const SizedBox(height: 8),
-            const Center(
+            Center(
               child: Text(
                 '沒有連線時會先存進佇列，恢復連線後自動同步。',
                 style: TextStyle(fontSize: 11, color: AppTokens.muted),
@@ -479,7 +479,7 @@ class _DateTimeButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: AppTokens.card,
       borderRadius: BorderRadius.circular(AppTokens.radiusSm),
       child: InkWell(
         onTap: onTap,

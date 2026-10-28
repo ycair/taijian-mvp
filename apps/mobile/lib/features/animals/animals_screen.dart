@@ -243,9 +243,9 @@ class _AnimalsScreenState extends ConsumerState<AnimalsScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 child: Row(
                   children: [
-                    const Icon(Icons.history_outlined, color: AppTokens.primaryStrong),
+                    Icon(Icons.history_outlined, color: AppTokens.primaryStrong),
                     const SizedBox(width: 10),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -392,7 +392,7 @@ class _AnimalsScreenState extends ConsumerState<AnimalsScreen> {
                 padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
                 child: Row(
                   children: [
-                    const Icon(Icons.local_florist_outlined, size: 18, color: AppTokens.muted),
+                    Icon(Icons.local_florist_outlined, size: 18, color: AppTokens.muted),
                     const SizedBox(width: 6),
                     Text('紀念', style: Theme.of(context).textTheme.titleMedium),
                   ],
@@ -470,7 +470,7 @@ class _AnimalCard extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
                       group!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: AppTokens.primaryStrong,
@@ -491,7 +491,7 @@ class _AnimalCard extends StatelessWidget {
                   PopupMenuItem(value: group, child: Text(group)),
               ],
             ),
-          const Icon(Icons.chevron_right, color: AppTokens.muted),
+          Icon(Icons.chevron_right, color: AppTokens.muted),
         ],
       ),
     );

@@ -281,7 +281,7 @@ class _JournalEditorScreenState extends ConsumerState<JournalEditorScreen> {
                             const SizedBox(width: 8),
                             Text(formatDateKey(_date.year, _date.month, _date.day)),
                             const Spacer(),
-                            const Icon(Icons.chevron_right, color: AppTokens.muted),
+                            Icon(Icons.chevron_right, color: AppTokens.muted),
                           ],
                         ),
                       ),
@@ -434,7 +434,7 @@ class _PhotoDraftCard extends StatelessWidget {
                     : FutureBuilder(
                         future: draft.pending!.readAsBytes(),
                         builder: (context, snapshot) {
-                          if (!snapshot.hasData) return const ColoredBox(color: AppTokens.successBg);
+                          if (!snapshot.hasData) return ColoredBox(color: AppTokens.successBg);
                           return Image.memory(snapshot.data!, fit: BoxFit.cover);
                         },
                       ),

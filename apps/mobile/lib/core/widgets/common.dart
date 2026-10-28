@@ -195,7 +195,7 @@ class PageHeader extends StatelessWidget {
               children: [
                 Text(
                   kicker.toUpperCase(),
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppTokens.primaryStrong,
                     fontWeight: FontWeight.w800,
                     fontSize: 11,
@@ -241,11 +241,11 @@ class EmptyState extends StatelessWidget {
             Container(
               width: 72,
               height: 72,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppTokens.successBg,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.spa_outlined, color: AppTokens.primary, size: 34),
+              child: Icon(Icons.spa_outlined, color: AppTokens.primary, size: 34),
             ),
             const SizedBox(height: 20),
             Text(
@@ -280,7 +280,7 @@ class LoadingView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(
+            SizedBox(
               width: 28,
               height: 28,
               child: CircularProgressIndicator(strokeWidth: 3, color: AppTokens.primary),
@@ -312,7 +312,7 @@ class ErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.cloud_off_outlined, color: AppTokens.overdue, size: 40),
+            Icon(Icons.cloud_off_outlined, color: AppTokens.overdue, size: 40),
             const SizedBox(height: 16),
             Text(
               message,
@@ -335,13 +335,13 @@ class InlineBanner extends StatelessWidget {
     super.key,
     required this.icon,
     required this.message,
-    this.color = AppTokens.butter,
+    this.color,
     this.trailing,
   });
 
   final IconData icon;
   final String message;
-  final Color color;
+  final Color? color;
   final Widget? trailing;
 
   @override
@@ -349,7 +349,7 @@ class InlineBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: color,
+        color: color ?? AppTokens.butter,
         borderRadius: BorderRadius.circular(AppTokens.radiusMd),
       ),
       child: Row(
@@ -359,7 +359,7 @@ class InlineBanner extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(color: AppTokens.ink, fontWeight: FontWeight.w600, height: 1.4),
+              style: TextStyle(color: AppTokens.ink, fontWeight: FontWeight.w600, height: 1.4),
             ),
           ),
           if (trailing != null) ...[const SizedBox(width: 8), trailing!],
@@ -390,7 +390,7 @@ class ConflictBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFE7D6),
+        color: AppTokens.warningBg,
         borderRadius: BorderRadius.circular(AppTokens.radiusMd),
         border: Border.all(color: AppTokens.accent.withValues(alpha: 0.5)),
       ),
@@ -399,18 +399,18 @@ class ConflictBanner extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.edit_note, color: AppTokens.overdue),
+              Icon(Icons.edit_note, color: AppTokens.overdue),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.w800, color: AppTokens.ink),
+                  style: TextStyle(fontWeight: FontWeight.w800, color: AppTokens.ink),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 6),
-          Text(body, style: const TextStyle(color: AppTokens.ink, height: 1.4)),
+          Text(body, style: TextStyle(color: AppTokens.ink, height: 1.4)),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,

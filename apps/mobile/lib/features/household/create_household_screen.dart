@@ -103,13 +103,13 @@ class _CreateHouseholdScreenState extends ConsumerState<CreateHouseholdScreen> {
                 onChanged: (value) => setState(() => _timezone = value ?? _timezone),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 '今日任務會依這個時區計算；之後可以在設定中調整。',
                 style: TextStyle(fontSize: 11, color: AppTokens.muted, height: 1.4),
               ),
               if (_error != null) ...[
                 const SizedBox(height: 16),
-                Text(_error!, style: const TextStyle(color: AppTokens.overdue)),
+                Text(_error!, style: TextStyle(color: AppTokens.overdue)),
               ],
               const SizedBox(height: 24),
               FilledButton(
