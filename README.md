@@ -72,8 +72,11 @@ for multiple caregivers, not as a single-device notebook:
 - Public read-only web pages:
   - `/s/<token>` — one unlisted journey
   - `/feed` — public journeys
-- J3 currently has public likes, comments, entry reports, author follows/blocks,
-  and an admin report console at `/moderation`.
+- iOS native `旅程 → 探索`: public feed, following-only filter, entry detail,
+  resident tag → native public resident records, likes, comments, follows,
+  blocks, reports, share, and admin moderation.
+- J3 also has public web likes, comments, entry reports, author follows/blocks,
+  and a web admin report console at `/moderation`.
 - System share sheet; no public storage bucket and no direct client writes.
 
 ### Proposals
@@ -237,9 +240,10 @@ GitHub `test` check.
 
 ## Deferred / not yet started
 
-- A following-only Journal feed (follows are stored but do not reorder the feed).
 - Journal stickers, freeform collage, and external social posting; crop and monthly photo quota are implemented.
-- Comment-level reporting UI (the moderation console can list comment reports).
+- Comment-level reporting UI.
+- A native follow/block management list (blocking currently happens from an entry;
+  unblocking is web-only).
 - Real StoreKit/IAP, payments, shipping, order fulfillment, and admin shop console.
 - APNs/FCM remote push, Widgets, Share Extension.
 - Apple Sign-In.
@@ -258,6 +262,7 @@ GitHub `test` check.
 - [Journal quota and crop](docs/operations/journal-quota.md)
 - [Journal follows and blocks](docs/operations/journal-follow-block.md)
 - [Journal moderation](docs/operations/moderation.md)
+- [iOS native public Journal](docs/operations/ios-public-journal.md)
 - [Public resident records](docs/operations/public-resident-records.md)
 - [Security audit 2026-10-28](docs/security/2026-10-28-security-audit.md)
 - [Map core design](docs/superpowers/specs/2026-10-27-map-core-design.md)

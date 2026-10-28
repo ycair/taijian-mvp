@@ -15,6 +15,7 @@ import '../auth/auth_service.dart';
 import '../animals/transfer_repository.dart';
 import '../reminders/notification_service.dart';
 import '../household/household_repository.dart';
+import '../journal/public_journal_repository.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -59,6 +60,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final transfers = ref.watch(transfersProvider).value ?? const <AnimalTransfer>[];
     final pendingTransfers = transfers.where((transfer) => transfer.isIncoming && transfer.isPending && !transfer.isExpired).length;
     final outbox = ref.watch(outboxEntriesProvider).value ?? const <OutboxEntry>[];
+    final isAdmin = ref.watch(isAdminProvider).value ?? false;
     final pending = outbox
         .where((entry) => entry.status == OutboxStatus.pending || entry.status == OutboxStatus.sending)
         .length;
@@ -327,6 +329,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     value: '一起決定苔間接下來要做什麼',
                     onTap: () => context.push('/proposals'),
                   ),
+                  if (isAdmin)
+                    _SettingRow(
+                      icon: Icons.shield_outlined,
+                      title: '檢舉管理',
+                      value: '處理公開旅程的檢舉',
+                      onTap: () => context.push('/moderation'),
+                    ),
                   const _SettingRow(
                     icon: Icons.eco_outlined,
                     title: '苔間',

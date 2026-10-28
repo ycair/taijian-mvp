@@ -59,6 +59,31 @@ void main() {
     expect(captured.body, jsonEncode({'idToken': 'line-id-token'}));
   });
 
+  test('getFunction sends query parameters and bearer token', () async {
+    late http.Request captured;
+    final client = SupabaseRestClient(
+      baseUrl: 'https://example.supabase.co',
+      apiKey: 'sb_publishable_test',
+      tokenProvider: () => 'token-123',
+      httpClient: MockClient((request) async {
+        captured = request;
+        return http.Response(jsonEncode({'ok': true, 'entries': []}), 200);
+      }),
+    );
+
+    final body = await client.getFunction(
+      'journal-public',
+      query: {'feed': '1', 'limit': '20'},
+    );
+
+    expect(body['ok'], isTrue);
+    expect(captured.method, 'GET');
+    expect(captured.url.path, '/functions/v1/journal-public');
+    expect(captured.url.queryParameters, {'feed': '1', 'limit': '20'});
+    expect(captured.headers['apikey'], 'sb_publishable_test');
+    expect(captured.headers['authorization'], 'Bearer token-123');
+  });
+
   test('rpc posts JSON to PostgREST and decodes rows', () async {
     late http.Request captured;
     final client = SupabaseRestClient(

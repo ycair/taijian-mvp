@@ -7,9 +7,45 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/common.dart';
 import 'journal_models.dart';
 import 'journal_repository.dart';
+import 'public_journal_feed.dart';
 
-class JournalScreen extends ConsumerWidget {
+class JournalScreen extends StatelessWidget {
   const JournalScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('旅程'),
+          actions: [
+            IconButton(
+              tooltip: '新增家庭旅程',
+              onPressed: () => context.push('/journal/new'),
+              icon: const Icon(Icons.add),
+            ),
+          ],
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: '家庭'),
+              Tab(text: '探索'),
+            ],
+          ),
+        ),
+        body: const TabBarView(
+          children: [
+            _HouseholdJournalView(),
+            PublicJournalFeedView(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HouseholdJournalView extends ConsumerWidget {
+  const _HouseholdJournalView();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -18,21 +54,10 @@ class JournalScreen extends ConsumerWidget {
     final members = ref.watch(householdMembersProvider).value ?? const [];
     final byId = {for (final animal in animals) animal.id: animal};
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('旅程'),
-        actions: [
-          IconButton(
-            tooltip: '新增旅程',
-            onPressed: () => context.push('/journal/new'),
-            icon: const Icon(Icons.add),
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        color: AppTokens.primary,
-        onRefresh: () async => ref.invalidate(journalEntriesProvider),
-        child: entries.when(
+    return RefreshIndicator(
+      color: AppTokens.primary,
+      onRefresh: () async => ref.invalidate(journalEntriesProvider),
+      child: entries.when(
           loading: () => const LoadingView(),
           error: (error, stack) => ListView(
             children: [
@@ -80,8 +105,7 @@ class JournalScreen extends ConsumerWidget {
                         ),
                       ),
                   ],
-                ),
-        ),
+              ),
       ),
     );
   }
