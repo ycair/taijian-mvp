@@ -9,6 +9,7 @@ type PublicEntry = {
   title: string;
   body: string;
   journalDate: string;
+  authorId: string;
   authorName: string;
   authorAvatar: string | null;
   shareToken: string;
@@ -18,6 +19,8 @@ type PublicEntry = {
   residents: Array<{ name: string; speciesLabel: string | null; avatarColor: string; token: string }>;
   likeCount: number;
   liked: boolean;
+  following: boolean;
+  blocked: boolean;
   commentCount: number;
   comments: Array<{ id: string; body: string; createdAt: string; authorName: string }>;
 };
@@ -54,10 +57,14 @@ function EntryView({
   entry,
   showLink = false,
   onLike,
+  onFollow,
+  onBlock,
 }: {
   entry: PublicEntry;
   showLink?: boolean;
   onLike?: (entry: PublicEntry) => void;
+  onFollow?: (entry: PublicEntry) => void;
+  onBlock?: (entry: PublicEntry) => void;
 }) {
   return (
     <article className="card" style={{ marginTop: 16 }}>
@@ -99,7 +106,18 @@ function EntryView({
           {entry.liked ? '♥' : '♡'} {entry.likeCount}
         </button>
         <span className="muted" style={{ fontSize: 11 }}>登入苔間後可以按讚</span>
+        <button
+          className={entry.following ? 'btn' : 'btn-ghost'}
+          style={{ padding: '0 12px', minHeight: 40, fontSize: 12 }}
+          onClick={() => onFollow?.(entry)}
+          disabled={!onFollow}
+        >
+          {entry.following ? '已追蹤作者' : '追蹤作者'}
+        </button>
         <button className="btn-ghost" style={{ marginLeft: 'auto', fontSize: 11 }} onClick={() => report(entry)}>檢舉</button>
+        <button className="btn-ghost" style={{ fontSize: 11, color: 'var(--danger, #b42318)' }} onClick={() => onBlock?.(entry)} disabled={!onBlock}>
+          封鎖作者
+        </button>
       </div>
       {showLink && (
         <Link className="btn-ghost" to={`/s/${entry.shareToken}`} style={{ textDecoration: 'none' }}>
@@ -130,6 +148,51 @@ async function toggleLike(entry: PublicEntry): Promise<PublicEntry | null> {
   };
 }
 
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem('sb_access');
+  return token ? { authorization: `Bearer ${token}` } : {};
+}
+
+async function toggleFollow(entry: PublicEntry): Promise<PublicEntry | null> {
+  const token = localStorage.getItem('sb_access');
+  if (!token) {
+    window.alert('請先在 LINE 內登入苔間。');
+    return null;
+  }
+  if (!entry.authorId) return null;
+  const result = await callCommand(token, {
+    commandId: newCommandId(),
+    type: 'profile.follow',
+    payload: { userId: entry.authorId },
+  });
+  if (!result.ok) {
+    window.alert(result.message ?? '追蹤失敗');
+    return null;
+  }
+  const data = result.data as { following?: boolean } | undefined;
+  return { ...entry, following: Boolean(data?.following) };
+}
+
+async function blockAuthor(entry: PublicEntry): Promise<boolean> {
+  const token = localStorage.getItem('sb_access');
+  if (!token) {
+    window.alert('請先在 LINE 內登入苔間。');
+    return false;
+  }
+  if (!entry.authorId) return false;
+  if (!window.confirm(`封鎖 ${entry.authorName}？你將看不到對方的公開旅程，直到解除封鎖。`)) return false;
+  const result = await callCommand(token, {
+    commandId: newCommandId(),
+    type: 'profile.block',
+    payload: { userId: entry.authorId },
+  });
+  if (!result.ok) {
+    window.alert(result.message ?? '封鎖失敗');
+    return false;
+  }
+  return true;
+}
+
 export function PublicJournalPage() {
   const { token = '' } = useParams();
   const [entry, setEntry] = useState<PublicEntry | null>(null);
@@ -138,7 +201,7 @@ export function PublicJournalPage() {
   useEffect(() => {
     setEntry(null);
     setError('');
-    fetch(`${functionsUrl}/journal-public?token=${encodeURIComponent(token)}`)
+    fetch(`${functionsUrl}/journal-public?token=${encodeURIComponent(token)}`, { headers: authHeaders() })
       .then((response) => response.json())
       .then((result) => {
         if (!result.ok) throw new Error(result.message ?? '找不到旅程');
@@ -161,6 +224,16 @@ export function PublicJournalPage() {
                 if (next) setEntry(next);
               });
             }}
+            onFollow={(current) => {
+              void toggleFollow(current).then((next) => {
+                if (next) setEntry(next);
+              });
+            }}
+            onBlock={(current) => {
+              void blockAuthor(current).then((blocked) => {
+                if (blocked) window.location.href = '/feed';
+              });
+            }}
           />
         )}
         <div style={{ marginTop: 18 }}>
@@ -177,7 +250,7 @@ export function PublicJournalFeedPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${functionsUrl}/journal-public?feed=1&limit=20`)
+    fetch(`${functionsUrl}/journal-public?feed=1&limit=20`, { headers: authHeaders() })
       .then((response) => response.json())
       .then((result) => {
         if (!result.ok) throw new Error(result.message ?? '讀取失敗');
@@ -207,6 +280,20 @@ export function PublicJournalFeedPage() {
                 if (next) {
                   setEntries((items) => items.map((item) => item.shareToken === next.shareToken ? next : item));
                 }
+              });
+            }}
+            onFollow={(current) => {
+              void toggleFollow(current).then((next) => {
+                if (next) {
+                  setEntries((items) => items.map((item) => item.authorId === next.authorId
+                    ? { ...item, following: next.following }
+                    : item));
+                }
+              });
+            }}
+            onBlock={(current) => {
+              void blockAuthor(current).then((blocked) => {
+                if (blocked) setEntries((items) => items.filter((item) => item.authorId !== current.authorId));
               });
             }}
           />

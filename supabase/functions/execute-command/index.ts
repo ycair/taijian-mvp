@@ -1328,6 +1328,51 @@ Deno.serve(async (request) => {
           break;
         }
 
+        case 'profile.follow': {
+          const targetId = String(payload.userId ?? '');
+          if (!targetId || targetId === userId) {
+            throw Object.assign(new Error('invalid follow target'), { code: 'VALIDATION_ERROR' });
+          }
+          const [target] = await tx`select id from profiles where id = ${targetId} and status = 'active' and deleted_at is null`;
+          if (!target) throw Object.assign(new Error('profile not found'), { code: 'NOT_FOUND' });
+          const [blocked] = await tx`
+            select 1 from profile_blocks where blocker_id = ${targetId} and blocked_id = ${userId}
+          `;
+          if (blocked) throw Object.assign(new Error('profile has blocked you'), { code: 'FORBIDDEN' });
+          const [existing] = await tx`
+            select 1 from profile_follows where follower_id = ${userId} and following_id = ${targetId}
+          `;
+          if (existing) {
+            await tx`delete from profile_follows where follower_id = ${userId} and following_id = ${targetId}`;
+          } else {
+            await tx`insert into profile_follows (follower_id, following_id) values (${userId}, ${targetId})`;
+          }
+          response = ok(envelope.commandId, { userId: targetId, following: !existing });
+          break;
+        }
+
+        case 'profile.block': {
+          const targetId = String(payload.userId ?? '');
+          if (!targetId || targetId === userId) {
+            throw Object.assign(new Error('invalid block target'), { code: 'VALIDATION_ERROR' });
+          }
+          const [target] = await tx`select id from profiles where id = ${targetId} and status = 'active' and deleted_at is null`;
+          if (!target) throw Object.assign(new Error('profile not found'), { code: 'NOT_FOUND' });
+          const [existing] = await tx`
+            select 1 from profile_blocks where blocker_id = ${userId} and blocked_id = ${targetId}
+          `;
+          if (existing) {
+            await tx`delete from profile_blocks where blocker_id = ${userId} and blocked_id = ${targetId}`;
+          } else {
+            await tx`insert into profile_blocks (blocker_id, blocked_id) values (${userId}, ${targetId})`;
+            await tx`delete from profile_follows
+                     where (follower_id = ${userId} and following_id = ${targetId})
+                        or (follower_id = ${targetId} and following_id = ${userId})`;
+          }
+          response = ok(envelope.commandId, { userId: targetId, blocked: !existing });
+          break;
+        }
+
         case 'journal.comment.create': {
           const entryId = String(payload.entryId ?? '');
           const body = String(payload.body ?? '').trim();
