@@ -123,3 +123,22 @@ extension JournalVisibility on JournalEntry {
       ? null
       : 'https://heartfelt-sherbet-c689e3.netlify.app/s/$shareToken';
 }
+
+
+class JournalPhotoQuota {
+  const JournalPhotoQuota({required this.used, required this.limit, required this.month});
+
+  factory JournalPhotoQuota.fromMap(Map<String, dynamic> map) {
+    return JournalPhotoQuota(
+      used: readInt(map, 'used'),
+      limit: readInt(map, 'quota', 60),
+      month: readString(map, 'month'),
+    );
+  }
+
+  final int used;
+  final int limit;
+  final String month;
+
+  int get remaining => (limit - used).clamp(0, limit);
+}

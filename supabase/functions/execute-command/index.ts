@@ -95,6 +95,30 @@ function recordMetadata(value: unknown): Record<string, unknown> {
   return metadata;
 }
 
+async function journalPhotoQuota(tx: any, userId: string) {
+  await tx`select id from profiles where id = ${userId} for update`;
+  const [row] = await tx`
+    select
+      date_trunc('month', now() at time zone 'UTC')::date as month,
+      coalesce((select sp.photo_quota
+        from profile_subscriptions ps
+        join subscription_plans sp on sp.id = ps.plan_id
+        where ps.profile_id = ${userId} and ps.status = 'active' and ps.expires_at > now()
+        limit 1), 60)::int as quota,
+      coalesce((select used from journal_photo_usage u
+        where u.profile_id = ${userId}
+          and u.month = date_trunc('month', now() at time zone 'UTC')::date), 0)::int as used
+  `;
+  return row as { month: string; quota: number; used: number };
+}
+
+async function addJournalPhotoUsage(tx: any, userId: string, count: number, month: string) {
+  if (count <= 0) return;
+  await tx`insert into journal_photo_usage (profile_id, month, used)
+           values (${userId}, ${month}, ${count})
+           on conflict (profile_id, month) do update set used = journal_photo_usage.used + excluded.used`;
+}
+
 function journalPhotos(
   value: unknown,
   householdId: string,
@@ -1165,6 +1189,11 @@ Deno.serve(async (request) => {
           const coverPath = values.requestedCover && photoData.photos.some((photo) => photo.path === values.requestedCover)
             ? values.requestedCover
             : photoData.coverPath;
+          const quota = await journalPhotoQuota(tx, userId);
+          if (quota.used + photoData.photos.length > quota.quota) {
+            throw Object.assign(new Error('monthly journal photo quota exceeded'), { code: 'PHOTO_QUOTA_EXCEEDED' });
+          }
+          await addJournalPhotoUsage(tx, userId, photoData.photos.length, quota.month);
           const visibility = ['household', 'link', 'public'].includes(String(payload.visibility))
             ? String(payload.visibility)
             : 'household';
@@ -1218,6 +1247,19 @@ Deno.serve(async (request) => {
           const coverPath = values.requestedCover && photoData.photos.some((photo) => photo.path === values.requestedCover)
             ? values.requestedCover
             : photoData.coverPath;
+          const previousPaths = new Set(
+            (Array.isArray(entry.photos) ? entry.photos : [])
+              .map((photo: any) => String(photo?.path ?? ''))
+              .filter(Boolean),
+          );
+          const newPhotoCount = photoData.photos.filter((photo) => !previousPaths.has(String(photo.path))).length;
+          if (newPhotoCount > 0) {
+            const quota = await journalPhotoQuota(tx, userId);
+            if (quota.used + newPhotoCount > quota.quota) {
+              throw Object.assign(new Error('monthly journal photo quota exceeded'), { code: 'PHOTO_QUOTA_EXCEEDED' });
+            }
+            await addJournalPhotoUsage(tx, userId, newPhotoCount, quota.month);
+          }
           const visibility = payload.visibility != null
             ? (['household', 'link', 'public'].includes(String(payload.visibility))
               ? String(payload.visibility)

@@ -66,6 +66,14 @@ class JournalRepository {
     }
   }
 
+  Future<JournalPhotoQuota> fetchPhotoQuota() async {
+    final client = rest;
+    if (client == null) return const JournalPhotoQuota(used: 0, limit: 60, month: '');
+    final rows = await client.rpc('journal_photo_quota', {});
+    if (rows.isEmpty) return const JournalPhotoQuota(used: 0, limit: 60, month: '');
+    return JournalPhotoQuota.fromMap(snakeToCamelMap(rows.first));
+  }
+
   Future<void> create({
     required String journalId,
     required String title,
@@ -171,4 +179,10 @@ final journalEntryProvider = Provider.family<AsyncValue<JournalEntry?>, String>(
 
 final journalPhotoUrlProvider = FutureProvider.family<String?, String>((ref, path) {
   return ref.watch(journalRepositoryProvider).photoUrl(path);
+});
+
+
+final journalPhotoQuotaProvider = FutureProvider<JournalPhotoQuota>((ref) {
+  ref.watch(householdIdProvider);
+  return ref.watch(journalRepositoryProvider).fetchPhotoQuota();
 });
