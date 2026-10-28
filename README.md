@@ -238,7 +238,7 @@ GitHub `test` check.
 
 - Journal reactions, comments, follow graph, and moderation/reporting.
 - Journal stickers, freeform collage, and external social posting; crop and monthly photo quota are implemented.
-- Follows, blocks, and moderation console.
+- Following and blocking public Journal authors; a following-only feed and moderation console are still pending.
 - Real StoreKit/IAP, payments, shipping, order fulfillment, and admin shop console.
 - APNs/FCM remote push, Widgets, Share Extension.
 - Apple Sign-In.
@@ -255,6 +255,7 @@ GitHub `test` check.
 - [Journal photo operations](docs/operations/journal-photo-core.md)
 - [Journal comments and reports](docs/operations/journal-comments.md)
 - [Journal quota and crop](docs/operations/journal-quota.md)
+- [Journal follows and blocks](docs/operations/journal-follow-block.md)
 - [Public resident records](docs/operations/public-resident-records.md)
 - [Security audit 2026-10-28](docs/security/2026-10-28-security-audit.md)
 - [Map core design](docs/superpowers/specs/2026-10-27-map-core-design.md)

@@ -4,7 +4,7 @@ import { verifyAccessTokenFromRequest } from '../_shared/auth_tokens.ts';
 
 const PUBLIC_FIELDS = `
   e.id, e.title, e.body, e.journal_date, e.photos, e.cover_path,
-  e.animal_ids, e.visibility, e.share_token, e.published_at,
+  e.animal_ids, e.visibility, e.share_token, e.published_at, e.author_id,
   p.display_name AS author_name, p.avatar_url AS author_avatar
 `;
 
@@ -59,6 +59,12 @@ async function hydrate(row: any, viewerId: string | null): Promise<Record<string
           and deleted_at is null
       `
     : [];
+  const [following] = viewerId
+    ? await sql`select 1 from profile_follows where follower_id = ${viewerId} and following_id = ${row.author_id}`
+    : [null];
+  const [blocked] = viewerId
+    ? await sql`select 1 from profile_blocks where blocker_id = ${viewerId} and blocked_id = ${row.author_id}`
+    : [null];
   const [likeCount] = await sql`select count(*)::int as count from journal_likes where entry_id = ${row.id}`;
   const [liked] = viewerId
     ? await sql`select 1 from journal_likes where entry_id = ${row.id} and profile_id = ${viewerId}`
@@ -76,6 +82,7 @@ async function hydrate(row: any, viewerId: string | null): Promise<Record<string
     title: row.title,
     body: row.body,
     journalDate: row.journal_date,
+    authorId: row.author_id,
     authorName: row.author_name,
     authorAvatar: row.author_avatar,
     shareToken: row.share_token,
@@ -91,6 +98,8 @@ async function hydrate(row: any, viewerId: string | null): Promise<Record<string
     coverUrl: cover ? await signedPhotoUrl(cover) : null,
     likeCount: likeCount?.count ?? 0,
     liked: !!liked,
+    following: !!following,
+    blocked: !!blocked,
     commentCount: comments.length,
     comments: comments.map((comment: any) => ({
       id: comment.id,
@@ -119,6 +128,10 @@ Deno.serve(async (request) => {
         where e.share_token = ${token}
           and e.visibility in ('link', 'public')
           and e.deleted_at is null
+          and (${viewerId}::uuid is null or not exists (
+            select 1 from profile_blocks b
+            where b.blocker_id = ${viewerId} and b.blocked_id = e.author_id
+          ))
         limit 1
       `;
       if (!row) return json({ ok: false, code: 'NOT_FOUND', message: 'not found' }, 404);
@@ -131,6 +144,10 @@ Deno.serve(async (request) => {
       from public.journal_entries e
       join public.profiles p on p.id = e.created_by
       where e.visibility = 'public' and e.deleted_at is null
+        and (${viewerId}::uuid is null or not exists (
+          select 1 from profile_blocks b
+          where b.blocker_id = ${viewerId} and b.blocked_id = e.author_id
+        ))
       order by e.published_at desc nulls last, e.created_at desc
       limit ${limit}
     `;
