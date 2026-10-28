@@ -55,6 +55,7 @@ for multiple caregivers, not as a single-device notebook:
 - Daily, weekly, and every-N-days schedules with timezone-aware occurrences.
 - Seven-day weekly overview and completion status.
 - iOS local notifications, opt-in per device, scheduled from the current household.
+- Persisted light/dark mode toggle in Settings; the whole iOS palette switches.
 - No APNs/FCM remote push and no Widgets; local notifications are rescheduled by
   the app when data changes.
 
@@ -265,6 +266,7 @@ GitHub `test` check.
 - [Journal follows and blocks](docs/operations/journal-follow-block.md)
 - [Journal moderation](docs/operations/moderation.md)
 - [iOS native public Journal](docs/operations/ios-public-journal.md)
+- [iOS dark mode](docs/operations/ios-dark-mode.md)
 - [Public resident records](docs/operations/public-resident-records.md)
 - [Transfer UID](docs/operations/transfer-uid.md)
 - [Security audit 2026-10-28](docs/security/2026-10-28-security-audit.md)
