@@ -72,7 +72,8 @@ for multiple caregivers, not as a single-device notebook:
 - Public read-only web pages:
   - `/s/<token>` — one unlisted journey
   - `/feed` — public journeys
-- J3 currently has public likes, comments, and entry reports. Follows, blocks, and moderation console are still deferred.
+- J3 currently has public likes, comments, entry reports, author follows/blocks,
+  and an admin report console at `/moderation`.
 - System share sheet; no public storage bucket and no direct client writes.
 
 ### Proposals
@@ -236,10 +237,9 @@ GitHub `test` check.
 
 ## Deferred / not yet started
 
-- Journal reactions, comments, follow graph, and moderation/reporting.
+- A following-only Journal feed (follows are stored but do not reorder the feed).
 - Journal stickers, freeform collage, and external social posting; crop and monthly photo quota are implemented.
-- Following and blocking public Journal authors; a following-only feed is still pending.
-- Journal report moderation console at `/moderation` (admin-only server checks).
+- Comment-level reporting UI (the moderation console can list comment reports).
 - Real StoreKit/IAP, payments, shipping, order fulfillment, and admin shop console.
 - APNs/FCM remote push, Widgets, Share Extension.
 - Apple Sign-In.
