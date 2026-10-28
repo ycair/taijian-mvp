@@ -9,6 +9,9 @@ The Flutter iOS app now owns the public Journal experience:
   `journal-public?feed=1&following=1` query.
 - Public entry detail page with photos, resident tags, like, follow, block,
   report, share, and comments.
+- Tapping a public resident tag opens the native read-only public resident page
+  with profile, public care records, and public relatives. Private relatives stay
+  hidden as `已隱藏`.
 - Comment composer writes through `journal.comment.create`.
 - Admin users reach native `設定 → 檢舉管理` (`/moderation`) to list and resolve
   reports.
@@ -29,12 +32,12 @@ for LINE quick access. Netlify is not involved in iOS builds.
 
 ## Limitations
 
-- Public resident detail inside iOS is still the web fallback; native resident
-  public pages are a later batch.
 - Comment-level report UI is not exposed yet, although the server and moderation
   console can handle comment reports.
 - Public share links still land on the LIFF/web page for recipients without the
   app.
+- A native follow/block management list is not built yet; unblocking currently
+  requires the web UI.
 
 ## Verification
 
@@ -42,3 +45,5 @@ for LINE quick access. Netlify is not involved in iOS builds.
 - Cloud smoke for follow-only feed: followed author appears, unfollowed author
   disappears.
 - Profile iOS build installed and launched on the physical iPhone.
+- Public resident token for the current public `cache` journey renders its
+  feeding record in the native page.

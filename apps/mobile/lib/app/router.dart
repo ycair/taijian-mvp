@@ -18,6 +18,7 @@ import '../features/journal/journal_editor_screen.dart';
 import '../features/journal/journal_screen.dart';
 import '../features/journal/moderation_screen.dart';
 import '../features/journal/public_journal_detail_screen.dart';
+import '../features/journal/public_resident_screen.dart';
 import '../features/records/records_screen.dart';
 import '../features/reminders/reminder_form_screen.dart';
 import '../features/reminders/weekly_overview_screen.dart';
@@ -79,6 +80,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/journal/public/:token',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => PublicJournalDetailScreen(
+          token: state.pathParameters['token']!,
+        ),
+      ),
+      GoRoute(
+        path: '/resident/public/:token',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PublicResidentScreen(
           token: state.pathParameters['token']!,
         ),
       ),

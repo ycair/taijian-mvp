@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/journal/public_journal_models.dart';
+import 'package:mobile/features/journal/public_resident_models.dart';
 
 void main() {
   test('public journal entry parses photos, residents, and comments', () {
@@ -58,6 +59,63 @@ void main() {
     expect(updated.following, isTrue);
     expect(updated.title, '標題');
     expect(updated.authorName, '小苔');
+  });
+
+  test('public resident parses records and private relatives stay masked', () {
+    final resident = PublicResident.fromMap({
+      'resident': {
+        'name': 'cache',
+        'species': 'ball-python',
+        'speciesLabel': '球蟒',
+        'morph': '橘夢淡彩派',
+        'sex': 'male',
+        'avatarColor': '#C7B198',
+        'avatarPattern': 'gradient',
+        'status': 'active',
+      },
+      'records': [
+        {
+          'type': 'feeding',
+          'occurredAt': '2026-10-26T12:44:00.000Z',
+          'value': null,
+          'unit': null,
+          'note': null,
+          'metadata': {'food': '蟋蟀'},
+        },
+      ],
+      'relatives': {
+        'parents': [
+          {
+            'relation': 'parent',
+            'public': true,
+            'name': '公開父',
+            'speciesLabel': '球蟒',
+            'avatarColor': '#7C9A76',
+            'avatarPattern': 'solid',
+            'token': 'parent-token',
+          },
+        ],
+        'children': [
+          {
+            'relation': 'child',
+            'public': false,
+            'name': null,
+            'speciesLabel': null,
+            'avatarColor': null,
+            'avatarPattern': null,
+            'token': null,
+          },
+        ],
+      },
+    });
+
+    expect(resident.profile.name, 'cache');
+    expect(resident.profile.sexLabel, '公');
+    expect(resident.records.single.label, '餵食');
+    expect(resident.records.single.food, '蟋蟀');
+    expect(resident.parents.single.canOpen, isTrue);
+    expect(resident.children.single.canOpen, isFalse);
+    expect(resident.children.single.name, isNull);
   });
 
   test('moderation report labels and fallback title', () {

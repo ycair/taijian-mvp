@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/common.dart';
@@ -224,18 +225,26 @@ class _ResidentChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppTokens.successBg,
+    final canOpen = resident.token.isNotEmpty;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: canOpen ? () => context.push('/resident/public/${resident.token}') : null,
         borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        '${resident.name} · ${resident.speciesLabel ?? '居民'}',
-        style: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          color: AppTokens.primaryStrong,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppTokens.successBg,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            '${resident.name} · ${resident.speciesLabel ?? '居民'}${canOpen ? ' ›' : ''}',
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: AppTokens.primaryStrong,
+            ),
+          ),
         ),
       ),
     );

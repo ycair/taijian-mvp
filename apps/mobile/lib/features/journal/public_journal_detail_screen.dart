@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../app/providers.dart';
@@ -340,7 +341,7 @@ class _PublicJournalDetailScreenState extends ConsumerState<PublicJournalDetailS
                     runSpacing: 6,
                     children: [
                       for (final resident in entry.residents)
-                        Chip(
+                        ActionChip(
                           avatar: CircleAvatar(
                             backgroundColor: AppTokens.colorFromHex(resident.avatarColor),
                             child: Text(
@@ -348,7 +349,13 @@ class _PublicJournalDetailScreenState extends ConsumerState<PublicJournalDetailS
                               style: const TextStyle(fontSize: 10),
                             ),
                           ),
-                          label: Text('${resident.name} · ${resident.speciesLabel ?? '居民'}'),
+                          label: Text(
+                            '${resident.name} · ${resident.speciesLabel ?? '居民'}'
+                            '${resident.token.isEmpty ? '' : ' ›'}',
+                          ),
+                          onPressed: resident.token.isEmpty
+                              ? null
+                              : () => context.push('/resident/public/${resident.token}'),
                         ),
                     ],
                   ),

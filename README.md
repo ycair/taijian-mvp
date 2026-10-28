@@ -73,7 +73,8 @@ for multiple caregivers, not as a single-device notebook:
   - `/s/<token>` — one unlisted journey
   - `/feed` — public journeys
 - iOS native `旅程 → 探索`: public feed, following-only filter, entry detail,
-  likes, comments, follows, blocks, reports, share, and admin moderation.
+  resident tag → native public resident records, likes, comments, follows,
+  blocks, reports, share, and admin moderation.
 - J3 also has public web likes, comments, entry reports, author follows/blocks,
   and a web admin report console at `/moderation`.
 - System share sheet; no public storage bucket and no direct client writes.
@@ -240,8 +241,9 @@ GitHub `test` check.
 ## Deferred / not yet started
 
 - Journal stickers, freeform collage, and external social posting; crop and monthly photo quota are implemented.
-- Comment-level reporting UI and native public resident detail pages.
-- A native follow/block management list (blocking currently happens from an entry).
+- Comment-level reporting UI.
+- A native follow/block management list (blocking currently happens from an entry;
+  unblocking is web-only).
 - Real StoreKit/IAP, payments, shipping, order fulfillment, and admin shop console.
 - APNs/FCM remote push, Widgets, Share Extension.
 - Apple Sign-In.
