@@ -4,7 +4,7 @@ import { verifyAccessTokenFromRequest } from '../_shared/auth_tokens.ts';
 
 const PUBLIC_FIELDS = `
   e.id, e.title, e.body, e.journal_date, e.photos, e.cover_path,
-  e.animal_ids, e.visibility, e.share_token, e.published_at, e.author_id,
+  e.animal_ids, e.visibility, e.share_token, e.published_at, e.created_by AS author_id,
   p.display_name AS author_name, p.avatar_url AS author_avatar
 `;
 
@@ -130,7 +130,7 @@ Deno.serve(async (request) => {
           and e.deleted_at is null
           and (${viewerId}::uuid is null or not exists (
             select 1 from profile_blocks b
-            where b.blocker_id = ${viewerId} and b.blocked_id = e.author_id
+            where b.blocker_id = ${viewerId} and b.blocked_id = e.created_by
           ))
         limit 1
       `;
@@ -146,7 +146,7 @@ Deno.serve(async (request) => {
       where e.visibility = 'public' and e.deleted_at is null
         and (${viewerId}::uuid is null or not exists (
           select 1 from profile_blocks b
-          where b.blocker_id = ${viewerId} and b.blocked_id = e.author_id
+          where b.blocker_id = ${viewerId} and b.blocked_id = e.created_by
         ))
       order by e.published_at desc nulls last, e.created_at desc
       limit ${limit}
