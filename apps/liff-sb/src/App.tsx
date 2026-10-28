@@ -12,6 +12,7 @@ import { InvitePage } from './pages/InvitePage';
 import { PublicJournalFeedPage, PublicJournalPage } from './pages/PublicJournalPage';
 import { PrivacyPage, TermsPage } from './pages/LegalPage';
 import { PublicResidentPage } from './pages/PublicResidentPage';
+import { ModerationPage } from './pages/ModerationPage';
 
 type AppState = {
   token: string;
@@ -280,6 +281,7 @@ export function App() {
         <Route path="/s/:token" element={<PublicJournalPage />} />
         <Route path="/feed" element={<PublicJournalFeedPage />} />
         <Route path="/r/:token" element={<PublicResidentPage />} />
+        <Route path="/moderation" element={<ModerationPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route

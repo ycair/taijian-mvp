@@ -95,6 +95,13 @@ function recordMetadata(value: unknown): Record<string, unknown> {
   return metadata;
 }
 
+async function requireAdmin(tx: any, userId: string) {
+  const [profile] = await tx`select is_admin from profiles where id = ${userId} and deleted_at is null`;
+  if (!profile?.is_admin) {
+    throw Object.assign(new Error('admin only'), { code: 'FORBIDDEN' });
+  }
+}
+
 async function journalPhotoQuota(tx: any, userId: string) {
   await tx`select id from profiles where id = ${userId} for update`;
   const [row] = await tx`
@@ -1404,6 +1411,67 @@ Deno.serve(async (request) => {
           }
           await tx`update journal_comments set deleted_at = now() where id = ${commentId}`;
           response = ok(envelope.commandId, { commentId, deleted: true });
+          break;
+        }
+
+        case 'journal.report.list': {
+          await requireAdmin(tx, userId);
+          const status = ['open', 'reviewed', 'dismissed'].includes(String(payload.status))
+            ? String(payload.status)
+            : 'open';
+          const rows = await tx`
+            select r.id, r.entry_id, r.comment_id, r.reason, r.status, r.created_at,
+                   reporter.display_name as reporter_name,
+                   e.title as entry_title, e.share_token,
+                   c.body as comment_body,
+                   coalesce(eauthor.display_name, cauthor.display_name) as target_author_name
+            from journal_reports r
+            join profiles reporter on reporter.id = r.reporter_id
+            left join journal_comments c on c.id = r.comment_id
+            left join journal_entries e on e.id = coalesce(r.entry_id, c.entry_id)
+            left join profiles eauthor on eauthor.id = e.created_by
+            left join profiles cauthor on cauthor.id = c.author_id
+            where r.status = ${status}
+            order by r.created_at asc
+            limit 100
+          `;
+          response = ok(envelope.commandId, {
+            reports: rows.map((row: any) => ({
+              id: row.id,
+              entryId: row.entry_id,
+              commentId: row.comment_id,
+              reason: row.reason,
+              status: row.status,
+              createdAt: row.created_at,
+              reporterName: row.reporter_name,
+              entryTitle: row.entry_title,
+              shareToken: row.share_token,
+              commentBody: row.comment_body,
+              targetAuthorName: row.target_author_name,
+            })),
+          });
+          break;
+        }
+
+        case 'journal.report.resolve': {
+          await requireAdmin(tx, userId);
+          const reportId = String(payload.reportId ?? '');
+          const status = String(payload.status ?? '');
+          if (!['reviewed', 'dismissed'].includes(status)) {
+            throw Object.assign(new Error('invalid report status'), { code: 'VALIDATION_ERROR' });
+          }
+          const [updated] = await tx`
+            update journal_reports
+            set status = ${status}, reviewed_at = now(), reviewed_by = ${userId}
+            where id = ${reportId}
+            returning id, status, reviewed_at
+          `;
+          if (!updated) throw Object.assign(new Error('report not found'), { code: 'NOT_FOUND' });
+          response = ok(envelope.commandId, {
+            reportId: updated.id,
+            status: updated.status,
+            reviewedAt: updated.reviewed_at,
+          });
           break;
         }
 
