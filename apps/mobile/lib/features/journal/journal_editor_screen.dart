@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
@@ -26,6 +27,7 @@ class _JournalEditorScreenState extends ConsumerState<JournalEditorScreen> {
   final _titleController = TextEditingController();
   final _bodyController = TextEditingController();
   final _picker = ImagePicker();
+  final _cropper = ImageCropper();
   final _drafts = <_PhotoDraft>[];
   final _selectedAnimalIds = <String>{};
   DateTime _date = DateTime.now();
@@ -80,9 +82,13 @@ class _JournalEditorScreenState extends ConsumerState<JournalEditorScreen> {
     if (picked != null) setState(() => _date = picked);
   }
 
-  Future<void> _pickPhotos() async {
-    final remaining = 5 - _drafts.length;
-    if (remaining <= 0) return;
+  Future<void> _pickPhotos(JournalPhotoQuota? quota) async {
+    final quotaRemaining = quota?.remaining ?? 60;
+    final remaining = [5 - _drafts.length, quotaRemaining].reduce((a, b) => a < b ? a : b);
+    if (remaining <= 0) {
+      _toast(quotaRemaining <= 0 ? '本月照片額度已用完。' : '一篇旅程最多 5 張照片。');
+      return;
+    }
     try {
       final files = await _picker.pickMultiImage(
         imageQuality: 82,
@@ -168,6 +174,7 @@ class _JournalEditorScreenState extends ConsumerState<JournalEditorScreen> {
         }
       }
       ref.invalidate(journalEntriesProvider);
+      ref.invalidate(journalPhotoQuotaProvider);
       if (!mounted) return;
       context.pop();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -177,6 +184,28 @@ class _JournalEditorScreenState extends ConsumerState<JournalEditorScreen> {
       if (mounted) _toast('儲存旅程失敗：$error');
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _crop(int index) async {
+    final draft = _drafts[index];
+    final file = draft.pending;
+    if (file == null) return;
+    try {
+      final cropped = await _cropper.cropImage(
+        sourcePath: file.path,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        compressQuality: 85,
+      );
+      if (!mounted || cropped == null) return;
+      final wasCover = _coverToken == draft.token;
+      setState(() {
+        draft.pending = XFile(cropped.path);
+        if (wasCover) _coverToken = draft.token;
+      });
+    } catch (error) {
+      if (mounted) _toast('裁切失敗：$error');
     }
   }
 
@@ -190,6 +219,7 @@ class _JournalEditorScreenState extends ConsumerState<JournalEditorScreen> {
     final entry = entryAsync?.value;
     if (_editing && entry != null) _hydrate(entry);
     final animals = ref.watch(activeAnimalsProvider);
+    final quota = ref.watch(journalPhotoQuotaProvider).value;
     final loading = _editing && entryAsync!.isLoading && entry == null;
     final missing = _editing && !entryAsync!.isLoading && entry == null;
 
@@ -294,9 +324,16 @@ class _JournalEditorScreenState extends ConsumerState<JournalEditorScreen> {
                       children: [
                         Text('照片', style: Theme.of(context).textTheme.labelLarge),
                         const Spacer(),
-                        Text('${_drafts.length} / 5', style: Theme.of(context).textTheme.bodySmall),
+                        Text(
+                          quota == null
+                              ? '${_drafts.length} / 5'
+                              : '${_drafts.length} / 5 · 本月 ${quota.used} / ${quota.limit}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                         TextButton.icon(
-                          onPressed: _drafts.length >= 5 ? null : _pickPhotos,
+                          onPressed: _drafts.length >= 5 || (quota?.remaining ?? 60) <= 0
+                              ? null
+                              : () => _pickPhotos(quota),
                           icon: const Icon(Icons.add_photo_alternate_outlined, size: 18),
                           label: const Text('加入'),
                         ),
@@ -309,6 +346,7 @@ class _JournalEditorScreenState extends ConsumerState<JournalEditorScreen> {
                         index: index,
                         isCover: _coverToken == _drafts[index].token,
                         onCover: () => setState(() => _coverToken = _drafts[index].token),
+                        onCrop: _drafts[index].pending == null ? null : () => _crop(index),
                         onRemove: () => setState(() {
                           final removed = _drafts.removeAt(index);
                           removed.caption.dispose();
@@ -347,7 +385,7 @@ class _PhotoDraft {
         caption = TextEditingController();
 
   final JournalPhoto? existing;
-  final XFile? pending;
+  XFile? pending;
   final TextEditingController caption;
 
   String get token => existing?.path ?? 'pending:${pending!.path}';
@@ -359,6 +397,7 @@ class _PhotoDraftCard extends StatelessWidget {
     required this.index,
     required this.isCover,
     required this.onCover,
+    this.onCrop,
     required this.onRemove,
   });
 
@@ -366,6 +405,7 @@ class _PhotoDraftCard extends StatelessWidget {
   final int index;
   final bool isCover;
   final VoidCallback onCover;
+  final VoidCallback? onCrop;
   final VoidCallback onRemove;
 
   @override
@@ -416,6 +456,12 @@ class _PhotoDraftCard extends StatelessWidget {
                         selected: isCover,
                         onSelected: (_) => onCover(),
                       ),
+                      if (onCrop != null)
+                        IconButton(
+                          tooltip: '裁切照片',
+                          onPressed: onCrop,
+                          icon: const Icon(Icons.crop, size: 18),
+                        ),
                       const Spacer(),
                       IconButton(
                         tooltip: '移除照片',

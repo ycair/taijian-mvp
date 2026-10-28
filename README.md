@@ -237,7 +237,8 @@ GitHub `test` check.
 ## Deferred / not yet started
 
 - Journal reactions, comments, follow graph, and moderation/reporting.
-- Journal photo crop, stickers, freeform collage, photo quota, and external social posting.
+- Journal stickers, freeform collage, and external social posting; crop and monthly photo quota are implemented.
+- Follows, blocks, and moderation console.
 - Real StoreKit/IAP, payments, shipping, order fulfillment, and admin shop console.
 - APNs/FCM remote push, Widgets, Share Extension.
 - Apple Sign-In.
@@ -253,6 +254,7 @@ GitHub `test` check.
 - [iOS native LINE/Profile](docs/operations/ios-native-line.md)
 - [Journal photo operations](docs/operations/journal-photo-core.md)
 - [Journal comments and reports](docs/operations/journal-comments.md)
+- [Journal quota and crop](docs/operations/journal-quota.md)
 - [Public resident records](docs/operations/public-resident-records.md)
 - [Security audit 2026-10-28](docs/security/2026-10-28-security-audit.md)
 - [Map core design](docs/superpowers/specs/2026-10-27-map-core-design.md)
