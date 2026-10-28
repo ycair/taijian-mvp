@@ -149,6 +149,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       value: config.liffConfigured ? '開啟 LIFF 完成連結' : '尚未設定 LIFF_URL',
                       onTap: _linkLine,
                     ),
+                  const Divider(height: 12),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.fingerprint, color: AppTokens.primaryStrong, size: 22),
+                    title: const Text('我的 UID', style: TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: SelectableText(
+                      currentUid ?? '尚未登入',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontFamily: 'monospace',
+                        color: AppTokens.muted,
+                      ),
+                    ),
+                    trailing: IconButton(
+                      tooltip: '複製 UID',
+                      onPressed: currentUid == null ? null : () => _copyUid(currentUid),
+                      icon: const Icon(Icons.copy, size: 20),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -375,6 +394,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _copyUid(String uid) async {
+    await Clipboard.setData(ClipboardData(text: uid));
+    if (mounted) _toast('UID 已複製，可以貼給要轉移的對象。');
   }
 
   Future<void> _toggleNotifications(bool enabled) async {

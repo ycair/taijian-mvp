@@ -37,6 +37,8 @@ for multiple caregivers, not as a single-device notebook:
   for relatives the viewer cannot access.
 - Irreversible memorial state; reminders disabled and records read-only.
 - Own-household and other-user transfers, with atomic movement of records/reminders.
+- Recipient UID visible/copyable at `設定 → 帳號 → 我的 UID`; transfer screen
+  includes a UID help dialog.
 - Local groups, search, custom order, memorial section.
 
 ### Records — 2B
@@ -264,6 +266,7 @@ GitHub `test` check.
 - [Journal moderation](docs/operations/moderation.md)
 - [iOS native public Journal](docs/operations/ios-public-journal.md)
 - [Public resident records](docs/operations/public-resident-records.md)
+- [Transfer UID](docs/operations/transfer-uid.md)
 - [Security audit 2026-10-28](docs/security/2026-10-28-security-audit.md)
 - [Map core design](docs/superpowers/specs/2026-10-27-map-core-design.md)
 - [Map operations](docs/operations/map-core.md)

@@ -31,6 +31,30 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
     super.dispose();
   }
 
+  void _showUidHelp() {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('如何取得對方 UID？'),
+        content: const Text(
+          '請對方打開苔間：\n\n'
+          '1. 設定 → 帳號\n'
+          '2. 找到「我的 UID」\n'
+          '3. 點右側複製按鈕\n'
+          '4. 把 UID 傳給你\n\n'
+          'UID 是苔間帳號識別碼，不是 LINE ID。',
+          style: TextStyle(height: 1.5),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('知道了'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _submit(Animal animal) async {
     if (_busy) return;
     if (animal.isMemorial) {
@@ -167,10 +191,18 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
               autocorrect: false,
               decoration: const InputDecoration(
                 labelText: '對方 UID',
-                hintText: '在對方的帳號設定頁可以找到',
+                hintText: '請對方到 設定 → 帳號 → 我的 UID 複製',
               ),
             ),
-            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: _showUidHelp,
+                icon: const Icon(Icons.help_outline, size: 17),
+                label: const Text('如何取得對方 UID？'),
+              ),
+            ),
+            const SizedBox(height: 4),
             TextField(
               controller: _noteController,
               maxLines: 3,
