@@ -72,7 +72,7 @@ for multiple caregivers, not as a single-device notebook:
 - Public read-only web pages:
   - `/s/<token>` — one unlisted journey
   - `/feed` — public journeys
-- J3 currently has public likes (one per profile). Comments, follows, reports/blocks, and moderation UI are still deferred.
+- J3 currently has public likes, comments, and entry reports. Follows, blocks, and moderation console are still deferred.
 - System share sheet; no public storage bucket and no direct client writes.
 
 ### Proposals
@@ -252,6 +252,7 @@ GitHub `test` check.
 - [Supabase cloud operations](docs/operations/supabase-cloud.md)
 - [iOS native LINE/Profile](docs/operations/ios-native-line.md)
 - [Journal photo operations](docs/operations/journal-photo-core.md)
+- [Journal comments and reports](docs/operations/journal-comments.md)
 - [Public resident records](docs/operations/public-resident-records.md)
 - [Security audit 2026-10-28](docs/security/2026-10-28-security-audit.md)
 - [Map core design](docs/superpowers/specs/2026-10-27-map-core-design.md)
