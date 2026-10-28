@@ -63,6 +63,14 @@ async function hydrate(row: any, viewerId: string | null): Promise<Record<string
   const [liked] = viewerId
     ? await sql`select 1 from journal_likes where entry_id = ${row.id} and profile_id = ${viewerId}`
     : [null];
+  const comments = await sql`
+    select c.id, c.body, c.created_at, p.display_name as author_name, p.avatar_url as author_avatar
+    from journal_comments c
+    join profiles p on p.id = c.author_id
+    where c.entry_id = ${row.id} and c.deleted_at is null
+    order by c.created_at asc
+    limit 100
+  `;
   return {
     id: row.id,
     title: row.title,
@@ -83,6 +91,13 @@ async function hydrate(row: any, viewerId: string | null): Promise<Record<string
     coverUrl: cover ? await signedPhotoUrl(cover) : null,
     likeCount: likeCount?.count ?? 0,
     liked: !!liked,
+    commentCount: comments.length,
+    comments: comments.map((comment: any) => ({
+      id: comment.id,
+      body: comment.body,
+      createdAt: comment.created_at,
+      authorName: comment.author_name,
+    })),
   };
 }
 

@@ -1286,6 +1286,58 @@ Deno.serve(async (request) => {
           break;
         }
 
+        case 'journal.comment.create': {
+          const entryId = String(payload.entryId ?? '');
+          const body = String(payload.body ?? '').trim();
+          if (!body || body.length > 1000) {
+            throw Object.assign(new Error('comment must be 1-1000 characters'), { code: 'VALIDATION_ERROR' });
+          }
+          const [entry] = await tx`
+            select id from journal_entries
+            where id = ${entryId} and visibility in ('link', 'public') and deleted_at is null
+          `;
+          if (!entry) throw Object.assign(new Error('journal not found'), { code: 'NOT_FOUND' });
+          const id = crypto.randomUUID();
+          await tx`insert into journal_comments (id, entry_id, author_id, body)
+                   values (${id}, ${entryId}, ${userId}, ${body})`;
+          response = ok(envelope.commandId, { commentId: id });
+          break;
+        }
+
+        case 'journal.comment.delete': {
+          const commentId = String(payload.commentId ?? '');
+          const [comment] = await tx`
+            select author_id from journal_comments
+            where id = ${commentId} and deleted_at is null
+            for update
+          `;
+          if (!comment) throw Object.assign(new Error('comment not found'), { code: 'NOT_FOUND' });
+          if (comment.author_id !== userId) {
+            throw Object.assign(new Error('cannot delete this comment'), { code: 'FORBIDDEN' });
+          }
+          await tx`update journal_comments set deleted_at = now() where id = ${commentId}`;
+          response = ok(envelope.commandId, { commentId, deleted: true });
+          break;
+        }
+
+        case 'journal.report.create': {
+          const entryId = payload.entryId == null ? null : String(payload.entryId);
+          const commentId = payload.commentId == null ? null : String(payload.commentId);
+          const reason = String(payload.reason ?? '').trim().slice(0, 500);
+          if ((!entryId && !commentId) || !reason) {
+            throw Object.assign(new Error('report target and reason required'), { code: 'VALIDATION_ERROR' });
+          }
+          const [target] = entryId
+            ? await tx`select id from journal_entries where id = ${entryId} and visibility in ('link','public') and deleted_at is null`
+            : await tx`select id from journal_comments where id = ${commentId} and deleted_at is null`;
+          if (!target) throw Object.assign(new Error('report target not found'), { code: 'NOT_FOUND' });
+          const id = crypto.randomUUID();
+          await tx`insert into journal_reports (id, entry_id, comment_id, reporter_id, reason)
+                   values (${id}, ${entryId}, ${commentId}, ${userId}, ${reason})`;
+          response = ok(envelope.commandId, { reportId: id });
+          break;
+        }
+
         case 'journal.like': {
           const entryId = String(payload.entryId ?? '');
           const [entry] = await tx`

@@ -18,6 +18,8 @@ type PublicEntry = {
   residents: Array<{ name: string; speciesLabel: string | null; avatarColor: string; token: string }>;
   likeCount: number;
   liked: boolean;
+  commentCount: number;
+  comments: Array<{ id: string; body: string; createdAt: string; authorName: string }>;
 };
 
 function PublicHeader() {
@@ -86,6 +88,7 @@ function EntryView({
       <div className="stack" style={{ marginTop: 16 }}>
         <PhotoGrid entry={entry} />
       </div>
+      <Comments entry={entry} />
       <div className="row" style={{ marginTop: 14 }}>
         <button
           className={entry.liked ? 'btn' : 'btn-ghost'}
@@ -96,6 +99,7 @@ function EntryView({
           {entry.liked ? '♥' : '♡'} {entry.likeCount}
         </button>
         <span className="muted" style={{ fontSize: 11 }}>登入苔間後可以按讚</span>
+        <button className="btn-ghost" style={{ marginLeft: 'auto', fontSize: 11 }} onClick={() => report(entry)}>檢舉</button>
       </div>
       {showLink && (
         <Link className="btn-ghost" to={`/s/${entry.shareToken}`} style={{ textDecoration: 'none' }}>
@@ -210,4 +214,80 @@ export function PublicJournalFeedPage() {
       </main>
     </div>
   );
+}
+
+
+function Comments({ entry }: { entry: PublicEntry }) {
+  const [body, setBody] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  async function submit() {
+    const token = localStorage.getItem('sb_access');
+    if (!token) {
+      setError('請先在 LINE 內登入苔間。');
+      return;
+    }
+    if (!body.trim() || busy) return;
+    setBusy(true);
+    setError('');
+    const result = await callCommand(token, {
+      commandId: newCommandId(),
+      type: 'journal.comment.create',
+      payload: { entryId: entry.id, body: body.trim() },
+    });
+    setBusy(false);
+    if (!result.ok) {
+      setError(result.message);
+      return;
+    }
+    setBody('');
+    window.location.reload();
+  }
+
+  return (
+    <section className="card" style={{ marginTop: 14 }}>
+      <h2 style={{ fontSize: 16, marginTop: 0 }}>留言 · {entry.commentCount}</h2>
+      {entry.comments.length === 0 && <p className="muted">還沒有留言。</p>}
+      {entry.comments.map((comment) => (
+        <div key={comment.id} style={{ padding: '8px 0', borderBottom: '1px dashed var(--line)' }}>
+          <strong style={{ fontSize: 13 }}>{comment.authorName}</strong>
+          <span className="muted" style={{ fontSize: 11, marginLeft: 8 }}>
+            {new Date(comment.createdAt).toLocaleDateString('zh-TW')}
+          </span>
+          <p style={{ margin: '4px 0 0', whiteSpace: 'pre-wrap' }}>{comment.body}</p>
+        </div>
+      ))}
+      {error && <p className="error">{error}</p>}
+      <div className="row" style={{ marginTop: 10 }}>
+        <input
+          className="input"
+          placeholder="登入後留言…"
+          value={body}
+          maxLength={1000}
+          onChange={(event) => setBody(event.target.value)}
+        />
+        <button className="btn" disabled={busy || !body.trim()} onClick={submit}>
+          {busy ? '送出…' : '留言'}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+
+async function report(entry: PublicEntry) {
+  const token = localStorage.getItem('sb_access');
+  if (!token) {
+    window.alert('請先在 LINE 內登入苔間。');
+    return;
+  }
+  const reason = window.prompt('請簡短說明檢舉原因（500 字內）');
+  if (!reason?.trim()) return;
+  const result = await callCommand(token, {
+    commandId: newCommandId(),
+    type: 'journal.report.create',
+    payload: { entryId: entry.id, reason: reason.trim() },
+  });
+  window.alert(result.ok ? '已送出檢舉，謝謝你。' : (result.message ?? '送出失敗'));
 }
