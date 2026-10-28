@@ -139,6 +139,7 @@ Deno.serve(async (request) => {
     }
 
     const limit = Math.min(50, Math.max(1, Number(url.searchParams.get('limit') ?? 20)));
+    const followingOnly = ['1', 'true'].includes(url.searchParams.get('following') ?? '');
     const rows = await sql`
       select ${sql.unsafe(PUBLIC_FIELDS)}
       from public.journal_entries e
@@ -147,6 +148,10 @@ Deno.serve(async (request) => {
         and (${viewerId}::uuid is null or not exists (
           select 1 from profile_blocks b
           where b.blocker_id = ${viewerId} and b.blocked_id = e.created_by
+        ))
+        and (${followingOnly}::boolean is false or exists (
+          select 1 from profile_follows f
+          where f.follower_id = ${viewerId} and f.following_id = e.created_by
         ))
       order by e.published_at desc nulls last, e.created_at desc
       limit ${limit}

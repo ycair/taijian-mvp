@@ -138,6 +138,28 @@ class SupabaseRestClient {
   static String _storagePath(String path) =>
       path.split('/').map(Uri.encodeComponent).join('/');
 
+  Future<Map<String, dynamic>> getFunction(
+    String name, {
+    Map<String, String>? query,
+    bool authenticated = true,
+  }) async {
+    final uri = Uri.parse(
+      '$_baseUrl/functions/v1/$name',
+    ).replace(queryParameters: query);
+    final response = await (authenticated
+        ? _authorized(() => _http.get(uri, headers: _headers(authenticated: authenticated)))
+        : _send(() => _http.get(uri, headers: _headers(authenticated: authenticated))));
+    final decoded = _decode(response);
+    if (decoded is! Map) {
+      throw const SupabaseApiException(
+        statusCode: 200,
+        code: 'INVALID_RESPONSE',
+        message: 'Expected a JSON object from the function',
+      );
+    }
+    return Map<String, dynamic>.from(decoded);
+  }
+
   Future<Map<String, dynamic>> callFunction(
     String name,
     Map<String, dynamic> body, {

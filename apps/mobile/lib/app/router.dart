@@ -16,6 +16,8 @@ import '../features/map/map_screen.dart';
 import '../features/proposals/proposals_screen.dart';
 import '../features/journal/journal_editor_screen.dart';
 import '../features/journal/journal_screen.dart';
+import '../features/journal/moderation_screen.dart';
+import '../features/journal/public_journal_detail_screen.dart';
 import '../features/records/records_screen.dart';
 import '../features/reminders/reminder_form_screen.dart';
 import '../features/reminders/weekly_overview_screen.dart';
@@ -72,6 +74,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/journal/new',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const JournalEditorScreen(),
+      ),
+      GoRoute(
+        path: '/journal/public/:token',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PublicJournalDetailScreen(
+          token: state.pathParameters['token']!,
+        ),
+      ),
+      GoRoute(
+        path: '/moderation',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ModerationScreen(),
       ),
       GoRoute(
         path: '/journal/:entryId/edit',
