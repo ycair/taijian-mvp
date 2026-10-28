@@ -128,7 +128,7 @@ class _MeasurementChartPainter extends CustomPainter {
       );
     }
 
-    final labelStyle = const TextStyle(fontSize: 10, color: AppTokens.muted);
+    final labelStyle = TextStyle(fontSize: 10, color: AppTokens.muted);
     _drawText(canvas, '${maxValue.toStringAsFixed(1)} $unit', Offset(chart.left, 2), labelStyle);
     _drawText(
       canvas,

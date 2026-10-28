@@ -36,7 +36,7 @@ class RecordActionTile extends ConsumerWidget {
             width: 38,
             height: 38,
             alignment: Alignment.center,
-            decoration: const BoxDecoration(color: AppTokens.successBg, shape: BoxShape.circle),
+            decoration: BoxDecoration(color: AppTokens.successBg, shape: BoxShape.circle),
             child: Icon(iconForRecord(record.type), size: 18, color: AppTokens.primaryStrong),
           ),
           const SizedBox(width: 12),
@@ -77,7 +77,7 @@ class RecordActionTile extends ConsumerWidget {
                   deleteCareRecord(context, ref, record: record);
                 }
               },
-              itemBuilder: (context) => const [
+              itemBuilder: (context) => [
                 PopupMenuItem(value: 'edit', child: Text('編輯紀錄')),
                 PopupMenuItem(
                   value: 'delete',

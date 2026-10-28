@@ -99,7 +99,7 @@ class _PublicResidentScreenState extends ConsumerState<PublicResidentScreen> {
                 children: [
                   _ProfileCard(profile: resident.profile),
                   const SizedBox(height: 12),
-                  const Text(
+                  Text(
                     '這是屋主主動公開的照護紀錄，任何人都可以透過連結唯讀查看。',
                     style: TextStyle(color: AppTokens.muted, height: 1.5),
                   ),
@@ -182,7 +182,7 @@ class _ProfileCard extends StatelessWidget {
                 ),
                 child: Text(
                   profile.statusLabel,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                     color: AppTokens.primaryStrong,
@@ -214,7 +214,7 @@ class _RecordCard extends StatelessWidget {
             width: 38,
             height: 38,
             alignment: Alignment.center,
-            decoration: const BoxDecoration(color: AppTokens.successBg, shape: BoxShape.circle),
+            decoration: BoxDecoration(color: AppTokens.successBg, shape: BoxShape.circle),
             child: Icon(_icon, size: 19, color: AppTokens.primaryStrong),
           ),
           const SizedBox(width: 12),

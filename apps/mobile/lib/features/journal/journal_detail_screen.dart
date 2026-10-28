@@ -59,14 +59,14 @@ class JournalDetailScreen extends ConsumerWidget {
             IconButton(
               tooltip: '編輯旅程',
               onPressed: () => context.push('/journal/${entry.id}/edit'),
-              icon: const Icon(Icons.edit_outlined),
+              icon: Icon(Icons.edit_outlined),
             ),
             PopupMenuButton<String>(
               tooltip: '旅程管理',
               onSelected: (value) {
                 if (value == 'delete') _delete(context, ref, entry);
               },
-              itemBuilder: (context) => const [
+              itemBuilder: (context) => [
                 PopupMenuItem(
                   value: 'delete',
                   child: Text('刪除旅程', style: TextStyle(color: AppTokens.overdue)),
@@ -226,14 +226,14 @@ class _LargePlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [AppTokens.successBg, AppTokens.butter],
         ),
       ),
-      child: const Center(
+      child: Center(
         child: Icon(Icons.menu_book_outlined, size: 56, color: AppTokens.primaryStrong),
       ),
     );
@@ -256,7 +256,7 @@ class _VisibilityBadge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTokens.primaryStrong),
+        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTokens.primaryStrong),
       ),
     );
   }

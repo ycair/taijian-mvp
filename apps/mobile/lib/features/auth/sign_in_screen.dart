@@ -62,7 +62,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         borderRadius: BorderRadius.circular(30),
                         border: Border.all(color: AppTokens.butter, width: 2),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.spa,
                         size: 44,
                         color: AppTokens.primaryStrong,
@@ -87,7 +87,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   ),
                   const SizedBox(height: 40),
                   if (config.useMock) ...[
-                    const InlineBanner(
+                    InlineBanner(
                       icon: Icons.science_outlined,
                       message: '測試模式：使用記憶體中的範例家庭，不會連線 Firebase。',
                       color: AppTokens.butter,
@@ -120,7 +120,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                           ? null
                           : () => _signIn(auth.signInWithGoogle),
                       style: OutlinedButton.styleFrom(
-                        backgroundColor: Colors.white,
+                        backgroundColor: AppTokens.card,
                         minimumSize: const Size(0, 54),
                       ),
                       icon: Icon(
@@ -141,7 +141,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       onPressed: _busy ? null : () => _signIn(auth.signInAsGuest),
                       child: const Text('先以訪客身分試用'),
                     ),
-                    const Text(
+                    Text(
                       '訪客資料只存在這台裝置；換手機前請先綁定 LINE 或 Google。',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 11, color: AppTokens.muted, height: 1.4),
@@ -150,7 +150,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     OutlinedButton.icon(
                       onPressed: _busy ? null : () => _signIn(auth.signInWithGoogle),
                       style: OutlinedButton.styleFrom(
-                        backgroundColor: Colors.white,
+                        backgroundColor: AppTokens.card,
                         minimumSize: const Size(0, 54),
                       ),
                       icon: Icon(
@@ -165,7 +165,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     Text(
                       _error!,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppTokens.overdue,
                         height: 1.4,
                       ),
@@ -173,7 +173,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   ],
                   if (_busy) ...[
                     const SizedBox(height: 20),
-                    const LinearProgressIndicator(
+                    LinearProgressIndicator(
                       minHeight: 3,
                       color: AppTokens.primary,
                       backgroundColor: AppTokens.line,
@@ -200,7 +200,7 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,

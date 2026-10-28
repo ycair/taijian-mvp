@@ -273,7 +273,7 @@ class _PublicJournalDetailScreenState extends ConsumerState<PublicJournalDetailS
                 if (value == 'report') _report();
                 if (value == 'block') _block();
               },
-              itemBuilder: (context) => const [
+              itemBuilder: (context) => [
                 PopupMenuItem(value: 'report', child: Text('檢舉這篇旅程')),
                 PopupMenuItem(
                   value: 'block',
@@ -417,7 +417,7 @@ class _PublicJournalDetailScreenState extends ConsumerState<PublicJournalDetailS
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AppTokens.card,
                           borderRadius: BorderRadius.circular(AppTokens.radiusMd),
                           border: Border.all(color: AppTokens.line),
                         ),

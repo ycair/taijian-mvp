@@ -236,7 +236,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
           ),
           if (animal.isMemorial) ...[
             const SizedBox(height: 16),
-            const InlineBanner(
+            InlineBanner(
               icon: Icons.lock_outline,
               message: '紀念中的居民不能轉移。',
               color: AppTokens.successBg,

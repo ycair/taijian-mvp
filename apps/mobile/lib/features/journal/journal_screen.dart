@@ -146,7 +146,7 @@ class _JournalCard extends StatelessWidget {
                         backgroundColor: AppTokens.successBg,
                         child: Text(
                           (authorName ?? '苔').trim().isEmpty ? '苔' : (authorName ?? '苔').trim().substring(0, 1),
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppTokens.primaryStrong),
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppTokens.primaryStrong),
                         ),
                       ),
                       const SizedBox(width: 7),
@@ -179,12 +179,12 @@ class _JournalCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             animalNames.join(' · '),
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTokens.primaryStrong),
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTokens.primaryStrong),
                           ),
                         )
                       else
                         const Spacer(),
-                      const Icon(Icons.photo_library_outlined, size: 14, color: AppTokens.muted),
+                      Icon(Icons.photo_library_outlined, size: 14, color: AppTokens.muted),
                       const SizedBox(width: 4),
                       Text('${entry.photos.length}', style: Theme.of(context).textTheme.bodySmall),
                     ],
@@ -205,14 +205,14 @@ class _JournalPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [AppTokens.successBg, AppTokens.butter],
         ),
       ),
-      child: const Center(
+      child: Center(
         child: Icon(Icons.menu_book_outlined, size: 42, color: AppTokens.primaryStrong),
       ),
     );
@@ -229,7 +229,7 @@ class JournalPhotoImage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final url = ref.watch(journalPhotoUrlProvider(path));
     return url.when(
-      loading: () => const ColoredBox(color: AppTokens.successBg),
+      loading: () => ColoredBox(color: AppTokens.successBg),
       error: (error, stack) => const _JournalPlaceholder(),
       data: (value) => value == null
           ? const _JournalPlaceholder()
@@ -237,7 +237,7 @@ class JournalPhotoImage extends ConsumerWidget {
               value,
               fit: fit,
               loadingBuilder: (context, child, progress) =>
-                  progress == null ? child : const ColoredBox(color: AppTokens.successBg),
+                  progress == null ? child : ColoredBox(color: AppTokens.successBg),
               errorBuilder: (context, error, stack) => const _JournalPlaceholder(),
             ),
     );
@@ -260,7 +260,7 @@ class _VisibilityChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTokens.primaryStrong),
+        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTokens.primaryStrong),
       ),
     );
   }

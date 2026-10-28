@@ -239,7 +239,7 @@ class _CountChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
-        color: count > 0 ? AppTokens.successBg : const Color(0xFFF8F3EB),
+        color: count > 0 ? AppTokens.successBg : AppTokens.subtleBg,
         borderRadius: BorderRadius.circular(AppTokens.radiusSm),
       ),
       child: Row(
@@ -279,7 +279,7 @@ class _AttentionRow extends StatelessWidget {
           Expanded(child: Text(label)),
           Text(
             '$count 次',
-            style: const TextStyle(fontWeight: FontWeight.w800, color: AppTokens.overdue),
+            style: TextStyle(fontWeight: FontWeight.w800, color: AppTokens.overdue),
           ),
         ],
       ),

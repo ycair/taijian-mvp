@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/providers.dart';
 import '../../core/models/models.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_controller.dart';
 import '../../core/widgets/common.dart';
 import '../../data/command/command_attempt.dart';
 import '../../data/outbox/outbox_database.dart';
@@ -73,7 +74,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         children: [
           const PageHeader(kicker: 'Settings', title: '設定'),
           if (config.useMock)
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(20, 0, 20, 16),
               child: InlineBanner(
                 icon: Icons.science_outlined,
@@ -92,7 +93,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         width: 52,
                         height: 52,
                         alignment: Alignment.center,
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           color: AppTokens.successBg,
                           shape: BoxShape.circle,
                         ),
@@ -152,11 +153,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   const Divider(height: 12),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.fingerprint, color: AppTokens.primaryStrong, size: 22),
+                    leading: Icon(Icons.fingerprint, color: AppTokens.primaryStrong, size: 22),
                     title: const Text('我的 UID', style: TextStyle(fontWeight: FontWeight.w600)),
                     subtitle: SelectableText(
                       currentUid ?? '尚未登入',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontFamily: 'monospace',
                         color: AppTokens.muted,
@@ -169,6 +170,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                   ),
                 ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          _Section(
+            title: '外觀',
+            child: MossCard(
+              child: SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                secondary: const Icon(Icons.dark_mode_outlined),
+                title: const Text('深色模式'),
+                subtitle: const Text('使用較暗的背景與低亮度色票。'),
+                value: ref.watch(darkModeProvider),
+                onChanged: (value) => ref.read(darkModeProvider.notifier).setDark(value),
               ),
             ),
           ),
@@ -327,7 +342,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                   if (conflicts > 0 || failed > 0) ...[
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       '有變更需要處理：衝突可以選擇保留最新或你的版本；失敗可重試或刪除。',
                       style: TextStyle(fontSize: 12, color: AppTokens.muted, height: 1.4),
                     ),
@@ -372,15 +387,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.logout, color: AppTokens.overdue),
-                    title: const Text('登出', style: TextStyle(color: AppTokens.overdue, fontWeight: FontWeight.w700)),
+                    leading: Icon(Icons.logout, color: AppTokens.overdue),
+                    title: Text('登出', style: TextStyle(color: AppTokens.overdue, fontWeight: FontWeight.w700)),
                     onTap: _signOut,
                   ),
                   if (config.useSupabase)
                     ListTile(
                       contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.person_off_outlined, color: AppTokens.overdue),
-                      title: const Text(
+                      leading: Icon(Icons.person_off_outlined, color: AppTokens.overdue),
+                      title: Text(
                         '刪除帳號',
                         style: TextStyle(color: AppTokens.overdue, fontWeight: FontWeight.w700),
                       ),
@@ -495,7 +510,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 child: SelectableText(url, style: const TextStyle(fontSize: 12)),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 '單次使用，7 天內有效。',
                 style: TextStyle(fontSize: 11, color: AppTokens.muted),
               ),
@@ -567,7 +582,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 },
               ),
             if (_providers.contains('guest'))
-              const Padding(
+              Padding(
                 padding: EdgeInsets.only(top: 8),
                 child: Text(
                   '目前是訪客。綁定 LINE 或 Google 後才能換手機找回資料。',
@@ -575,7 +590,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               '不能解除最後一個登入方式。',
               style: TextStyle(fontSize: 12, color: AppTokens.muted, height: 1.4),
             ),
@@ -807,7 +822,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ListTile(
                   title: Text(timezoneLabel(timezone)),
                   trailing: timezone == current
-                      ? const Icon(Icons.check, color: AppTokens.primaryStrong)
+                      ? Icon(Icons.check, color: AppTokens.primaryStrong)
                       : null,
                   onTap: () => Navigator.of(context).pop(timezone),
                 ),
@@ -840,7 +855,7 @@ class _Section extends StatelessWidget {
             padding: const EdgeInsets.only(left: 4, bottom: 8),
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
                 color: AppTokens.primaryStrong,
@@ -876,7 +891,7 @@ class _SettingRow extends StatelessWidget {
       leading: Icon(icon, color: AppTokens.primaryStrong, size: 22),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle: Text(value, style: Theme.of(context).textTheme.bodySmall),
-      trailing: onTap == null ? null : const Icon(Icons.chevron_right, color: AppTokens.muted),
+      trailing: onTap == null ? null : Icon(Icons.chevron_right, color: AppTokens.muted),
       onTap: onTap,
     );
   }

@@ -34,7 +34,7 @@ class ShopScreen extends ConsumerWidget {
                 ),
               ),
             ),
-            const TabBar(
+            TabBar(
               labelColor: AppTokens.primaryStrong,
               unselectedLabelColor: AppTokens.muted,
               indicatorColor: AppTokens.primary,
@@ -145,7 +145,7 @@ class _ProductCard extends StatelessWidget {
                 const SizedBox(height: 5),
                 Text(
                   '${product.priceLabel} · 庫存 ${product.stock}',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTokens.primaryStrong),
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTokens.primaryStrong),
                 ),
               ],
             ),
@@ -154,7 +154,7 @@ class _ProductCard extends StatelessWidget {
           Column(
             children: [
               if (quantity > 0)
-                Text('$quantity', style: const TextStyle(fontWeight: FontWeight.w800, color: AppTokens.primaryStrong)),
+                Text('$quantity', style: TextStyle(fontWeight: FontWeight.w800, color: AppTokens.primaryStrong)),
               IconButton(
                 tooltip: '加入購物車',
                 onPressed: onAdd,
@@ -208,8 +208,8 @@ class _PointsTabState extends ConsumerState<_PointsTab> {
                       width: 44,
                       height: 44,
                       alignment: Alignment.center,
-                      decoration: const BoxDecoration(color: AppTokens.butter, shape: BoxShape.circle),
-                      child: const Icon(Icons.stars_outlined, color: AppTokens.ink),
+                      decoration: BoxDecoration(color: AppTokens.butter, shape: BoxShape.circle),
+                      child: Icon(Icons.stars_outlined, color: AppTokens.ink),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -318,7 +318,7 @@ class _PlansTabState extends ConsumerState<_PlansTab> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                const Icon(Icons.favorite, color: AppTokens.primary),
+                Icon(Icons.favorite, color: AppTokens.primary),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -355,7 +355,7 @@ class _PlansTabState extends ConsumerState<_PlansTab> {
                             Expanded(
                               child: Text(plan.name, style: Theme.of(context).textTheme.titleMedium),
                             ),
-                            Text(plan.priceLabel, style: const TextStyle(fontWeight: FontWeight.w800, color: AppTokens.primaryStrong)),
+                            Text(plan.priceLabel, style: TextStyle(fontWeight: FontWeight.w800, color: AppTokens.primaryStrong)),
                           ],
                         ),
                         const SizedBox(height: 8),
@@ -364,7 +364,7 @@ class _PlansTabState extends ConsumerState<_PlansTab> {
                             padding: const EdgeInsets.only(top: 3),
                             child: Row(
                               children: [
-                                const Icon(Icons.check, size: 15, color: AppTokens.primary),
+                                Icon(Icons.check, size: 15, color: AppTokens.primary),
                                 const SizedBox(width: 6),
                                 Expanded(child: Text(benefit, style: Theme.of(context).textTheme.bodySmall)),
                               ],
@@ -670,7 +670,7 @@ class _SandboxBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.science_outlined, size: 17, color: AppTokens.primaryStrong),
+          Icon(Icons.science_outlined, size: 17, color: AppTokens.primaryStrong),
           const SizedBox(width: 8),
           Expanded(child: Text(text, style: const TextStyle(fontSize: 12, height: 1.4))),
         ],

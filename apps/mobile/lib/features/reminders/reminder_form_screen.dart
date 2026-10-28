@@ -208,7 +208,7 @@ class _ReminderFormScreenState extends ConsumerState<ReminderFormScreen> {
             IconButton(
               tooltip: '刪除提醒',
               onPressed: () => _delete(editing!),
-              icon: const Icon(Icons.delete_outline, color: AppTokens.overdue),
+              icon: Icon(Icons.delete_outline, color: AppTokens.overdue),
             ),
         ],
       ),
@@ -292,11 +292,11 @@ class _ReminderFormScreenState extends ConsumerState<ReminderFormScreen> {
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.schedule, size: 20, color: AppTokens.primaryStrong),
+                                    Icon(Icons.schedule, size: 20, color: AppTokens.primaryStrong),
                                     const SizedBox(width: 10),
                                     Text('時間 $_clock'),
                                     const Spacer(),
-                                    const Icon(Icons.chevron_right, color: AppTokens.muted),
+                                    Icon(Icons.chevron_right, color: AppTokens.muted),
                                   ],
                                 ),
                               ),
@@ -365,7 +365,7 @@ class _ReminderFormScreenState extends ConsumerState<ReminderFormScreen> {
                           ),
                           if (_editing) ...[
                             const SizedBox(height: 10),
-                            const Text(
+                            Text(
                               '若家人同時修改這個提醒，儲存後會出現衝突提示，讓你選擇要保留哪個版本。',
                               textAlign: TextAlign.center,
                               style: TextStyle(fontSize: 11, color: AppTokens.muted, height: 1.4),

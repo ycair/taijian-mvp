@@ -1,12 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/app.dart';
 import 'app/bootstrap.dart';
 import 'app/providers.dart';
 import 'core/config/app_config.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_controller.dart';
 import 'core/time/app_time.dart';
 
 Future<void> main() async {
@@ -14,6 +16,12 @@ Future<void> main() async {
   initializeTimeZones();
 
   final config = AppConfig.fromEnvironment();
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    AppTokens.setDark(prefs.getBool(DarkModeController.preferenceKey) ?? false);
+  } catch (_) {
+    // Default to light if local preferences are unavailable.
+  }
   try {
     final dependencies = await bootstrap(config);
     runApp(
@@ -51,7 +59,7 @@ class BootstrapFailureApp extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.all(28),
             children: [
-              const Icon(Icons.spa, size: 48, color: AppTokens.primary),
+              Icon(Icons.spa, size: 48, color: AppTokens.primary),
               const SizedBox(height: 16),
               Text('苔間無法啟動', style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 12),
@@ -67,7 +75,7 @@ class BootstrapFailureApp extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppTokens.card,
                   borderRadius: BorderRadius.circular(AppTokens.radiusMd),
                   border: Border.all(color: AppTokens.line),
                 ),
@@ -77,7 +85,7 @@ class BootstrapFailureApp extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 '開發時可改用 mock 模式：\nflutter run --dart-define=USE_MOCK=true',
                 style: TextStyle(
                   fontSize: 12,

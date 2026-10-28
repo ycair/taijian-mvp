@@ -49,7 +49,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 36),
         children: [
-          const Text(
+          Text(
             '把居民放到牠們喜歡的角落；家人看到的會是同一個地圖。',
             style: TextStyle(color: AppTokens.muted, height: 1.5),
           ),
@@ -214,7 +214,7 @@ class _MapCanvas extends StatelessWidget {
                             alignment: Alignment.topLeft,
                             child: Text(
                               zone.name,
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppTokens.primaryStrong),
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppTokens.primaryStrong),
                             ),
                           ),
                         ),
@@ -308,7 +308,7 @@ class _DraggableResidentState extends State<_DraggableResident> {
                 ),
                 child: Text(
                   widget.animal.name,
-                  style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: AppTokens.ink),
+                  style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: AppTokens.ink),
                 ),
               ),
             ],

@@ -258,7 +258,7 @@ class _StatPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: accent ? const Color(0xFFFFE7D6) : Colors.white,
+        color: accent ? AppTokens.warningBg : AppTokens.card,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: accent ? AppTokens.accent : AppTokens.line),
       ),
@@ -341,14 +341,14 @@ class _MapEntryCard extends StatelessWidget {
             width: 46,
             height: 46,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [AppTokens.successBg, AppTokens.butter],
               ),
               borderRadius: BorderRadius.circular(15),
             ),
-            child: const Icon(Icons.map_outlined, color: AppTokens.primaryStrong),
+            child: Icon(Icons.map_outlined, color: AppTokens.primaryStrong),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -384,7 +384,7 @@ class _MapEntryCard extends StatelessWidget {
               ),
             ),
           const SizedBox(width: 4),
-          const Icon(Icons.chevron_right, color: AppTokens.muted),
+          Icon(Icons.chevron_right, color: AppTokens.muted),
         ],
       ),
     );

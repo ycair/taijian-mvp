@@ -206,7 +206,7 @@ class _RecordGroup extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 8, left: 4),
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w800,
                 color: AppTokens.primaryStrong,
                 fontSize: 12,
