@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+
+import 'journal_quota.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../app/providers.dart';
@@ -82,10 +84,17 @@ class _JournalEditorScreenState extends ConsumerState<JournalEditorScreen> {
     if (picked != null) setState(() => _date = picked);
   }
 
+  int _slotsLeft(JournalPhotoQuota? quota) => remainingPhotoSlots(
+        draftCount: _drafts.length,
+        pendingCount: _drafts.where((draft) => draft.pending != null).length,
+        quotaRemaining: quota?.remaining,
+      );
+
   Future<void> _pickPhotos(JournalPhotoQuota? quota) async {
-    final quotaRemaining = quota?.remaining ?? 60;
-    final remaining = [5 - _drafts.length, quotaRemaining].reduce((a, b) => a < b ? a : b);
+    final remaining = _slotsLeft(quota);
     if (remaining <= 0) {
+      final quotaRemaining = (quota?.remaining ?? 60) -
+          _drafts.where((draft) => draft.pending != null).length;
       _toast(quotaRemaining <= 0 ? '本月照片額度已用完。' : '一篇旅程最多 5 張照片。');
       return;
     }
@@ -327,13 +336,11 @@ class _JournalEditorScreenState extends ConsumerState<JournalEditorScreen> {
                         Text(
                           quota == null
                               ? '${_drafts.length} / 5'
-                              : '${_drafts.length} / 5 · 本月 ${quota.used} / ${quota.limit}',
+                              : '${_drafts.length} / 5 · 本月 ${quota.used} / ${quota.limit} · 可再選 ${_slotsLeft(quota)} 張',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                         TextButton.icon(
-                          onPressed: _drafts.length >= 5 || (quota?.remaining ?? 60) <= 0
-                              ? null
-                              : () => _pickPhotos(quota),
+                          onPressed: _slotsLeft(quota) <= 0 ? null : () => _pickPhotos(quota),
                           icon: const Icon(Icons.add_photo_alternate_outlined, size: 18),
                           label: const Text('加入'),
                         ),
