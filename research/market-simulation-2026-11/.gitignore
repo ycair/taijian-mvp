@@ -1,5 +1,6 @@
 # Upstream tool checkout (large, AGPL, not vendored into this repo)
 MiroFish/
+MiroFish-local/
 
 # Secrets and local model/runtime files
 .env

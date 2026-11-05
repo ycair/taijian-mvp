@@ -345,6 +345,21 @@
       </div>
     </section>
 
+    <section class="wrap section" id="mirofish-local">
+      <div class="section-head">
+        <div>
+          <div class="kicker">MiroFish-Local · Graphiti + Neo4j</div>
+          <h2>完整 pipeline 的免費版本。</h2>
+        </div>
+        <p>這一層才是原本 MiroFish 的 GraphRAG／persona／報告流程；沒有 Zep key，改用 Graphiti + Neo4j。</p>
+      </div>
+      <div id="mirofish-local-content"></div>
+      <div class="callout" style="margin-top:16px">
+        <strong>目前結論</strong>
+        MiroFish-Local 是正確的免費架構選擇，但這次 THU LLM 在「ontology JSON」提示下回傳 tool_calls 而非文字，GraphRAG 無法完成。這是模型／provider 介面相容性問題，不是 Graphiti 或 Neo4j 損壞。研究主體因此仍以 OASIS 與 11 位 persona panel 為可信訊號；完整 GraphRAG 需要換模型或使用 Zep Free。
+      </div>
+    </section>
+
     <section class="wrap section" id="panel">
       <div class="section-head">
         <div>
@@ -552,6 +567,7 @@
           <li><a href="https://github.com/getzep/graphiti">Graphiti</a>：Zep 的 Apache-2.0 temporal graph framework；可自架 Neo4j / FalkorDB。</li>
           <li><a href="https://github.com/tt-a1i/MiroFish-local">MiroFish-Local</a>：支援 Graphiti + Neo4j 的本地 fork，<code>ZEP_BACKEND=graphiti</code>。</li>
           <li><a href="https://www.getzep.com/pricing/">Zep pricing</a>：Free 10,000 credits／月、2 projects；Flex 為付費。</li>
+          <li><a href="https://github.com/tt-a1i/MiroFish-local">MiroFish-Local</a>：本次完整本地 pipeline 使用來源（Graphiti + Neo4j）。</li>
         </ul>
         <hr class="soft">
         <p class="small" style="margin-bottom:0">

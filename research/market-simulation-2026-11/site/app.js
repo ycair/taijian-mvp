@@ -3,6 +3,7 @@
   const mc = data.monte_carlo;
   const oasis = data.oasis || {};
   const panel = data.panel || {};
+  const local = data.mirofish_local || {};
   const escape = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const NS = 'http://www.w3.org/2000/svg';
   const fmt = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 0 });
@@ -294,6 +295,32 @@
     `;
   }
 
+  function renderMirofishLocal() {
+    const container = document.getElementById('mirofish-local-content');
+    if (!container) return;
+    const summary = local.summary || {};
+    if (summary.status !== 'completed') {
+      container.innerHTML = `<div class="callout"><strong>MiroFish-Local 已驗證，但完整 pipeline 被模型介面阻擋</strong>${escape(summary.reason || '尚未完成。')}<br><br><span class="small">${escape((summary.completed_checks || []).join(' · '))}</span></div>`;
+      return;
+    }
+    const report = local.report || {};
+    const reportText = typeof report.report === 'string'
+      ? report.report
+      : (report.content || report.markdown || report.summary || '');
+    container.innerHTML = `
+      <div class="grid grid-3">
+        <div class="card kpi"><div class="label">GRAPHITI + NEO4J</div><div class="value">完整</div><div class="note">沒有 Zep Cloud key</div></div>
+        <div class="card kpi"><div class="label">GRAPH ID</div><div class="value" style="font-size:18px;font-family:var(--mono);word-break:break-all">${escape(summary.graph_id || '—')}</div><div class="note">本地圖譜</div></div>
+        <div class="card kpi"><div class="label">SIMULATION ID</div><div class="value" style="font-size:18px;font-family:var(--mono);word-break:break-all">${escape(summary.simulation_id || '—')}</div><div class="note">OASIS 2 rounds</div></div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="kicker">ReportAgent output</div>
+        <p class="small">完整 GraphRAG pipeline 的報告摘要（原始 JSON 在 <code>simulations/results/mirofish_report.json</code>）。</p>
+        <div style="white-space:pre-wrap; line-height:1.7; font-size:13px">${escape(reportText).slice(0, 12000) || '報告 JSON 已保存，尚無可顯示的 markdown 欄位。'}</div>
+      </div>
+    `;
+  }
+
   function renderPanel() {
     const container = document.getElementById('panel-content');
     if (!container) return;
@@ -372,6 +399,7 @@
   activeChart(document.getElementById('chart-active'));
   retentionChart(document.getElementById('chart-retention'));
   renderOasis();
+  renderMirofishLocal();
   renderPanel();
   initCalculator();
 })();

@@ -21,6 +21,12 @@ panel = json.loads(panel_path.read_text(encoding="utf-8")) if panel_path.exists(
     "summary": {"status": "pending", "note": "Structured persona panel has not finished yet."},
     "responses": [],
 }
+local_summary_path = ROOT / "simulations" / "results" / "mirofish_local_summary.json"
+local_report_path = ROOT / "simulations" / "results" / "mirofish_report.json"
+mirofish_local = {
+    "summary": json.loads(local_summary_path.read_text(encoding="utf-8")) if local_summary_path.exists() else {"status": "pending"},
+    "report": json.loads(local_report_path.read_text(encoding="utf-8")) if local_report_path.exists() else None,
+}
 if panel.get("summary", {}).get("status") == "completed":
     customer_rows = [
         row for row in panel.get("responses", [])
@@ -44,6 +50,7 @@ payload = {
     "monte_carlo": mc,
     "oasis": oasis,
     "panel": panel,
+    "mirofish_local": mirofish_local,
 }
 (SITE / "data.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 (SITE / "data.js").write_text(

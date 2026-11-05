@@ -9,6 +9,8 @@
 - `simulations/results/monte_carlo.json` — 原始結果、敏感度、留存曲線。
 - `simulations/mirofish_oasis/` — MiroFish 的 OASIS 引擎 pilot：12 個 persona、2 輪、2 份設定檔。
 - `simulations/results/oasis_summary.json` — OASIS pilot 的低訊號摘要。
+- `simulations/run_mirofish_local.py` — MiroFish-Local（Graphiti + Neo4j）完整 pipeline 驅動腳本。
+- `simulations/results/mirofish_local_summary.json` — 本地 pipeline 驗證結果與阻塞原因。
 - `simulations/structured_panel.py` — 用 THU LLM 對 12 個 persona 做結構化訪問。
 - `simulations/results/structured_panel.json` — 11 位顧客 persona 的回答（官方 seed 已排除）。
 - `build_site_data.py` — 把結果合成 `site/data.js` / `data.json`。
@@ -34,11 +36,14 @@ MiroFish/backend/.venv-arm/bin/python simulations/structured_panel.py
 python3 build_site_data.py
 ```
 
-MiroFish 完整 GraphRAG pipeline 需要 Zep Cloud API key；本次沒有提供，因此只跑 OASIS 引擎，並把結果標為低訊號 pilot。`MiroFish/`、`.env`、SQLite DB 與 log 都不進 git。
+MiroFish 原版完整 GraphRAG pipeline 需要 Zep Cloud API key；本次改用 **MiroFish-Local（Graphiti + Neo4j）**。Neo4j 5.26、Graphiti client、後端 health、seed 上傳與文字提取都驗證成功；但 THU LLM 在 ontology JSON schema 提示下回傳 `tool_calls`、`content=null`，導致 `/graph/ontology/generate` HTTP 500。已測試 gpt-oss-120b、mistral-small-4、muse-spark-open、ornith-35b、vibe、nemotron-3-ultra，行為一致。因此完整 GraphRAG 沒有硬跑；OASIS pilot 與 persona panel 才是本報告的質性證據。
+
+若要做完整 pipeline，換一個在 JSON schema 提示下會回傳文字的模型／provider（或自架 Ollama），或使用 Zep Cloud Free。`MiroFish/`、`MiroFish-local/`、`.env`、SQLite DB 與 log 都不進 git。
 
 ### Zep 平替
 
-- **Zep Cloud Free**：每月 10,000 credits、2 projects；最接近原流程，但仍有限額。
+- **Zep Cloud Free**：每月 10,000 credits、2 projects；實務上仍需能建立帳號並取得 key，且有限額。
+- **MiroFish-Local**：本報告已安裝並啟動驗證；用 `ZEP_BACKEND=graphiti` 接 Graphiti + Neo4j。架構可跑，但本次 THU 模型回傳 `tool_calls` 而非 JSON 文字，卡在 ontology 步驟。
 - **Graphiti + Neo4j / FalkorDB**：Apache-2.0、可自架，沒有 Zep key；需要自行處理 graph DB、LLM/embedding 與運維。
 - **MiroFish-Local**：以 `ZEP_BACKEND=graphiti` 支援 Graphiti + Neo4j 的 fork；完整 pipeline 可離線，但不是上游官方支援。
 - 其他記憶框架（Mem0、Letta、Cognee）不是 Zep API 的直接 drop-in，移植成本較高。
