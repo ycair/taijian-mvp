@@ -1,12 +1,12 @@
 {
   "status": "blocked",
-  "reason": "MiroFish-Local 的 ontology JSON 步驟呼叫 THU LLM 時，模型回傳 tool_calls（content=null），導致 /graph/ontology/generate HTTP 500。已測試 gpt-oss-120b、mistral-small-4、muse-spark-open、ornith-35b、vibe、nemotron-3-ultra；均出現相同 schema/tool-call 行為。",
+  "reason": "Zep Cloud key 已驗證可用（建立測試 user HTTP 201、刪除 HTTP 200），但 MiroFish-Local 的 ontology JSON 步驟仍被 THU LLM 的 tool_calls/content=null 行為阻擋（/graph/ontology/generate HTTP 500）。",
   "completed_checks": [
-    "Neo4j 5.26 + APOC 已啟動",
-    "Graphiti 本地 client 可建立 graph metadata",
+    "Zep Cloud project key：建立 user 201、刪除 user 200",
+    "Neo4j 5.26 + APOC 曾啟動，Graphiti client 可建立 graph metadata",
     "MiroFish-Local backend /health 正常",
     "seed 上傳與文字提取成功",
     "OASIS direct pilot 與 11 位顧客 persona 結構化 panel 已完成"
   ],
-  "recommendation": "若一定要跑 MiroFish 完整 GraphRAG，換一個在 schema JSON 提示下會回傳文字的模型/provider（或自架 Ollama），或使用 Zep Cloud Free。不要用會回傳空 content 的模型硬跑。"
+  "recommendation": "Zep 已不是瓶頸；若要跑完整 GraphRAG，換一個在 ontology/structured JSON 提示下會回傳文字的模型（OpenAI、Ollama 或可用的 OpenCode Go bridge）。不要用會回傳空 content 的模型硬跑。"
 }
