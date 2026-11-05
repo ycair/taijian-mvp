@@ -35,8 +35,8 @@
         再用 MiroFish/OASIS 與 12 個 persona 檢查我們是否誤解了飼主。
       </p>
       <div class="meta-row">
-        <span class="pill strong">60,000 次蒙地卡羅路徑</span>
-        <span class="pill">3 情境 × 20,000</span>
+        <span class="pill strong">100,000 次蒙地卡羅路徑</span>
+        <span class="pill">5 情境 × 20,000</span>
         <span class="pill">9 個敏感度變數</span>
         <span class="pill">MiroFish/OASIS pilot</span>
         <span class="pill">THU LLM / gpt-oss-120b</span>
@@ -153,7 +153,7 @@
             <tr>
               <td><strong>Monte Carlo 營收</strong></td>
               <td>月度付費漏斗：觸及 → 試用 → 付費 → 月流失；加入 CAC、變動成本、固定成本</td>
-              <td class="num">3 × 20,000</td>
+              <td class="num">5 × 20,000</td>
               <td>MRR、12 個月收入、付費會員、利潤、LTV/CAC、回收期</td>
               <td>基準 MRR 中位數約 NT$124k；但轉正機率低，需先驗證通路與留存。</td>
             </tr>
@@ -188,7 +188,7 @@
           </tbody>
         </table>
       </div>
-      <p class="small" id="iterations-note" style="margin-top:10px">總共 <span id="iterations">—</span> 條蒙地卡羅路徑；模擬種子 20261106；幣別 TWD。</p>
+      <p class="small" id="iterations-note" style="margin-top:10px">總共 <span id="iterations">—</span> 條蒙地卡羅路徑；5 個情境各 20,000；模擬種子 20261106；幣別 TWD。</p>
 
       <div class="grid grid-2" style="margin-top:16px">
         <div class="card chart-card">
@@ -232,7 +232,7 @@
             <tbody id="scenario-body"></tbody>
           </table>
         </div>
-        <p class="small" style="margin-bottom:0">保守／基準／樂觀的參數範圍見 <a href="data.json">data.json</a> 的 <code>scenario_ranges</code>。保守與樂觀不是預測，是管理層對不確定性的邊界。</p>
+        <p class="small" style="margin-bottom:0">5 個情境的參數範圍見 <a href="data.json">data.json</a> 的 <code>scenario_ranges</code>。保守／樂觀與商轉／App Store 都是條件式想像，不是預測。</p>
       </div>
 
       <div class="card" style="margin-top:16px">
@@ -256,6 +256,69 @@
       </div>
     </section>
 
+    <section class="wrap section" id="counterfactual">
+      <div class="section-head">
+        <div>
+          <div class="kicker">Counterfactual · if the constraints disappear</div>
+          <h2>如果已商轉、也已上架 App Store。</h2>
+        </div>
+        <p>這不是現在的苔間，而是兩個「條件成立後」的壓力測試：真實付款、可投放通路、App Store 發佈。請把它們當成資金與里程碑的邊界，不是營收承諾。</p>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="kicker">Commercializable</div>
+          <h3 style="font-size:18px">已接真實付款與通路，但還沒假設 App Store 規模</h3>
+          <p class="small">假設：TapPay/Stripe 或類似付款、真實訂閱、合作爬店／內容通路、可負擔的小團隊；仍以 LIFF/web 與 iOS 手動安裝混合。</p>
+          <div class="grid grid-2" style="margin-top:12px">
+            <div><span class="small">MRR P50</span><div class="value" id="future-commercial-mrr">—</div></div>
+            <div><span class="small">付費會員 P50</span><div class="value" id="future-commercial-active">—</div></div>
+            <div><span class="small">12 個月收入 P50</span><div class="value" id="future-commercial-revenue">—</div></div>
+            <div><span class="small">12 個月內轉正</span><div class="value" id="future-commercial-profit">—</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="kicker">App Store · commercial</div>
+          <h3 style="font-size:18px">已成功上架，取得可規模化發佈與 IAP</h3>
+          <p class="small">假設：App Store 審核通過、IAP、搜尋／分類曝光、無 7 天簽署限制；以 15% Small Business 抽成與 3% 付款／退款成本估算。超過門檻後 30% 會使結果更差。</p>
+          <div class="grid grid-2" style="margin-top:12px">
+            <div><span class="small">MRR P50</span><div class="value" id="future-appstore-mrr">—</div></div>
+            <div><span class="small">付費會員 P50</span><div class="value" id="future-appstore-active">—</div></div>
+            <div><span class="small">12 個月收入 P50</span><div class="value" id="future-appstore-revenue">—</div></div>
+            <div><span class="small">12 個月內轉正</span><div class="value" id="future-appstore-profit">—</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card chart-card" style="margin-top:16px">
+        <h3>五個世界：第 12 個月 MRR</h3>
+        <div class="sub">P10–P90 區間；橘點為 P50。最後兩個是 counterfactual，不是觀測。</div>
+        <div class="chart" id="chart-future-range"></div>
+        <div class="legend"><span><i style="background:#c8794d"></i>目前／條件式情境</span><span>商轉與 App Store 都仍受留存、退款與審核影響</span></div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h3 style="font-size:16px">商轉與上架後，模型改變的是什麼？</h3>
+        <div class="table-wrap" style="margin-top:10px">
+          <table>
+            <thead><tr><th>變數</th><th class="num">目前基準</th><th class="num">已商轉</th><th class="num">App Store</th></tr></thead>
+            <tbody>
+              <tr><td>12 個月觸及率</td><td class="num">10–30%</td><td class="num">22–50%</td><td class="num">30–58%</td></tr>
+              <tr><td>試用轉換</td><td class="num">8–20%</td><td class="num">12–26%</td><td class="num">18–36%</td></tr>
+              <tr><td>試用轉付費</td><td class="num">18–40%</td><td class="num">22–42%</td><td class="num">27–48%</td></tr>
+              <tr><td>月流失</td><td class="num">3–9%</td><td class="num">3.5–7.5%</td><td class="num">2.5–6.5%</td></tr>
+              <tr><td>平台／付款成本</td><td class="num">0%</td><td class="num">4–7% + 退款</td><td class="num">15–20% + 退款</td></tr>
+              <tr><td>CAC / 付費客</td><td class="num">NT$300–900</td><td class="num">NT$350–900</td><td class="num">NT$220–700</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout" style="margin-top:12px">
+          <strong>最重要的解讀</strong>
+          App Store 想像會把 MRR 中位數推到約 <strong>NT$1.39M</strong>，但這不是「上架就會發生」；它同時要求留存、退款、審核、IAP 定價與規模化客服都成立。商轉情境的 MRR 中位數約 <strong>NT$556k</strong>，但仍只有 <strong>39%</strong> 的 12 個月轉正機率。
+        </div>
+      </div>
+    </section>
+
     <section class="wrap section" id="oasis">
       <div class="section-head">
         <div>
@@ -268,6 +331,17 @@
       <div class="callout" style="margin-top:16px">
         <strong>為什麼不假裝它很成功？</strong>
         MiroFish 的完整 GraphRAG 流程需要 Zep Cloud API key；本次沒有提供，所以我們直接跑它的 OASIS 引擎，並只把結果當作低訊號質性 pilot。3 則貼文、0 互動，不能拿來推論市場需求。
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="kicker">Zep-free alternatives</div>
+        <h3 style="font-size:18px">免費的 Zep 平替：不是另一把 key，而是換掉記憶層</h3>
+        <div class="grid grid-3" style="margin-top:10px">
+          <div><span class="tag fact">最簡單</span><p><strong>Zep Cloud Free</strong><br>官方免費每月 10,000 credits、2 個 project；本報告的 12 個短 persona 有機會跑完一輪，但仍是雲端、有限額與條款變動風險。</p></div>
+          <div><span class="tag assumption">真正免費</span><p><strong>Graphiti + Neo4j / FalkorDB</strong><br>Apache-2.0 的 temporal graph framework，自架資料庫；需要自己處理 extraction、embedding、權限與運維。它不是 Zep 的 drop-in API。</p></div>
+          <div><span class="tag goal">MiroFish 相容</span><p><strong>MiroFish-Local fork</strong><br>以 <code>ZEP_BACKEND=graphiti</code> 接 Graphiti + Neo4j，完整 pipeline 可離線；需要 Neo4j、Docker、THU LLM 與 embedding，且 fork 非上游官方支援。</p></div>
+        </div>
+        <p class="small" style="margin-bottom:0">本次沒有重跑完整 local GraphRAG；若要做，建議先以 2–3 個 persona、小圖譜驗證，再放大。Graphiti 與 MiroFish-Local 的連結在下方來源。</p>
       </div>
     </section>
 
@@ -475,6 +549,9 @@
           <li><a href="https://www.linecorp.com/tw/pr/news/2024/1217">LINE Taiwan, 2024</a>：2,200 萬用戶、約 94% 滲透率。</li>
           <li><a href="https://vos.tier.org.tw/Viewpoint01More.aspx?DGUID=390c8a34-e293-4056-8aa2-b54c5315fdd7">台經院, 2024</a>：2023 台灣寵物產業約 631 億元。</li>
           <li><a href="https://github.com/666ghj/MiroFish">MiroFish</a>：OASIS 多代理人引擎與 MiroFish repo。</li>
+          <li><a href="https://github.com/getzep/graphiti">Graphiti</a>：Zep 的 Apache-2.0 temporal graph framework；可自架 Neo4j / FalkorDB。</li>
+          <li><a href="https://github.com/tt-a1i/MiroFish-local">MiroFish-Local</a>：支援 Graphiti + Neo4j 的本地 fork，<code>ZEP_BACKEND=graphiti</code>。</li>
+          <li><a href="https://www.getzep.com/pricing/">Zep pricing</a>：Free 10,000 credits／月、2 projects；Flex 為付費。</li>
         </ul>
         <hr class="soft">
         <p class="small" style="margin-bottom:0">

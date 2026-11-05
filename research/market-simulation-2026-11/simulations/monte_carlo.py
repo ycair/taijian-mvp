@@ -66,6 +66,8 @@ def scenario_params(name: str) -> dict:
         "variable_cost_per_paid": (10, 20, 35),
         "cac_per_paid": (300, 600, 900),
         "fixed_cost_monthly": (25000, 50000, 80000),
+        "take_rate": (0.0, 0.0, 0.0),
+        "refund_rate": (0.0, 0.0, 0.0),
     }
     if name == "conservative":
         common.update({
@@ -85,6 +87,40 @@ def scenario_params(name: str) -> dict:
             "monthly_churn": (0.02, 0.035, 0.06),
             "cac_per_paid": (150, 350, 650),
         })
+    elif name == "commercial":
+        # Counterfactual: real payments, paid/partner acquisition, a small team.
+        common.update({
+            "digital_share": (0.45, 0.60, 0.75),
+            "reach_12m": (0.22, 0.36, 0.50),
+            "trial_rate": (0.12, 0.18, 0.26),
+            "paid_rate": (0.22, 0.32, 0.42),
+            "referral_multiplier": (1.05, 1.20, 1.40),
+            "arpu": (179, 229, 299),
+            "monthly_churn": (0.035, 0.055, 0.075),
+            "variable_cost_per_paid": (15, 25, 40),
+            "cac_per_paid": (350, 600, 900),
+            "fixed_cost_monthly": (60000, 90000, 130000),
+            "take_rate": (0.04, 0.05, 0.07),
+            "refund_rate": (0.02, 0.04, 0.07),
+        })
+    elif name == "appstore":
+        # Counterfactual: App Store distribution, IAP, 15% Small Business fee,
+        # payment/refund overhead. If revenue exceeds the program threshold,
+        # Apple's 30% take would make this scenario worse.
+        common.update({
+            "digital_share": (0.55, 0.70, 0.85),
+            "reach_12m": (0.30, 0.44, 0.58),
+            "trial_rate": (0.18, 0.27, 0.36),
+            "paid_rate": (0.27, 0.38, 0.48),
+            "referral_multiplier": (1.10, 1.28, 1.50),
+            "arpu": (199, 249, 299),
+            "monthly_churn": (0.025, 0.045, 0.065),
+            "variable_cost_per_paid": (12, 22, 35),
+            "cac_per_paid": (220, 420, 700),
+            "fixed_cost_monthly": (50000, 80000, 120000),
+            "take_rate": (0.15, 0.18, 0.20),
+            "refund_rate": (0.02, 0.04, 0.06),
+        })
     return common
 
 
@@ -102,7 +138,9 @@ def run_one(rng: random.Random, params: dict) -> dict:
     trials = reached * params["trial_rate"]
     paid_total = trials * params["paid_rate"]
     churn = params["monthly_churn"]
-    arpu = params["arpu"]
+    gross_arpu = params["arpu"]
+    net_multiplier = max(0.0, 1 - params.get("take_rate", 0.0) - params.get("refund_rate", 0.0))
+    arpu = gross_arpu * net_multiplier
     variable = params["variable_cost_per_paid"]
     cac = params["cac_per_paid"]
     fixed = params["fixed_cost_monthly"]
@@ -137,6 +175,10 @@ def run_one(rng: random.Random, params: dict) -> dict:
         "cost_12m": cost,
         "profit_12m": revenue - cost,
         "ltv": ltv,
+        "gross_arpu": gross_arpu,
+        "net_arpu": arpu,
+        "take_rate": params.get("take_rate", 0.0),
+        "refund_rate": params.get("refund_rate", 0.0),
         "cac": cac,
         "ltv_cac": ltv / cac if cac > 0 else 0.0,
         "payback_months": payback,
@@ -159,6 +201,7 @@ def summarize_rows(rows: list[dict]) -> dict:
     profit = [row["profit_12m"] for row in rows]
     ltv_cac = [row["ltv_cac"] for row in rows]
     payback = [row["payback_months"] for row in rows]
+    net_arpu = [row["net_arpu"] for row in rows]
     return {
         "revenue_12m": summary(revenue),
         "mrr_m12": summary(mrr),
@@ -166,6 +209,7 @@ def summarize_rows(rows: list[dict]) -> dict:
         "profit_12m": summary(profit),
         "ltv_cac": summary(ltv_cac),
         "payback_months": summary(payback),
+        "net_arpu": summary(net_arpu),
         "probability_mrr_over_100k": round(sum(value >= 100000 for value in mrr) / len(mrr), 4),
         "probability_revenue_over_1m": round(sum(value >= 1000000 for value in revenue) / len(revenue), 4),
         "probability_profitable": round(sum(value > 0 for value in profit) / len(profit), 4),
@@ -244,7 +288,13 @@ def main() -> None:
     all_rows = []
     scenario_summaries = {}
     scenario_curves = {}
-    for name, seed in [("conservative", SEED + 1), ("base", SEED + 2), ("upside", SEED + 3)]:
+    for name, seed in [
+        ("conservative", SEED + 1),
+        ("base", SEED + 2),
+        ("upside", SEED + 3),
+        ("commercial", SEED + 4),
+        ("appstore", SEED + 5),
+    ]:
         rows, ranges = simulate(name, N, seed)
         all_rows.extend(rows)
         scenario_summaries[name] = summarize_rows(rows)
@@ -312,13 +362,22 @@ def main() -> None:
             },
         ],
         "assumptions": scenario_params("base"),
-        "scenario_ranges": {name: scenario_params(name) for name in ["conservative", "base", "upside"]},
+        "scenario_ranges": {
+            name: scenario_params(name)
+            for name in ["conservative", "base", "upside", "commercial", "appstore"]
+        },
+        "scenario_notes": {
+            "commercial": "Counterfactual: real payments and partner/paid acquisition, still web/LIFF-first.",
+            "appstore": "Counterfactual: App Store distribution and IAP; 15% Small Business take rate, 3% payment/refund overhead. Above Apple's Small Business threshold the 30% take applies.",
+        },
     }
     (OUT / "monte_carlo.json").write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps({
         "base": scenario_summaries["base"],
         "conservative": scenario_summaries["conservative"]["mrr_m12"],
         "upside": scenario_summaries["upside"]["mrr_m12"],
+        "commercial": scenario_summaries["commercial"]["mrr_m12"],
+        "appstore": scenario_summaries["appstore"]["mrr_m12"],
         "sensitivity_top": sensitivity_rows[:4],
         "written": str(OUT / "monte_carlo.json"),
     }, ensure_ascii=False, indent=2))

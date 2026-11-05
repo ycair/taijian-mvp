@@ -4,8 +4,8 @@
 
 ## 檔案
 
-- `site/index.html` — 可直接開啟的靜態報告（圖表、情境計算器、四個階段的判斷）。
-- `simulations/monte_carlo.py` — 60,000 條路徑的蒙地卡羅（三情境各 20,000）。
+- `site/index.html` — 可直接開啟的靜態報告（圖表、情境計算器、商轉／App Store counterfactual、四個階段的判斷）。
+- `simulations/monte_carlo.py` — 100,000 條路徑的蒙地卡羅（五情境各 20,000，含商轉與 App Store counterfactual）。
 - `simulations/results/monte_carlo.json` — 原始結果、敏感度、留存曲線。
 - `simulations/mirofish_oasis/` — MiroFish 的 OASIS 引擎 pilot：12 個 persona、2 輪、2 份設定檔。
 - `simulations/results/oasis_summary.json` — OASIS pilot 的低訊號摘要。
@@ -35,6 +35,13 @@ python3 build_site_data.py
 ```
 
 MiroFish 完整 GraphRAG pipeline 需要 Zep Cloud API key；本次沒有提供，因此只跑 OASIS 引擎，並把結果標為低訊號 pilot。`MiroFish/`、`.env`、SQLite DB 與 log 都不進 git。
+
+### Zep 平替
+
+- **Zep Cloud Free**：每月 10,000 credits、2 projects；最接近原流程，但仍有限額。
+- **Graphiti + Neo4j / FalkorDB**：Apache-2.0、可自架，沒有 Zep key；需要自行處理 graph DB、LLM/embedding 與運維。
+- **MiroFish-Local**：以 `ZEP_BACKEND=graphiti` 支援 Graphiti + Neo4j 的 fork；完整 pipeline 可離線，但不是上游官方支援。
+- 其他記憶框架（Mem0、Letta、Cognee）不是 Zep API 的直接 drop-in，移植成本較高。
 
 ## 安全
 

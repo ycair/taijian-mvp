@@ -218,15 +218,58 @@
   function fillScenarioTable() {
     const body = document.getElementById('scenario-body');
     if (!body) return;
-    const names = { conservative: '保守', base: '基準', upside: '樂觀' };
-    body.innerHTML = ['conservative', 'base', 'upside'].map((name) => {
+    const names = { conservative: '保守', base: '基準', upside: '樂觀', commercial: '已商轉', appstore: 'App Store' };
+    body.innerHTML = ['conservative', 'base', 'upside', 'commercial', 'appstore'].map((name) => {
       const s = mc.scenario_summaries[name];
       return `<tr><td><strong>${names[name]}</strong></td><td class="num">${money(s.mrr_m12.p50)}</td><td class="num">${num(s.active_m12.p50)}</td><td class="num">${money(s.revenue_12m.p50)}</td><td class="num">${pct(s.probability_profitable)}</td><td class="num">${s.ltv_cac.p50.toFixed(1)}×</td></tr>`;
     }).join('');
   }
 
   function fillFacts() {
-    setText('iterations', num(mc.meta.iterations_per_scenario * 3));
+    setText('iterations', num(mc.meta.iterations_per_scenario * 5));
+  }
+
+  function fillFutureKPIs() {
+    const labels = { commercial: 'commercial', appstore: 'appstore' };
+    for (const [name, prefix] of Object.entries(labels)) {
+      const s = mc.scenario_summaries[name];
+      setText(`future-${prefix}-mrr`, money(s.mrr_m12.p50));
+      setText(`future-${prefix}-active`, num(s.active_m12.p50));
+      setText(`future-${prefix}-revenue`, money(s.revenue_12m.p50));
+      setText(`future-${prefix}-profit`, pct(s.probability_profitable));
+    }
+  }
+
+  function futureRangeChart(container) {
+    const scenarios = ['conservative', 'base', 'upside', 'commercial', 'appstore'];
+    const labels = { conservative: '保守', base: '基準', upside: '樂觀', commercial: '已商轉', appstore: 'App Store' };
+    const { svg, width, height } = svgRoot(container, 270);
+    const margin = { left: 60, right: 20, top: 22, bottom: 38 };
+    const plotW = width - margin.left - margin.right;
+    const plotH = height - margin.top - margin.bottom;
+    const values = scenarios.flatMap((name) => [mc.scenario_summaries[name].mrr_m12.p10, mc.scenario_summaries[name].mrr_m12.p90]);
+    const max = Math.max(...values) * 1.12;
+    for (let i = 0; i <= 4; i++) {
+      const y = margin.top + (plotH * i) / 4;
+      node('line', { x1: margin.left, x2: width - margin.right, y1: y, y2: y, class: 'gridline' }, svg);
+      const label = node('text', { x: margin.left - 8, y: y + 4, 'text-anchor': 'end', fill: '#7d766a', 'font-size': 9 }, svg);
+      label.textContent = money(max * (1 - i / 4));
+    }
+    const band = plotW / scenarios.length;
+    scenarios.forEach((name, index) => {
+      const item = mc.scenario_summaries[name].mrr_m12;
+      const x = margin.left + band * index + band * 0.25;
+      const y10 = margin.top + plotH * (1 - item.p10 / max);
+      const y90 = margin.top + plotH * (1 - item.p90 / max);
+      const y50 = margin.top + plotH * (1 - item.p50 / max);
+      const counterfactual = index >= 3;
+      node('rect', { x, y: y90, width: band * 0.5, height: Math.max(2, y10 - y90), rx: 7, fill: counterfactual ? '#c8794d' : '#6f9273', opacity: counterfactual ? .72 : .72 }, svg);
+      node('circle', { cx: x + band * 0.25, cy: y50, r: 4.5, fill: '#fffdf8', stroke: '#8a4e2d', 'stroke-width': 2 }, svg);
+      const xLabel = node('text', { x: x + band * 0.25, y: height - 14, 'text-anchor': 'middle', fill: '#445348', 'font-size': 9, 'font-weight': 700 }, svg);
+      xLabel.textContent = labels[name];
+      const p = node('text', { x: x + band * 0.25, y: y50 - 10, 'text-anchor': 'middle', fill: '#8a4e2d', 'font-size': 9, 'font-weight': 800 }, svg);
+      p.textContent = money(item.p50);
+    });
   }
 
   function renderOasis() {
@@ -320,7 +363,9 @@
   fillKPIs();
   fillScenarioTable();
   fillFacts();
+  fillFutureKPIs();
   rangeChart(document.getElementById('chart-range'));
+  futureRangeChart(document.getElementById('chart-future-range'));
   histogram(document.getElementById('chart-hist-revenue'), mc.base_histograms.revenue_12m, '12 個月收入', mc.scenario_summaries.base.revenue_12m.p50);
   histogram(document.getElementById('chart-hist-mrr'), mc.base_histograms.mrr_m12, 'MRR', mc.scenario_summaries.base.mrr_m12.p50);
   tornado(document.getElementById('chart-tornado'));
