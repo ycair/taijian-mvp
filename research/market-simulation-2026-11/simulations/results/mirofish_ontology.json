@@ -1,0 +1,60 @@
+{
+  "data": {
+    "analysis_summary": "",
+    "files": [
+      {
+        "filename": "taijian_seed.md",
+        "size": 1701
+      }
+    ],
+    "ontology": {
+      "edge_types": [],
+      "entity_types": [
+        {
+          "attributes": [
+            {
+              "description": "Full name of the person",
+              "name": "full_name",
+              "type": "text"
+            },
+            {
+              "description": "Role or occupation",
+              "name": "role",
+              "type": "text"
+            }
+          ],
+          "description": "Any individual person not fitting other specific person types.",
+          "examples": [
+            "ordinary citizen",
+            "anonymous netizen"
+          ],
+          "name": "Person"
+        },
+        {
+          "attributes": [
+            {
+              "description": "Name of the organization",
+              "name": "org_name",
+              "type": "text"
+            },
+            {
+              "description": "Type of organization",
+              "name": "org_type",
+              "type": "text"
+            }
+          ],
+          "description": "Any organization not fitting other specific organization types.",
+          "examples": [
+            "small business",
+            "community group"
+          ],
+          "name": "Organization"
+        }
+      ]
+    },
+    "project_id": "proj_ec57fa4c9fb3",
+    "project_name": "苔間 2026-11 市場模擬",
+    "total_text_length": 794
+  },
+  "success": true
+}

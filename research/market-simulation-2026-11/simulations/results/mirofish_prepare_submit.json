@@ -1,0 +1,14 @@
+{
+  "data": {
+    "already_prepared": false,
+    "entity_types": [
+      "Organization"
+    ],
+    "expected_entities_count": 2,
+    "message": "准备任务已启动，请通过 /api/simulation/prepare/status 查询进度",
+    "simulation_id": "sim_cbb5bf984f62",
+    "status": "preparing",
+    "task_id": "64d1b4ae-e022-454d-b56f-7e4fa318e733"
+  },
+  "success": true
+}

@@ -1,12 +1,13 @@
 {
-  "status": "blocked",
-  "reason": "Zep Cloud key 已驗證可用（建立測試 user HTTP 201、刪除 HTTP 200），但 MiroFish-Local 的 ontology JSON 步驟仍被 THU LLM 的 tool_calls/content=null 行為阻擋（/graph/ontology/generate HTTP 500）。",
+  "status": "partial",
+  "reason": "Zep Cloud key 已驗證可用；加上 submit_json tool adapter 後，ontology 成功產生 10 類實體、9 種關係，Zep 圖譜也建出 21 nodes / 26 edges。但 MiroFish 的 persona 生成只產生了台經院與農業部兩個機構帳號；OASIS 2 回合等待約 7 分鐘仍為 0 actions，因此停止，未把它當作市場結果。",
   "completed_checks": [
-    "Zep Cloud project key：建立 user 201、刪除 user 200",
-    "Neo4j 5.26 + APOC 曾啟動，Graphiti client 可建立 graph metadata",
-    "MiroFish-Local backend /health 正常",
-    "seed 上傳與文字提取成功",
+    "Zep Cloud project key：建立 user HTTP 201、刪除 HTTP 200",
+    "THU gpt-oss-120b + submit_json tool adapter：ontology OK",
+    "Zep graph：21 nodes / 26 edges",
+    "MiroFish simulation prepare：完成",
+    "OASIS simulation：2 個機構 agent、0 actions；未完成",
     "OASIS direct pilot 與 11 位顧客 persona 結構化 panel 已完成"
   ],
-  "recommendation": "Zep 已不是瓶頸；若要跑完整 GraphRAG，換一個在 ontology/structured JSON 提示下會回傳文字的模型（OpenAI、Ollama 或可用的 OpenCode Go bridge）。不要用會回傳空 content 的模型硬跑。"
+  "recommendation": "Zep 與 ontology 已通；目前卡在 persona/seed 與 OASIS 產生有效顧客對話。若要追求效果，建議用能穩定回傳 JSON 的 OpenAI-compatible 模型或 Ollama，並把 seed 改成顧客 persona，不要讓圖譜被官方機構佔據。"
 }

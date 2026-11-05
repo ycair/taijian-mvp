@@ -70,10 +70,13 @@ def unwrap(data: dict) -> dict:
     return data.get("data") if isinstance(data.get("data"), dict) else data
 
 
-def wait_task(path: str, task_id: str, *, interval: int = 5, max_seconds: int = 1800) -> dict:
+def wait_task(path: str, task_id: str, *, interval: int = 5, max_seconds: int = 1800, method: str = "GET", payload=None) -> dict:
     started = time.time()
     while True:
-        status, data = request("GET", f"{path}/{task_id}")
+        if method == "POST":
+            status, data = request("POST", path, payload or {"task_id": task_id})
+        else:
+            status, data = request("GET", f"{path}/{task_id}")
         body = unwrap(data)
         state = body.get("status") or data.get("status")
         print(f"  poll {path}: {state} ({int(time.time() - started)}s)", flush=True)
@@ -116,7 +119,8 @@ def main() -> None:
     built = wait_task("/graph/task", task_id)
     (OUT / "mirofish_build.json").write_text(json.dumps(built, ensure_ascii=False, indent=2), encoding="utf-8")
     body = unwrap(built)
-    graph_id = body.get("graph_id") or built.get("graph_id")
+    result = body.get("result") if isinstance(body.get("result"), dict) else {}
+    graph_id = body.get("graph_id") or result.get("graph_id") or built.get("graph_id")
     if not graph_id:
         raise RuntimeError(f"no graph_id: {json.dumps(built, ensure_ascii=False)[:2000]}")
     print("graph_id", graph_id)
@@ -141,7 +145,7 @@ def main() -> None:
     (OUT / "mirofish_prepare_submit.json").write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     prep_task = unwrap(data).get("task_id")
     if prep_task:
-        prepared = wait_task("/simulation/prepare/status", prep_task, max_seconds=1800)
+        prepared = wait_task("/simulation/prepare/status", prep_task, max_seconds=1800, method="POST", payload={"task_id": prep_task})
         (OUT / "mirofish_prepare.json").write_text(json.dumps(prepared, ensure_ascii=False, indent=2), encoding="utf-8")
 
     status, data = request("POST", "/simulation/start", {
@@ -185,7 +189,7 @@ def main() -> None:
     report_task = unwrap(data).get("task_id")
     report_id = unwrap(data).get("report_id")
     if report_task:
-        result = wait_task("/report/generate/status", report_task, max_seconds=1800)
+        result = wait_task("/report/generate/status", report_task, max_seconds=1800, method="POST", payload={"task_id": report_task})
         (OUT / "mirofish_report_status.json").write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
         report_id = unwrap(result).get("report_id") or report_id
     if report_id:

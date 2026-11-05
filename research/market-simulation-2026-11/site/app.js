@@ -300,13 +300,12 @@
     if (!container) return;
     const summary = local.summary || {};
     if (summary.status !== 'completed') {
-      container.innerHTML = `<div class="callout"><strong>MiroFish-Local 已驗證，但完整 pipeline 被模型介面阻擋</strong>${escape(summary.reason || '尚未完成。')}<br><br><span class="small">${escape((summary.completed_checks || []).join(' · '))}</span></div>`;
+      container.innerHTML = `<div class="callout"><strong>MiroFish-Local 部分打通，但 simulation 尚未成為市場證據</strong>${escape(summary.reason || '尚未完成。')}<br><br><span class="small">${escape((summary.completed_checks || []).join(' · '))}</span></div>`;
       return;
     }
-    const report = local.report || {};
-    const reportText = typeof report.report === 'string'
-      ? report.report
-      : (report.content || report.markdown || report.summary || '');
+    const reportEnvelope = local.report || {};
+    const report = reportEnvelope.data || reportEnvelope;
+    const reportText = report.markdown_content || report.markdownContent || report.report || report.content || report.markdown || report.summary || '';
     container.innerHTML = `
       <div class="grid grid-3">
         <div class="card kpi"><div class="label">GRAPHITI + NEO4J</div><div class="value">完整</div><div class="note">沒有 Zep Cloud key</div></div>

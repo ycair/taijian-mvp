@@ -1,0 +1,22 @@
+{
+  "data": {
+    "created_at": "2026-11-06T04:14:23.143766",
+    "error": null,
+    "message": "图谱构建完成",
+    "metadata": {},
+    "progress": 100,
+    "progress_detail": {},
+    "result": {
+      "chunk_count": 2,
+      "edge_count": 26,
+      "graph_id": "mirofish_229e5017403b4c07",
+      "node_count": 21,
+      "project_id": "proj_ec57fa4c9fb3"
+    },
+    "status": "completed",
+    "task_id": "61e9ac5d-be76-47b5-a87d-d2e23555a7f0",
+    "task_type": "构建图谱: 苔間 2026-11 市場模擬",
+    "updated_at": "2026-11-06T04:14:35.535018"
+  },
+  "success": true
+}

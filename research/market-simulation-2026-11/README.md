@@ -36,14 +36,14 @@ MiroFish/backend/.venv-arm/bin/python simulations/structured_panel.py
 python3 build_site_data.py
 ```
 
-MiroFish 原版完整 GraphRAG pipeline 需要 Zep Cloud API key；本次改用 **MiroFish-Local（Graphiti + Neo4j）**。Neo4j 5.26、Graphiti client、後端 health、seed 上傳與文字提取都驗證成功；但 THU LLM 在 ontology JSON schema 提示下回傳 `tool_calls`、`content=null`，導致 `/graph/ontology/generate` HTTP 500。已測試 gpt-oss-120b、mistral-small-4、muse-spark-open、ornith-35b、vibe、nemotron-3-ultra，行為一致。因此完整 GraphRAG 沒有硬跑；OASIS pilot 與 persona panel 才是本報告的質性證據。
+MiroFish 原版完整 GraphRAG pipeline 需要 Zep Cloud API key。這次先用 Zep Cloud（key 驗證：create user 201、delete 200），並在 MiroFish-Local 的 `chat_json` 加上 `submit_json` tool adapter：THU gpt-oss-120b 的 tool-call arguments 可以轉回 JSON，ontology 成功產生 10 類實體／9 種關係，Zep 圖譜建出 21 nodes／26 edges。但 persona 生成只得到台經院與農業部兩個機構帳號，OASIS 2 回合等待約 7 分鐘仍為 0 actions，因此停止；沒有把 partial run 當市場結果。
 
 若要做完整 pipeline，換一個在 JSON schema 提示下會回傳文字的模型／provider（或自架 Ollama），或使用 Zep Cloud Free。`MiroFish/`、`MiroFish-local/`、`.env`、SQLite DB 與 log 都不進 git。
 
 ### Zep 平替
 
 - **Zep Cloud Free**：每月 10,000 credits、2 projects；實務上仍需能建立帳號並取得 key，且有限額。
-- **MiroFish-Local**：本報告已安裝並啟動驗證；用 `ZEP_BACKEND=graphiti` 接 Graphiti + Neo4j。架構可跑，但本次 THU 模型回傳 `tool_calls` 而非 JSON 文字，卡在 ontology 步驟。
+- **MiroFish-Local + Zep Cloud**：Zep key 與 ontology tool adapter 已驗證；完整 simulation 仍需要能穩定產生顧客 persona 的 seed/model。Graphiti + Neo4j 模式仍未完成。
 - **Graphiti + Neo4j / FalkorDB**：Apache-2.0、可自架，沒有 Zep key；需要自行處理 graph DB、LLM/embedding 與運維。
 - **MiroFish-Local**：以 `ZEP_BACKEND=graphiti` 支援 Graphiti + Neo4j 的 fork；完整 pipeline 可離線，但不是上游官方支援。
 - 其他記憶框架（Mem0、Letta、Cognee）不是 Zep API 的直接 drop-in，移植成本較高。
