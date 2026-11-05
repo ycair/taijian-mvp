@@ -1,0 +1,1155 @@
+{
+  "generated_at": "2026-11-05T19:11:35.348485+00:00",
+  "monte_carlo": {
+    "meta": {
+      "generated_at": "2026-11-05T19:03:44.111504+00:00",
+      "seed": 20261106,
+      "iterations_per_scenario": 20000,
+      "currency": "TWD",
+      "model": "monthly paid-user funnel + churn + CAC + fixed cost",
+      "disclaimer": "All parameters are hypotheses. No revenue, retention, or conversion data exists for 苔間 yet."
+    },
+    "scenario_summaries": {
+      "conservative": {
+        "revenue_12m": {
+          "mean": 102982.22,
+          "p10": 50815.24,
+          "p50": 93718.18,
+          "p90": 167241.6,
+          "min": 12260.59,
+          "max": 399906.83
+        },
+        "mrr_m12": {
+          "mean": 15781.82,
+          "p10": 7773.85,
+          "p50": 14359.78,
+          "p90": 25602.95,
+          "min": 1884.28,
+          "max": 62897.76
+        },
+        "active_m12": {
+          "mean": 105.8,
+          "p10": 53.75,
+          "p50": 97.51,
+          "p90": 168.29,
+          "min": 16.97,
+          "max": 466.13
+        },
+        "profit_12m": {
+          "mean": -679543.18,
+          "p10": -869480.31,
+          "p50": -676409.77,
+          "p90": -494559.31,
+          "min": -1154029.35,
+          "max": -309097.23
+        },
+        "ltv_cac": {
+          "mean": 1.64,
+          "p10": 1.07,
+          "p50": 1.56,
+          "p90": 2.32,
+          "min": 0.56,
+          "max": 4.53
+        },
+        "payback_months": {
+          "mean": 7.53,
+          "p10": 5.12,
+          "p50": 7.32,
+          "p90": 10.15,
+          "min": 3.02,
+          "max": 17.51
+        },
+        "probability_mrr_over_100k": 0.0,
+        "probability_revenue_over_1m": 0.0,
+        "probability_profitable": 0.0,
+        "probability_ltv_cac_over_3": 0.0158,
+        "probability_payback_under_12m": 0.9733
+      },
+      "base": {
+        "revenue_12m": {
+          "mean": 831607.05,
+          "p10": 453177.89,
+          "p50": 776656.78,
+          "p90": 1282522.77,
+          "min": 157346.29,
+          "max": 3023664.63
+        },
+        "mrr_m12": {
+          "mean": 132656.29,
+          "p10": 72034.83,
+          "p50": 123842.66,
+          "p90": 205245.11,
+          "min": 24439.91,
+          "max": 482927.23
+        },
+        "active_m12": {
+          "mean": 727.88,
+          "p10": 408.9,
+          "p50": 685.65,
+          "p90": 1099.74,
+          "min": 130.92,
+          "max": 2447.72
+        },
+        "profit_12m": {
+          "mean": -455915.61,
+          "p10": -731709.61,
+          "p50": -466622.3,
+          "p90": -168443.76,
+          "min": -1320359.38,
+          "max": 811126.79
+        },
+        "ltv_cac": {
+          "mean": 5.03,
+          "p10": 3.09,
+          "p50": 4.68,
+          "p90": 7.4,
+          "min": 1.52,
+          "max": 17.25
+        },
+        "payback_months": {
+          "mean": 3.82,
+          "p10": 2.62,
+          "p50": 3.75,
+          "p90": 5.12,
+          "min": 1.47,
+          "max": 8.32
+        },
+        "probability_mrr_over_100k": 0.696,
+        "probability_revenue_over_1m": 0.2634,
+        "probability_profitable": 0.0288,
+        "probability_ltv_cac_over_3": 0.9166,
+        "probability_payback_under_12m": 1.0
+      },
+      "upside": {
+        "revenue_12m": {
+          "mean": 3613286.38,
+          "p10": 2227175.77,
+          "p50": 3447453.27,
+          "p90": 5221928.39,
+          "min": 1004858.57,
+          "max": 11012282.16
+        },
+        "mrr_m12": {
+          "mean": 592327.64,
+          "p10": 364801.78,
+          "p50": 564985.46,
+          "p90": 855260.03,
+          "min": 160023.35,
+          "max": 1842734.4
+        },
+        "active_m12": {
+          "mean": 2513.01,
+          "p10": 1587.8,
+          "p50": 2407.41,
+          "p90": 3576.56,
+          "min": 693.27,
+          "max": 6932.38
+        },
+        "profit_12m": {
+          "mean": 1509587.0,
+          "p10": 538760.11,
+          "p50": 1382180.3,
+          "p90": 2652158.89,
+          "min": -475874.3,
+          "max": 6636767.81
+        },
+        "ltv_cac": {
+          "mean": 16.52,
+          "p10": 9.55,
+          "p50": 15.11,
+          "p90": 25.23,
+          "min": 4.92,
+          "max": 62.62
+        },
+        "payback_months": {
+          "mean": 1.82,
+          "p10": 1.15,
+          "p50": 1.77,
+          "p90": 2.54,
+          "min": 0.62,
+          "max": 3.92
+        },
+        "probability_mrr_over_100k": 1.0,
+        "probability_revenue_over_1m": 1.0,
+        "probability_profitable": 0.9943,
+        "probability_ltv_cac_over_3": 1.0,
+        "probability_payback_under_12m": 1.0
+      }
+    },
+    "pooled": {
+      "revenue_12m": {
+        "mean": 1515958.55,
+        "p10": 73247.81,
+        "p50": 776656.78,
+        "p90": 4090613.44,
+        "min": 12260.59,
+        "max": 11012282.16
+      },
+      "mrr_m12": {
+        "mean": 246921.92,
+        "p10": 11209.36,
+        "p50": 123842.66,
+        "p90": 670226.36,
+        "min": 1884.28,
+        "max": 1842734.4
+      },
+      "active_m12": {
+        "mean": 1115.56,
+        "p10": 76.56,
+        "p50": 685.65,
+        "p90": 2838.32,
+        "min": 16.97,
+        "max": 6932.38
+      },
+      "profit_12m": {
+        "mean": 124709.4,
+        "p10": -785002.04,
+        "p50": -443249.77,
+        "p90": 1833158.1,
+        "min": -1320359.38,
+        "max": 6636767.81
+      },
+      "ltv_cac": {
+        "mean": 7.73,
+        "p10": 1.33,
+        "p50": 4.68,
+        "p90": 18.56,
+        "min": 0.56,
+        "max": 62.62
+      },
+      "payback_months": {
+        "mean": 4.39,
+        "p10": 1.5,
+        "p50": 3.74,
+        "p90": 8.39,
+        "min": 0.62,
+        "max": 17.51
+      },
+      "probability_mrr_over_100k": 0.5654,
+      "probability_revenue_over_1m": 0.4211,
+      "probability_profitable": 0.341,
+      "probability_ltv_cac_over_3": 0.6442,
+      "probability_payback_under_12m": 0.9911
+    },
+    "base_histograms": {
+      "revenue_12m": {
+        "bins": [
+          157346.0,
+          276776.0,
+          396206.0,
+          515636.0,
+          635066.0,
+          754496.0,
+          873926.0,
+          993356.0,
+          1112786.0,
+          1232216.0,
+          1351646.0,
+          1471076.0,
+          1590505.0,
+          1709935.0,
+          1829365.0,
+          1948795.0,
+          2068225.0,
+          2187655.0,
+          2307085.0,
+          2426515.0,
+          2545945.0,
+          2665375.0,
+          2784805.0,
+          2904235.0
+        ],
+        "counts": [
+          122,
+          952,
+          2175,
+          3032,
+          3201,
+          2851,
+          2311,
+          1669,
+          1306,
+          810,
+          631,
+          354,
+          237,
+          139,
+          75,
+          51,
+          38,
+          18,
+          13,
+          4,
+          6,
+          1,
+          2,
+          2
+        ],
+        "width": 119430.0
+      },
+      "mrr_m12": {
+        "bins": [
+          24440.0,
+          43544.0,
+          62647.0,
+          81751.0,
+          100854.0,
+          119958.0,
+          139062.0,
+          158165.0,
+          177269.0,
+          196373.0,
+          215476.0,
+          234580.0,
+          253684.0,
+          272787.0,
+          291891.0,
+          310994.0,
+          330098.0,
+          349202.0,
+          368305.0,
+          387409.0,
+          406513.0,
+          425616.0,
+          444720.0,
+          463824.0
+        ],
+        "counts": [
+          116,
+          932,
+          2166,
+          3026,
+          3157,
+          2885,
+          2338,
+          1671,
+          1307,
+          818,
+          631,
+          349,
+          240,
+          146,
+          74,
+          58,
+          41,
+          15,
+          14,
+          6,
+          5,
+          1,
+          2,
+          2
+        ],
+        "width": 19104.0
+      }
+    },
+    "base_retention_curve": [
+      {
+        "p10": 23.847798635612044,
+        "p50": 39.72604593884947,
+        "p90": 63.512443051520314
+      },
+      {
+        "p10": 50.585073436886326,
+        "p50": 84.3388307056185,
+        "p90": 134.9150812594224
+      },
+      {
+        "p10": 82.30369602844337,
+        "p50": 137.26061338414198,
+        "p90": 219.38161070484537
+      },
+      {
+        "p10": 118.55057600938511,
+        "p50": 197.88402578073917,
+        "p90": 316.29289532488843
+      },
+      {
+        "p10": 156.99675195781626,
+        "p50": 262.1449382033069,
+        "p90": 419.1410426355624
+      },
+      {
+        "p10": 195.72015873711962,
+        "p50": 326.21632037940714,
+        "p90": 521.7489702882509
+      },
+      {
+        "p10": 233.89756869872025,
+        "p50": 390.48930727858703,
+        "p90": 623.9410925951124
+      },
+      {
+        "p10": 272.5342436454112,
+        "p50": 454.3033600173192,
+        "p90": 726.8559035905146
+      },
+      {
+        "p10": 308.13954577672564,
+        "p50": 514.7366139456806,
+        "p90": 824.2424176806858
+      },
+      {
+        "p10": 343.5995649919809,
+        "p50": 575.0069149228099,
+        "p90": 921.650163470774
+      },
+      {
+        "p10": 377.42374090283147,
+        "p50": 631.7311272087686,
+        "p90": 1013.6967941164191
+      },
+      {
+        "p10": 408.89804048616054,
+        "p50": 685.6489364674287,
+        "p90": 1099.7433910276902
+      }
+    ],
+    "sensitivity": [
+      {
+        "variable": "reach_12m",
+        "low": 0.1,
+        "high": 0.3,
+        "low_revenue_12m": 397815.0,
+        "high_revenue_12m": 1188902.0,
+        "low_mrr_m12": 63474.0,
+        "high_mrr_m12": 189275.0,
+        "swing_revenue": 791086.0
+      },
+      {
+        "variable": "trial_rate",
+        "low": 0.08,
+        "high": 0.2,
+        "low_revenue_12m": 454682.0,
+        "high_revenue_12m": 1110825.0,
+        "low_mrr_m12": 72561.0,
+        "high_mrr_m12": 177433.0,
+        "swing_revenue": 656143.0
+      },
+      {
+        "variable": "paid_rate",
+        "low": 0.18,
+        "high": 0.4,
+        "low_revenue_12m": 488984.0,
+        "high_revenue_12m": 1080945.0,
+        "low_mrr_m12": 77947.0,
+        "high_mrr_m12": 172344.0,
+        "swing_revenue": 591962.0
+      },
+      {
+        "variable": "reptile_households",
+        "low": 150000,
+        "high": 300000,
+        "low_revenue_12m": 520836.0,
+        "high_revenue_12m": 1037110.0,
+        "low_mrr_m12": 83092.0,
+        "high_mrr_m12": 164978.0,
+        "swing_revenue": 516274.0
+      },
+      {
+        "variable": "digital_share",
+        "low": 0.3,
+        "high": 0.6,
+        "low_revenue_12m": 525016.0,
+        "high_revenue_12m": 1040037.0,
+        "low_mrr_m12": 83619.0,
+        "high_mrr_m12": 165864.0,
+        "swing_revenue": 515021.0
+      },
+      {
+        "variable": "arpu",
+        "low": 129,
+        "high": 239,
+        "low_revenue_12m": 553614.0,
+        "high_revenue_12m": 1018643.0,
+        "low_mrr_m12": 88124.0,
+        "high_mrr_m12": 162681.0,
+        "swing_revenue": 465029.0
+      },
+      {
+        "variable": "monthly_churn",
+        "low": 0.03,
+        "high": 0.09,
+        "low_revenue_12m": 850858.0,
+        "high_revenue_12m": 703423.0,
+        "low_mrr_m12": 141078.0,
+        "high_mrr_m12": 107472.0,
+        "swing_revenue": 147435.0
+      },
+      {
+        "variable": "cac_per_paid",
+        "low": 300,
+        "high": 900,
+        "low_revenue_12m": 782290.0,
+        "high_revenue_12m": 772580.0,
+        "low_mrr_m12": 124507.0,
+        "high_mrr_m12": 122990.0,
+        "swing_revenue": 9709.0
+      },
+      {
+        "variable": "fixed_cost_monthly",
+        "low": 25000,
+        "high": 80000,
+        "low_revenue_12m": 782290.0,
+        "high_revenue_12m": 772580.0,
+        "low_mrr_m12": 124507.0,
+        "high_mrr_m12": 122990.0,
+        "swing_revenue": 9709.0
+      }
+    ],
+    "retention": [
+      {
+        "monthly_churn": 0.03,
+        "m12": 0.6938,
+        "m24": 0.4814,
+        "median_lifetime_months": 33.3
+      },
+      {
+        "monthly_churn": 0.055,
+        "m12": 0.5072,
+        "m24": 0.2573,
+        "median_lifetime_months": 18.2
+      },
+      {
+        "monthly_churn": 0.09,
+        "m12": 0.3225,
+        "m24": 0.104,
+        "median_lifetime_months": 11.1
+      }
+    ],
+    "market_sources": [
+      {
+        "label": "農業部 2023 家犬貓調查：28.3% 家戶養寵物、9.3% 養非犬貓",
+        "url": "https://animal.moa.gov.tw/public/files/LatestNews_anp_news/202503310609020001.pdf"
+      },
+      {
+        "label": "台北時報 2024：台灣寵物犬貓與非犬貓飼養趨勢",
+        "url": "https://www.taipeitimes.com/News/taiwan/archives/2024/06/03/2003818796"
+      },
+      {
+        "label": "TVBS 2025：爬蟲類約占寵物飼養量 10%（媒體引述，低可信度）",
+        "url": "https://news.tvbs.com.tw/local/2967043"
+      },
+      {
+        "label": "中央社 2025：台北國際兩棲爬蟲盛典 15,000 人次、1,500 萬元營業額",
+        "url": "https://www.cna.com.tw/postwrite/chi/401223"
+      },
+      {
+        "label": "LINE Taiwan 2024：2,200 萬用戶、約 94% 人口滲透率",
+        "url": "https://www.linecorp.com/tw/pr/news/2024/1217"
+      },
+      {
+        "label": "台經院 2024：2023 台灣寵物產業規模約 631 億元",
+        "url": "https://vos.tier.org.tw/Viewpoint01More.aspx?DGUID=390c8a34-e293-4056-8aa2-b54c5315fdd7"
+      }
+    ],
+    "assumptions": {
+      "reptile_households": [
+        150000,
+        225000,
+        300000
+      ],
+      "digital_share": [
+        0.3,
+        0.45,
+        0.6
+      ],
+      "reach_12m": [
+        0.1,
+        0.2,
+        0.3
+      ],
+      "trial_rate": [
+        0.08,
+        0.14,
+        0.2
+      ],
+      "paid_rate": [
+        0.18,
+        0.29,
+        0.4
+      ],
+      "referral_multiplier": [
+        1.0,
+        1.15,
+        1.3
+      ],
+      "arpu": [
+        129,
+        179,
+        239
+      ],
+      "monthly_churn": [
+        0.03,
+        0.055,
+        0.09
+      ],
+      "variable_cost_per_paid": [
+        10,
+        20,
+        35
+      ],
+      "cac_per_paid": [
+        300,
+        600,
+        900
+      ],
+      "fixed_cost_monthly": [
+        25000,
+        50000,
+        80000
+      ]
+    },
+    "scenario_ranges": {
+      "conservative": {
+        "reptile_households": [
+          150000,
+          225000,
+          300000
+        ],
+        "digital_share": [
+          0.3,
+          0.45,
+          0.6
+        ],
+        "reach_12m": [
+          0.04,
+          0.08,
+          0.14
+        ],
+        "trial_rate": [
+          0.04,
+          0.08,
+          0.13
+        ],
+        "paid_rate": [
+          0.1,
+          0.18,
+          0.28
+        ],
+        "referral_multiplier": [
+          1.0,
+          1.15,
+          1.3
+        ],
+        "arpu": [
+          99,
+          149,
+          199
+        ],
+        "monthly_churn": [
+          0.06,
+          0.085,
+          0.12
+        ],
+        "variable_cost_per_paid": [
+          10,
+          20,
+          35
+        ],
+        "cac_per_paid": [
+          500,
+          900,
+          1400
+        ],
+        "fixed_cost_monthly": [
+          25000,
+          50000,
+          80000
+        ]
+      },
+      "base": {
+        "reptile_households": [
+          150000,
+          225000,
+          300000
+        ],
+        "digital_share": [
+          0.3,
+          0.45,
+          0.6
+        ],
+        "reach_12m": [
+          0.1,
+          0.2,
+          0.3
+        ],
+        "trial_rate": [
+          0.08,
+          0.14,
+          0.2
+        ],
+        "paid_rate": [
+          0.18,
+          0.29,
+          0.4
+        ],
+        "referral_multiplier": [
+          1.0,
+          1.15,
+          1.3
+        ],
+        "arpu": [
+          129,
+          179,
+          239
+        ],
+        "monthly_churn": [
+          0.03,
+          0.055,
+          0.09
+        ],
+        "variable_cost_per_paid": [
+          10,
+          20,
+          35
+        ],
+        "cac_per_paid": [
+          300,
+          600,
+          900
+        ],
+        "fixed_cost_monthly": [
+          25000,
+          50000,
+          80000
+        ]
+      },
+      "upside": {
+        "reptile_households": [
+          150000,
+          225000,
+          300000
+        ],
+        "digital_share": [
+          0.3,
+          0.45,
+          0.6
+        ],
+        "reach_12m": [
+          0.2,
+          0.3,
+          0.42
+        ],
+        "trial_rate": [
+          0.14,
+          0.2,
+          0.28
+        ],
+        "paid_rate": [
+          0.3,
+          0.4,
+          0.52
+        ],
+        "referral_multiplier": [
+          1.0,
+          1.15,
+          1.3
+        ],
+        "arpu": [
+          179,
+          229,
+          299
+        ],
+        "monthly_churn": [
+          0.02,
+          0.035,
+          0.06
+        ],
+        "variable_cost_per_paid": [
+          10,
+          20,
+          35
+        ],
+        "cac_per_paid": [
+          150,
+          350,
+          650
+        ],
+        "fixed_cost_monthly": [
+          25000,
+          50000,
+          80000
+        ]
+      }
+    }
+  },
+  "oasis": {
+    "status": "completed",
+    "agents": 12,
+    "rounds": 2,
+    "actions": 3,
+    "counts": {
+      "posts": 3,
+      "comments": 0,
+      "likes": 0,
+      "follows": 0
+    },
+    "adoption_signal": "無法判斷",
+    "themes": [
+      {
+        "agent": "OASIS pilot",
+        "text": "本次 3 則貼文中有 2 則重貼官方 beta 訊息，沒有展開價格、隱私或使用理由。"
+      },
+      {
+        "agent": "OASIS pilot",
+        "text": "留言 0、讚 0、追蹤 0；訊號不足以推論市場接受度。"
+      },
+      {
+        "agent": "OASIS pilot",
+        "text": "persona 間沒有形成對話，因此不能把沉默解讀成不支持，也不能解讀成支持。"
+      }
+    ],
+    "method_note": "MiroFish OASIS Twitter 引擎，12 個 persona、2 輪、每輪 1 小時；使用 gpt-oss-120b。MiroFish 完整 GraphRAG 流程需要 Zep Cloud key，本次未提供；此 pilot 只作流程驗證。",
+    "raw_posts": [
+      {
+        "agent": "taijian_official",
+        "content": "【苔間 beta 市場測試】我們做了一個 LINE-first 的爬蟲照護紀錄工具：餵食、換水、體重、蛻皮、醫療紀錄，家庭共享，也能把旅程公開分享。iOS 完整版；LIFF 負責快速紀錄與查詢。免費版每月 60 張照片，支持者方案 99/199/399 元。想問大家：你會想試用嗎？最在意什麼？哪一個價格你會考慮？"
+      },
+      {
+        "agent": "family_turtle",
+        "content": "【苔間 beta 市場測試】我們做了一個 LINE-first 的爬蟲照護紀錄工具：餵食、換水、體重、蛻皮、醫療紀錄，家庭共享，也能把旅程公開分享。iOS 完整版；LIFF 負責快速紀錄與查詢。免費版每月 60 張照片，支持者方案 99/199/399 元。想問大家：你會想試用嗎？最在意什麼？哪一個價格你會考慮？"
+      },
+      {
+        "agent": "student_gecko",
+        "content": "【苔間 beta 市場測試】我們做了一個 LINE-first 的爬蟲照護紀錄工具：餵食、換水、體重、蛻皮、醫療紀錄，家庭共享，也能把旅程公開分享。iOS 完整版；LIFF 負責快速紀錄與查詢。免費版每月 60 張照片，支持者方案 99/199/399 元。想問大家：你會想試用嗎？最在意什麼？哪一個價格你會考慮？"
+      }
+    ]
+  },
+  "panel": {
+    "summary": {
+      "status": "completed",
+      "model": "gpt-oss-120b",
+      "n": 11,
+      "valid": 12,
+      "mean_interest": 3.82,
+      "mean_trial_likelihood": 0.809,
+      "mean_pay_likelihood": 0.373,
+      "plans": {
+        "free": 8,
+        "99": 0,
+        "199": 3,
+        "399": 0,
+        "unsure": 0
+      },
+      "median_max_price": 199,
+      "note": "Synthetic qualitative panel; not a representative survey or a revenue forecast.",
+      "customer_n": 11,
+      "official_seed_excluded": true
+    },
+    "responses": [
+      {
+        "agent_id": 0,
+        "name": "苔間官方",
+        "username": "taijian_official",
+        "persona": "苔間是一個 LINE-first 的爬蟲與特殊寵物照護紀錄工具。核心功能：餵食、換水、體重、蛻皮、醫療紀錄；家庭共享；公開旅程；照片額度。iOS 完整版，LIFF 作為快速紀錄與查詢。商業模式是 99/199/399 元月訂閱，目前仍是 sandbox，沒有真實付款資料。請以官方帳號語氣，邀請大家試用並詢問最在意的問題。",
+        "answer": {
+          "interest": 4,
+          "trial_likelihood": 0.8,
+          "pay_likelihood": 0.3,
+          "max_price_twd": 199,
+          "preferred_plan": "free",
+          "must_have": "餵食、換水、體重、蛻皮、醫療紀錄、家庭共享",
+          "biggest_concern": "照片額度太少（60張/月）無法支撐長期紀錄，且目前無真實付款",
+          "try_trigger": "養的爬蟲/特殊寵物數量多到手動紀錄會亂，想要共享給家人",
+          "cancel_trigger": "功能不穩定或資料遺失，或是發現其他更好用的紀錄工具",
+          "channel": "特殊寵物社團、爬蟲論壇、LINE 群組推廣",
+          "quote": "養特殊寵物的都該試試 LINE 這麼方便的紀錄工具！先免費用看看，60張照片夠不夠？"
+        },
+        "usage": {
+          "completion_tokens": 284,
+          "prompt_tokens": 1809,
+          "total_tokens": 2093,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": null
+        }
+      },
+      {
+        "agent_id": 1,
+        "name": "小安",
+        "username": "gecko_an",
+        "persona": "24 歲，台中，剛養第一隻豹紋守宮。每天用 LINE，習慣把照片傳給朋友，但沒有固定紀錄。價格敏感，免費才願意試；最怕 app 很複雜、照片容量不夠。會問訂閱是否能真的省時間。",
+        "answer": {
+          "interest": 3,
+          "trial_likelihood": 0.8,
+          "pay_likelihood": 0.3,
+          "max_price_twd": 199,
+          "preferred_plan": "free",
+          "must_have": "能拍照存照片、餵食提醒、體重紀錄，簡單就好",
+          "biggest_concern": "照片上傳後不知道會不會被刪，介面太複雜我會放棄",
+          "try_trigger": "有人幫我設好帳號，教我怎麼用，我就試試看",
+          "cancel_trigger": "介面亂七八糟、照片莫名不見、還要付錢就直接棄用",
+          "channel": "LINE群組或IG貼文看到朋友推薦",
+          "quote": "我只是想養隻守宮而已，幹嘛要弄得這麼麻煩？但如果真的簡單，我願意試試"
+        },
+        "usage": {
+          "completion_tokens": 248,
+          "prompt_tokens": 1732,
+          "total_tokens": 1980,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": null
+        }
+      },
+      {
+        "agent_id": 2,
+        "name": "阿凱",
+        "username": "ballpython_kai",
+        "persona": "31 歲，新北，養三隻球蟒。用 Google Sheet 記餵食與蛻皮，對資料隱私很敏感；願意為可靠的提醒與跨裝置同步付費，但不信任把完整紀錄公開。會比較 Excel、Google Sheet 與專門 app。",
+        "answer": {
+          "interest": 4,
+          "trial_likelihood": 0.8,
+          "pay_likelihood": 0.3,
+          "max_price_twd": 199,
+          "preferred_plan": "free",
+          "must_have": "隱私設定、跨裝置同步、餵食蛻皮紀錄",
+          "biggest_concern": "怕資料外洩或被平台分析，寧可手動記錄也不想公開",
+          "try_trigger": "有人推薦且介面乾淨，能匯出資料不被綁死",
+          "cancel_trigger": "強制公開分享或廣告推播，資料格式被迫改變",
+          "channel": "PTT 爬蟲版、Facebook 球蟒社團、Discord 特殊寵物群",
+          "quote": "資料安全比功能多重要，寧願自己養成習慣也不亂丟隱私上雲端。"
+        },
+        "usage": {
+          "completion_tokens": 252,
+          "prompt_tokens": 1726,
+          "total_tokens": 1978,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": null
+        }
+      },
+      {
+        "agent_id": 3,
+        "name": "陳老闆",
+        "username": "reptile_shop",
+        "persona": "38 歲，高雄，爬蟲店經營者。每天要回答客人餵食與脫皮問題，希望有方法讓客人自己查紀錄，也想提供售後服務。關心 B2B 工具、客戶綁定與資料歸屬。",
+        "answer": {
+          "interest": 4,
+          "trial_likelihood": 0.9,
+          "pay_likelihood": 0.6,
+          "max_price_twd": 199,
+          "preferred_plan": "199",
+          "must_have": "餵食、脫皮、體重紀錄與照片上傳功能",
+          "biggest_concern": "iOS App 穩定性與資料是否能匯出備份，怕被綁死在平台上",
+          "try_trigger": "有新手客人養蛇或蜥蜴，需要紀錄餵食與脫皮時間時",
+          "cancel_trigger": "發現紀錄功能不穩定或資料遺失，無法信任平台",
+          "channel": "爬蟲社團、Facebook 爬蟲愛好者頁面或 LINE 群",
+          "quote": "這 App 如果能穩定記錄，我願意付費買斷，但資料要能匯出來！"
+        },
+        "usage": {
+          "completion_tokens": 260,
+          "prompt_tokens": 1723,
+          "total_tokens": 1983,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": null
+        }
+      },
+      {
+        "agent_id": 4,
+        "name": "林醫師",
+        "username": "exotic_vet",
+        "persona": "29 歲，台北，特寵獸醫助理。希望飼主就診時能快速提供用藥、食慾、排便與體重紀錄。對醫療資料正確性要求高，不接受模糊或不可靠的資料。",
+        "answer": {
+          "interest": 4,
+          "trial_likelihood": 0.8,
+          "pay_likelihood": 0.3,
+          "max_price_twd": 199,
+          "preferred_plan": "free",
+          "must_have": "體重與食慾紀錄、醫療紀錄可追溯、LIFF 快速輸入",
+          "biggest_concern": "紀錄品質不穩定，導致診斷時無法信任數據，影響治療決策",
+          "try_trigger": "有多隻特殊寵物且紀錄混亂，或需要分享紀錄給獸醫師時",
+          "cancel_trigger": "紀錄介面不直觀、資料丟失或無法正確匯出報告",
+          "channel": "特殊寵物社群、獸醫師推薦、LINE 社群或爬蟲論壇",
+          "quote": "紀錄不精確，等於自欺欺人。如果工具不能保證資料正確性，寧可手寫也不用。"
+        },
+        "usage": {
+          "completion_tokens": 265,
+          "prompt_tokens": 1715,
+          "total_tokens": 1980,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": null
+        }
+      },
+      {
+        "agent_id": 5,
+        "name": "阿宏",
+        "username": "student_gecko",
+        "persona": "21 歲，桃園，學生，養一隻肥尾守宮。預算很低，願意用免費版；如果付費，最多 99 元，而且要有明顯好處。會擔心訂閱制變成負擔。",
+        "answer": {
+          "interest": 4,
+          "trial_likelihood": 0.8,
+          "pay_likelihood": 0.3,
+          "max_price_twd": 99,
+          "preferred_plan": "free",
+          "must_have": "餵食、換水、體重、蛻皮紀錄，照片備份",
+          "biggest_concern": "訂閱制怕變成負擔，免費版照片限制太少不夠用",
+          "try_trigger": "能用 LINE 記錄且免費版照片提高到 100 張/月",
+          "cancel_trigger": "免費版照片限制再降或強制訂閱才能用",
+          "channel": "LINE 社群或特殊寵物 Facebook 社團",
+          "quote": "養隻肥尾守宮養到胖，紀錄亂七八糟，這 App 看起來能救命！"
+        },
+        "usage": {
+          "completion_tokens": 236,
+          "prompt_tokens": 1704,
+          "total_tokens": 1940,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": null
+        }
+      },
+      {
+        "agent_id": 6,
+        "name": "雅婷",
+        "username": "family_turtle",
+        "persona": "40 歲，台南，兩個孩子的媽媽，家裡養烏龜。希望孩子也能參與照顧，但不想讓孩子看到所有私人紀錄；需要簡單的家庭共享與提醒。",
+        "answer": {
+          "interest": 4,
+          "trial_likelihood": 0.8,
+          "pay_likelihood": 0.3,
+          "max_price_twd": 199,
+          "preferred_plan": "free",
+          "must_have": "餵食、換水、體重、蛻皮提醒，家庭共享功能",
+          "biggest_concern": "隱私設定不夠細緻，怕孩子亂動亂改或看到私人紀錄",
+          "try_trigger": "烏龜生病或需要記錄蛻皮時，發現手動記錄太麻煩才會試用",
+          "cancel_trigger": "發現分享功能不穩定或隱私設定被破壞，導致紀錄外洩",
+          "channel": "PTT 爬蟲版或 Facebook 爬蟲社團推廣",
+          "quote": "養烏龜真的很需要紀錄，但隱私跟分享要分得清楚，不然寧願手抄！"
+        },
+        "usage": {
+          "completion_tokens": 250,
+          "prompt_tokens": 1701,
+          "total_tokens": 1951,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": null
+        }
+      },
+      {
+        "agent_id": 7,
+        "name": "工程師 Eric",
+        "username": "remote_engineer",
+        "persona": "35 歲，新竹，工程師，常出國。養兩隻守宮，外出時希望家人能接手餵食與保溫。願意為可靠提醒、交接與跨裝置同步付費；在意 app 會不會突然停止服務。",
+        "answer": {
+          "interest": 4,
+          "trial_likelihood": 0.8,
+          "pay_likelihood": 0.6,
+          "max_price_twd": 299,
+          "preferred_plan": "199",
+          "must_have": "餵食提醒、體重記錄、家庭成員共享、iOS App",
+          "biggest_concern": "突然停止服務或 App 更新後功能不穩，資料無法匯出",
+          "try_trigger": "出差前一週，家人願意幫忙餵食但需要紀錄提醒時",
+          "cancel_trigger": "App 突然停止服務超過 3 天，或資料無法備份",
+          "channel": "LINE 社群或特殊寵物論壇推廣",
+          "quote": "養兩隻守宮真的很麻煩，如果能讓家人幫忙餵食還能追蹤紀錄就太好了"
+        },
+        "usage": {
+          "completion_tokens": 244,
+          "prompt_tokens": 1715,
+          "total_tokens": 1959,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": null
+        }
+      },
+      {
+        "agent_id": 8,
+        "name": "米米",
+        "username": "reptile_creator",
+        "persona": "27 歲，台北，爬蟲內容創作者。喜歡公開旅程與追蹤其他飼主，重視照片排版、分享連結與社群互動；但擔心公開後被陌生人騷擾，需要封鎖與檢舉。",
+        "answer": {
+          "interest": 4,
+          "trial_likelihood": 0.9,
+          "pay_likelihood": 0.3,
+          "max_price_twd": 199,
+          "preferred_plan": "free",
+          "must_have": "LINE整合、照片上傳、公開旅程分享功能",
+          "biggest_concern": "隱私安全不足，擔心公開後被陌生人騷擾或追蹤",
+          "try_trigger": "LINE就能用、介面簡單、且能控制公開範圍",
+          "cancel_trigger": "發現隱私設定不足或被陌生人騷擾且無法解決",
+          "channel": "PTT爬蟲版、Facebook爬蟲社團、Instagram相關帳號",
+          "quote": "功能看起來不錯，但隱私安全一定要做好，我才敢分享我的寶貝們的照片！"
+        },
+        "usage": {
+          "completion_tokens": 234,
+          "prompt_tokens": 1716,
+          "total_tokens": 1950,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": null
+        }
+      },
+      {
+        "agent_id": 9,
+        "name": "阿珍",
+        "username": "price_sensitive",
+        "persona": "33 歲，彰化，上班族，養一隻玉米蛇。用 LINE 記事本記事情，對新 app 有耐性但不想付太多。會問免費版限制、資料匯出、取消訂閱是否容易。",
+        "answer": {
+          "interest": 3,
+          "trial_likelihood": 0.7,
+          "pay_likelihood": 0.2,
+          "max_price_twd": 199,
+          "preferred_plan": "free",
+          "must_have": "餵食、換水、體重、蛻皮紀錄，LINE 就能記",
+          "biggest_concern": "免費版照片限制太低，60張不夠用，升級方案又貴",
+          "try_trigger": "養蛇數量多到手動記錄太累，或找到分享功能能幫忙",
+          "cancel_trigger": "介面太複雜、功能常當機、或 LINE 連不上就沒用",
+          "channel": "LINE 群組或臉書爬蟲社團看到推廣",
+          "quote": "LINE 就能記錄幹嘛還要多一個 App？但養越多隻越需要這個，先試看看吧"
+        },
+        "usage": {
+          "completion_tokens": 252,
+          "prompt_tokens": 1706,
+          "total_tokens": 1958,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": null
+        }
+      },
+      {
+        "agent_id": 10,
+        "name": "老周",
+        "username": "breeder",
+        "persona": "45 歲，屏東，小型繁殖者。需要血統、繁殖與轉移紀錄；願意付較高費用，但要求資料可備份、可轉移、不能綁死在單一平台。",
+        "answer": {
+          "interest": 4,
+          "trial_likelihood": 0.8,
+          "pay_likelihood": 0.6,
+          "max_price_twd": 199,
+          "preferred_plan": "199",
+          "must_have": "血統紀錄、照片備份、家庭成員共享、體重追蹤",
+          "biggest_concern": "資料格式是否可匯出或轉移，怕被平台綁死無法帶走",
+          "try_trigger": "能直接匯入現有的 Excel/CSV 血統表，且照片備份無上限",
+          "cancel_trigger": "資料只能在 App 看，無法匯出或備份，或被迫升級收費",
+          "channel": "台灣爬蟲論壇、特殊寵物社團或 Facebook 群組",
+          "quote": "願意付費但要確保資料能帶走，否則寧可自己弄 Excel。平台要穩定，功能要實用。"
+        },
+        "usage": {
+          "completion_tokens": 248,
+          "prompt_tokens": 1704,
+          "total_tokens": 1952,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": null
+        }
+      },
+      {
+        "agent_id": 11,
+        "name": "小芸",
+        "username": "new_keeper",
+        "persona": "26 歲，花蓮，剛開始養球蟒。曾被網路資訊誤導，想要新手提醒與檢查清單；對公開分享沒興趣，只想確保動物健康。",
+        "answer": {
+          "interest": 4,
+          "trial_likelihood": 0.8,
+          "pay_likelihood": 0.3,
+          "max_price_twd": 199,
+          "preferred_plan": "free",
+          "must_have": "餵食、體重、蛻皮提醒，資料不能亂跳",
+          "biggest_concern": "怕資料亂掉或手機沒網就用不了，養球蟒很怕斷紀錄",
+          "try_trigger": "養第二條蛇時就需要分開記錄，怕自己手動亂紀錄",
+          "cancel_trigger": "發現紀錄有錯誤或漏掉重要資料，覺得工具不可靠",
+          "channel": "PTT 爬蟲版、Facebook 球蟒社團、IG 爬蟲筆記",
+          "quote": "養蛇真的要很細心，希望工具能幫我記住重要的事，不要害蛇受傷。"
+        },
+        "usage": {
+          "completion_tokens": 259,
+          "prompt_tokens": 1698,
+          "total_tokens": 1957,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": null
+        }
+      }
+    ]
+  }
+}

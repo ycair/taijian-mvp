@@ -1,0 +1,42 @@
+{
+  "status": "completed",
+  "agents": 12,
+  "rounds": 2,
+  "actions": 3,
+  "counts": {
+    "posts": 3,
+    "comments": 0,
+    "likes": 0,
+    "follows": 0
+  },
+  "adoption_signal": "無法判斷",
+  "themes": [
+    {
+      "agent": "OASIS pilot",
+      "text": "本次 3 則貼文中有 2 則重貼官方 beta 訊息，沒有展開價格、隱私或使用理由。"
+    },
+    {
+      "agent": "OASIS pilot",
+      "text": "留言 0、讚 0、追蹤 0；訊號不足以推論市場接受度。"
+    },
+    {
+      "agent": "OASIS pilot",
+      "text": "persona 間沒有形成對話，因此不能把沉默解讀成不支持，也不能解讀成支持。"
+    }
+  ],
+  "method_note": "MiroFish OASIS Twitter 引擎，12 個 persona、2 輪、每輪 1 小時；使用 gpt-oss-120b。MiroFish 完整 GraphRAG 流程需要 Zep Cloud key，本次未提供；此 pilot 只作流程驗證。",
+  "raw_posts": [
+    {
+      "agent": "taijian_official",
+      "content": "【苔間 beta 市場測試】我們做了一個 LINE-first 的爬蟲照護紀錄工具：餵食、換水、體重、蛻皮、醫療紀錄，家庭共享，也能把旅程公開分享。iOS 完整版；LIFF 負責快速紀錄與查詢。免費版每月 60 張照片，支持者方案 99/199/399 元。想問大家：你會想試用嗎？最在意什麼？哪一個價格你會考慮？"
+    },
+    {
+      "agent": "family_turtle",
+      "content": "【苔間 beta 市場測試】我們做了一個 LINE-first 的爬蟲照護紀錄工具：餵食、換水、體重、蛻皮、醫療紀錄，家庭共享，也能把旅程公開分享。iOS 完整版；LIFF 負責快速紀錄與查詢。免費版每月 60 張照片，支持者方案 99/199/399 元。想問大家：你會想試用嗎？最在意什麼？哪一個價格你會考慮？"
+    },
+    {
+      "agent": "student_gecko",
+      "content": "【苔間 beta 市場測試】我們做了一個 LINE-first 的爬蟲照護紀錄工具：餵食、換水、體重、蛻皮、醫療紀錄，家庭共享，也能把旅程公開分享。iOS 完整版；LIFF 負責快速紀錄與查詢。免費版每月 60 張照片，支持者方案 99/199/399 元。想問大家：你會想試用嗎？最在意什麼？哪一個價格你會考慮？"
+    }
+  ]
+}

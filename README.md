@@ -273,6 +273,7 @@ GitHub `test` check.
 - [Map core design](docs/superpowers/specs/2026-10-27-map-core-design.md)
 - [Map operations](docs/operations/map-core.md)
 - [Commerce sandbox](docs/operations/commerce-sandbox.md)
+- [2026-11 market simulation](research/market-simulation-2026-11/site/index.html)
 
 苔間 is an original product direction. It does not include the original app's
 source, sprites, screenshots, copy, or branding.

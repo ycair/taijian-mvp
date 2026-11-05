@@ -1,0 +1,11 @@
+# Upstream tool checkout (large, AGPL, not vendored into this repo)
+MiroFish/
+
+# Secrets and local model/runtime files
+.env
+.env.*
+*.db
+*.log
+**/__pycache__/
+**/.venv*/
+**/log/

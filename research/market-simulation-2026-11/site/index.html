@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="苔間 2026-11 市場模擬：蒙地卡羅、敏感度、留存、MiroFish/OASIS persona pilot 與投資判斷。">
+  <title>苔間 · 2026-11 市場模擬與判斷</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">苔</div>
+        <div>苔間 <small>MARKET SIMULATION / 2026-11</small></div>
+      </div>
+      <nav class="topnav" aria-label="頁面導覽">
+        <a href="#verdict">判斷</a>
+        <a href="#simulations">模擬</a>
+        <a href="#position">定位</a>
+        <a href="#propose">12 題</a>
+        <a href="#move">下一步</a>
+        <a href="#sources">來源</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="wrap hero">
+      <div class="eyebrow">苔間 / Taiwan reptile &amp; exotic pet care</div>
+      <h1>在付費之前，<br><em>先買一張地圖。</em></h1>
+      <p>
+        這不是「苔間會不會成功」的預言。這是一組把假設攤開來的壓力測試：
+        用蒙地卡羅看 12 個月後的可能位置，用敏感度找最該驗證的變數，
+        再用 MiroFish/OASIS 與 12 個 persona 檢查我們是否誤解了飼主。
+      </p>
+      <div class="meta-row">
+        <span class="pill strong">60,000 次蒙地卡羅路徑</span>
+        <span class="pill">3 情境 × 20,000</span>
+        <span class="pill">9 個敏感度變數</span>
+        <span class="pill">MiroFish/OASIS pilot</span>
+        <span class="pill">THU LLM / gpt-oss-120b</span>
+        <span class="pill">資料截止 2026-11-06</span>
+      </div>
+    </section>
+
+    <section class="wrap section" id="verdict">
+      <div class="section-head">
+        <div>
+          <div class="kicker">Executive read</div>
+          <h2>先看結論，再看模型。</h2>
+        </div>
+        <p>基準情境不是「一定會賺」，而是「如果這些假設成立，12 個月後長什麼樣子」。真正的工作是殺掉錯的假設。</p>
+      </div>
+
+      <div class="grid grid-4">
+        <div class="card kpi">
+          <div class="label">BASE · 第 12 個月 MRR</div>
+          <div class="value" id="kpi-mrr">—</div>
+          <div class="note" id="kpi-mrr-note">—</div>
+        </div>
+        <div class="card kpi">
+          <div class="label">BASE · 付費會員</div>
+          <div class="value" id="kpi-active">—</div>
+          <div class="note" id="kpi-active-note">—</div>
+        </div>
+        <div class="card kpi">
+          <div class="label">BASE · 12 個月收入</div>
+          <div class="value" id="kpi-revenue">—</div>
+          <div class="note" id="kpi-revenue-note">—</div>
+        </div>
+        <div class="card kpi warn">
+          <div class="label">BASE · 12 個月內轉正</div>
+          <div class="value" id="kpi-profit">—</div>
+          <div class="note" id="kpi-profit-note">—</div>
+        </div>
+      </div>
+
+      <div class="verdict" style="margin-top:16px">
+        <div class="card">
+          <div class="kicker">The honest headline</div>
+          <p class="big">苔間有機會成為一個<strong>小而穩的訂閱工具</strong>；但「現在就放大」的證據不足。</p>
+          <p style="color:var(--ink-soft); font-size:13px; margin-bottom:0">
+            基準情境的單位經濟看起來可行（LTV/CAC 中位數 4.7×、回收約 3.8 個月），
+            但固定成本與獲客量讓 12 個月內轉正的機率只有 <strong>2.9%</strong>。
+            這不是產品失敗，而是「規模與留存尚未被證明」。
+          </p>
+          <ul class="mini-list">
+            <li>最敏感的不是價格，而是 <strong>12 個月觸及率</strong>、試用轉換與付費轉換。</li>
+            <li>保守情境的 MRR 中位數只有 <strong>NT$14k</strong>；樂觀情境可到 <strong>NT$565k</strong>。差距主要來自通路，不是功能。</li>
+            <li>目前沒有真實付款、續訂、CAC 或留存資料。模型只能拿來排優先順序，不能拿來募資承諾。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="kicker">What would change my mind</div>
+          <div class="callout">
+            <strong>先做一個會痛的實驗</strong>
+            邀請 30 位真實飼主用 4 週，其中至少 10 位走完「付費意願」流程；
+            觀察第 4 週仍在使用與願意付款的人，而不是按讚數。
+          </div>
+          <div style="margin-top:14px">
+            <span class="tag fact">FACT</span> 目前只有一個公開旅程、沒有真實訂閱。<br><br>
+            <span class="tag assumption">ASSUMPTION</span> 爬蟲飼主願意為「節省照顧記憶」付 99–399 元/月。<br><br>
+            <span class="tag goal">GOAL</span> 90 天內取得 30 位合格訪談、10 位付費 pilot、4 週留存 ≥ 50%。
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap section" id="read">
+      <div class="section-head">
+        <div>
+          <div class="kicker">Phase 1 · Read the Room</div>
+          <h2>先把四個座標說清楚。</h2>
+        </div>
+        <p>如果對方不知道我們是誰、正在解什麼、做到哪裡，後面的市場數字只會變成噪音。</p>
+      </div>
+      <div class="grid grid-4">
+        <div class="card phase">
+          <h3>我是誰</h3>
+          <p>苔間是一個以 iOS 為主、LINE 為輔的爬蟲與特殊寵物照護紀錄工具。家庭成員可以共同記錄餵食、換水、體重、蛻皮、醫療與照片。</p>
+        </div>
+        <div class="card phase">
+          <h3>正在解什麼問題</h3>
+          <p>照顧知識與紀錄散落在 LINE 記事本、聊天室、Google Sheet 與記憶裡；家人交接時最容易漏掉的是「上次餵食、上次蛻皮、用藥與體重趨勢」。</p>
+        </div>
+        <div class="card phase">
+          <h3>目前進展到哪裡</h3>
+          <p>iOS 完整版與 LIFF 已可用：居民、紀錄、提醒、地圖、Journal、公開分享、追蹤/封鎖、檢舉管理與深色模式。尚未有真實付款與可規模化的 iOS 發佈。</p>
+        </div>
+        <div class="card phase">
+          <h3>今天要判斷什麼</h3>
+          <p>不是「功能還缺什麼」，而是：<strong>哪個客群、哪個通路、哪個價格，值得我們在接下來 90 天用真實付款去驗證？</strong></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap section" id="simulations">
+      <div class="section-head">
+        <div>
+          <div class="kicker">Phase 2 · Simulations</div>
+          <h2>我們跑了什麼，以及它不代表什麼。</h2>
+        </div>
+        <p>所有數字都是假設區間。圖表是為了找出「最該問的問題」，不是為了製造漂亮曲線。</p>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>模擬</th><th>方法</th><th class="num">樣本／輪數</th><th>產出</th><th>解讀</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Monte Carlo 營收</strong></td>
+              <td>月度付費漏斗：觸及 → 試用 → 付費 → 月流失；加入 CAC、變動成本、固定成本</td>
+              <td class="num">3 × 20,000</td>
+              <td>MRR、12 個月收入、付費會員、利潤、LTV/CAC、回收期</td>
+              <td>基準 MRR 中位數約 NT$124k；但轉正機率低，需先驗證通路與留存。</td>
+            </tr>
+            <tr>
+              <td><strong>敏感度分析</strong></td>
+              <td>一次變動一個參數，其餘固定在基準中位數；每個極端 3,000 次</td>
+              <td class="num">9 變數</td>
+              <td>12 個月收入與 MRR 的擺幅</td>
+              <td>觸及率與轉換率比價格更關鍵；先解決「有人看到並開始用」。</td>
+            </tr>
+            <tr>
+              <td><strong>留存曲線</strong></td>
+              <td>以月流失率 3% / 5.5% / 9% 推導 12、24 個月留存</td>
+              <td class="num">3 情境</td>
+              <td>第 12 個月留存 69% / 51% / 32%</td>
+              <td>若月流失 9%，一年只剩三分之一；續訂是商業模式的核心風險。</td>
+            </tr>
+            <tr>
+              <td><strong>MiroFish / OASIS pilot</strong></td>
+              <td>12 個台灣爬蟲／特寵 persona，2 輪社群模擬；使用 THU LLM 的 gpt-oss-120b</td>
+              <td class="num">12 agents × 2 rounds</td>
+              <td>3 則貼文、0 留言、0 讚、0 追蹤</td>
+              <td><strong>低訊號 pilot</strong>：多數 agent 重貼官方貼文，不足以推論市場；保留作方法示範，不當作需求證據。</td>
+            </tr>
+            <tr>
+              <td><strong>THU persona panel</strong></td>
+              <td>同 12 個 persona，逐位結構化訪問：興趣、試用、付費、價格、疑慮、通路</td>
+              <td class="num">12 次 LLM 訪談</td>
+              <td>質性主題、價格帶、反對理由</td>
+              <td>用來補充 OASIS 的低訊號，不用來代替真人訪談。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small" id="iterations-note" style="margin-top:10px">總共 <span id="iterations">—</span> 條蒙地卡羅路徑；模擬種子 20261106；幣別 TWD。</p>
+
+      <div class="grid grid-2" style="margin-top:16px">
+        <div class="card chart-card">
+          <h3>三情境：第 12 個月 MRR</h3>
+          <div class="sub">P10–P90 區間；橘點為 P50。這張圖比單一平均值誠實。</div>
+          <div class="chart" id="chart-range"></div>
+        </div>
+        <div class="card chart-card">
+          <h3>基準情境：12 個月收入分布</h3>
+          <div class="sub">20,000 次模擬；虛線為 P50。長尾代表少數高觸及／高轉換路徑。</div>
+          <div class="chart" id="chart-hist-revenue"></div>
+        </div>
+        <div class="card chart-card">
+          <h3>基準情境：第 12 個月 MRR 分布</h3>
+          <div class="sub">MRR 的離散程度是「現在不能承諾營收」的直接證據。</div>
+          <div class="chart" id="chart-hist-mrr"></div>
+        </div>
+        <div class="card chart-card">
+          <h3>敏感度：哪個假設最會改變結果？</h3>
+          <div class="sub">以 12 個月收入 P50 的擺幅排序；不是相關係數。</div>
+          <div class="chart" id="chart-tornado"></div>
+          <div class="legend"><span><i style="background:#c8794d"></i>低值</span><span><i style="background:#3f6b4f"></i>高值</span><span>越長代表越值得優先驗證</span></div>
+        </div>
+        <div class="card chart-card">
+          <h3>付費會員成長：P10 / P50 / P90</h3>
+          <div class="sub">基準情境的月末付費會員數；不是下載數。</div>
+          <div class="chart" id="chart-active"></div>
+        </div>
+        <div class="card chart-card">
+          <h3>留存：不同月流失率的殘酷差異</h3>
+          <div class="sub">第 12 個月：3% → 69%；5.5% → 51%；9% → 32%。</div>
+          <div class="chart" id="chart-retention"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h3 style="font-size:16px">情境表</h3>
+        <div class="table-wrap" style="margin-top:10px">
+          <table>
+            <thead><tr><th>情境</th><th class="num">MRR P50</th><th class="num">付費會員 P50</th><th class="num">12 個月收入 P50</th><th class="num">12 個月內轉正</th><th class="num">LTV/CAC P50</th></tr></thead>
+            <tbody id="scenario-body"></tbody>
+          </table>
+        </div>
+        <p class="small" style="margin-bottom:0">保守／基準／樂觀的參數範圍見 <a href="data.json">data.json</a> 的 <code>scenario_ranges</code>。保守與樂觀不是預測，是管理層對不確定性的邊界。</p>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="kicker">Live scenario calculator</div>
+        <h3 style="font-size:18px">自己拉一個世界觀</h3>
+        <p class="small">公式與蒙地卡羅相同：45% 數位可觸及、12 個月分攤獲客、月流失、固定 ARPU。這是近似，不是會計模型。</p>
+        <div class="scenario-controls" style="margin-top:14px">
+          <div class="control"><label>爬蟲飼養家戶 <output id="calc-households-out"></output></label><input id="calc-households" type="range" min="50000" max="400000" step="5000" value="225000"></div>
+          <div class="control"><label>12 個月觸及率 <output id="calc-reach-out"></output></label><input id="calc-reach" type="range" min="2" max="50" step="1" value="20"></div>
+          <div class="control"><label>試用轉換率 <output id="calc-trial-out"></output></label><input id="calc-trial" type="range" min="2" max="30" step="1" value="14"></div>
+          <div class="control"><label>試用轉付費率 <output id="calc-paid-out"></output></label><input id="calc-paid" type="range" min="5" max="60" step="1" value="29"></div>
+          <div class="control"><label>每月 ARPU <output id="calc-arpu-out"></output></label><input id="calc-arpu" type="range" min="99" max="399" step="10" value="179"></div>
+          <div class="control"><label>月流失率 <output id="calc-churn-out"></output></label><input id="calc-churn" type="range" min="1" max="15" step="0.5" value="5.5"></div>
+        </div>
+        <div class="calc-output" style="margin-top:16px">
+          <div><span>第 12 個月付費會員</span><div class="big" id="calc-active">—</div></div>
+          <div><span>第 12 個月 MRR</span><div class="big" id="calc-mrr">—</div></div>
+          <div><span>12 個月累計收入</span><div class="big" id="calc-revenue">—</div></div>
+          <div><span>12 個月內曾試用</span><div class="big" id="calc-trials">—</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap section" id="oasis">
+      <div class="section-head">
+        <div>
+          <div class="kicker">MiroFish / OASIS</div>
+          <h2>多代理人模擬給了什麼？</h2>
+        </div>
+        <p>老實說：這次的 OASIS pilot 訊號很弱。它證明了流程可跑，不足以證明市場。</p>
+      </div>
+      <div id="oasis-content"></div>
+      <div class="callout" style="margin-top:16px">
+        <strong>為什麼不假裝它很成功？</strong>
+        MiroFish 的完整 GraphRAG 流程需要 Zep Cloud API key；本次沒有提供，所以我們直接跑它的 OASIS 引擎，並只把結果當作低訊號質性 pilot。3 則貼文、0 互動，不能拿來推論市場需求。
+      </div>
+    </section>
+
+    <section class="wrap section" id="panel">
+      <div class="section-head">
+        <div>
+          <div class="kicker">Synthetic qualitative panel</div>
+          <h2>12 個 persona 的真心話（還是合成資料）。</h2>
+        </div>
+        <p>THU LLM 依 persona 回答；用來找反對理由與價格帶，不用來估市場規模。</p>
+      </div>
+      <div id="panel-content" class="grid grid-2"></div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="kicker">Panel synthesis · what repeats</div>
+        <h3 style="font-size:18px">11 位顧客 persona 反覆出現的五件事</h3>
+        <div class="grid grid-2" style="margin-top:12px">
+          <div>
+            <p><span class="tag fact">1</span> <strong>資料可攜性是付費前提，不是加分項。</strong>阿凱、陳老闆、老周、林醫師都提到匯出／備份／不被綁死；沒有匯出，信任不會成立。</p>
+            <p><span class="tag fact">2</span> <strong>隱私與家庭權限要細緻。</strong>公開分享不是預設需求；雅婷擔心孩子亂改，米米擔心陌生人騷擾，阿凱不想把完整紀錄放雲端。</p>
+            <p><span class="tag fact">3</span> <strong>免費 60 張照片偏少。</strong>小安、阿宏、阿珍都直接點名照片額度；這是訂閱動機，也是放棄原因。</p>
+          </div>
+          <div>
+            <p><span class="tag fact">4</span> <strong>真正觸發點是「交接」與「多隻」。 </strong>出差、家人代餵、第二隻寵物、生病回診，比「想要一個漂亮 app」更強。</p>
+            <p><span class="tag fact">5</span> <strong>價格不是 399，而是 99–199 的信任區。</strong>3 位選 199，8 位仍選免費；最高可接受價格中位數 199。先把 199 的價值講清楚，不要先賣 399。</p>
+          </div>
+        </div>
+        <div class="callout" style="margin-top:12px">
+          <strong>產品含義</strong>
+          下一個版本最該做的不是更多社群功能，而是：匯出／備份、私人與家庭權限、照片額度溝通、離線可靠性、以及「出差／多隻／生病」的使用情境 onboarding。
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap section" id="position">
+      <div class="section-head">
+        <div>
+          <div class="kicker">Phase 2 · Position</div>
+          <h2>把功能變成值得投資的商業機會。</h2>
+        </div>
+        <p>每一段都區分「已觀察事實」與「商業假設」。不把目標寫成現況。</p>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <h3>解什麼問題？</h3>
+          <p><strong>客戶痛點：</strong>爬蟲照顧的關鍵資訊不是「可愛照片」，而是餵食頻率、拒食、蛻皮是否完整、體重趨勢、用藥與環境參數。這些紀錄常散落在 LINE 聊天、記事本、Excel 與記憶中；家庭成員接手時最容易斷裂。</p>
+          <p><strong>解決方案：</strong>用 LINE 作為入口，iOS 作為完整工作台：一鍵記錄、家庭共享、提醒、可視化趨勢、公開但可控的旅程與居民頁。不是再做一個社群，而是先把「照顧紀錄」變成可交接的資產。</p>
+        </div>
+        <div class="card">
+          <h3>為什麼現在？</h3>
+          <p><strong>三件事相遇：</strong>① 台灣 LINE 約 2,200 萬用戶、94% 滲透，紀錄與分享的預設場景已在 LINE；② 爬蟲與特殊寵物持續從 niche 走向年輕世代，2025 台北兩棲爬蟲盛典兩日 15,000 人次、1,500 萬元營業額；③ 特殊寵物管理與動物福利討論升溫，讓「可追溯的照顧紀錄」從加分變成需求。</p>
+          <p class="small">上述為外部訊號；不代表所有爬蟲飼主都需要 app。</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h3>市場估算：三層，而不是一個大數字</h3>
+        <div class="table-wrap" style="margin-top:10px">
+          <table>
+            <thead><tr><th>層級</th><th>定義</th><th class="num">估算</th><th>依據／信心</th></tr></thead>
+            <tbody>
+              <tr><td><strong>TAM</strong></td><td>台灣有飼養爬蟲／特殊寵物的家戶</td><td class="num">15–30 萬戶</td><td>農業部 2023：28.3% 家戶養寵物、9.3% 非犬貓；再以爬蟲占非犬貓的一部分推估。低信心。</td></tr>
+              <tr><td><strong>SAM</strong></td><td>其中會用數位工具、對紀錄有需求、可被 LINE/內容觸及者</td><td class="num">4.5–18 萬戶</td><td>以 TAM 的 30–60% 為假設。沒有直接調查。</td></tr>
+              <tr><td><strong>SOM（12 個月）</strong></td><td>模型中的實際觸及 × 試用 × 付費</td><td class="num">約 100–2,400 付費會員</td><td>蒙地卡羅 P10–P90；不是銷售承諾。</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="small" style="margin-bottom:0">市場規模不是最難的部分；「誰願意付、為什麼續訂」才是。以 99/199/399 元月費，100 位付費 ≈ NT$10k–40k MRR，還不足以支撐全職團隊。</p>
+      </div>
+
+      <div class="grid grid-2" style="margin-top:16px">
+        <div class="card">
+          <h3>會是一門什麼生意？</h3>
+          <p><strong>誰付：</strong>核心飼主訂閱（99/199/399 元）；未來可能的繁殖者／爬店 B2B 工具與交易服務。現在只有 sandbox，沒有真實付款。</p>
+          <p><strong>再付：</strong>照片額度、家庭共享、公開分享與資料可攜性；不是用廣告解鎖。若留存不足，訂閱會變成一次性工具費。</p>
+          <p><strong>競爭：</strong>LINE 記事本／相簿、Google Sheet、紙本、Facebook/Discord 社群、通用寵物 app、繁殖者自己的 Excel。苔間的差異是 LINE 原生入口＋爬蟲特定欄位＋家庭權限＋可控公開頁，不是「功能更多」。</p>
+        </div>
+        <div class="card">
+          <h3>獲客：流量不是客戶</h3>
+          <p><strong>第一波：</strong>爬店／繁殖者／特寵獸醫的合作與售後流程；爬蟲展與社群內容創作者；LINE 群組與現有飼主 referral。</p>
+          <p><strong>不要先做：</strong>廣泛 Meta/Google 廣告、一次性 KOL 曝光、沒有留存曲線就補貼。這些會把 CAC 放大，卻不證明續訂。</p>
+          <p><strong>北極星：</strong>第 4 週仍有 2 筆以上照護紀錄的活躍家庭，不是註冊數。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap section" id="propose">
+      <div class="section-head">
+        <div>
+          <div class="kicker">Phase 3 · Propose</div>
+          <h2>六十秒，六個任務。</h2>
+        </div>
+        <p>不是把整份簡報快轉，而是讓對方在六十秒內得到座標、證據與請求。</p>
+      </div>
+      <div class="grid grid-3">
+        <div class="card phase"><h3>1. 公司做什麼</h3><p>苔間是爬蟲與特殊寵物的家庭照護紀錄工具，iOS 為主、LINE 為輔。</p></div>
+        <div class="card phase"><h3>2. 幫誰解什麼</h3><p>幫需要交接與記得細節的飼主，解決「紀錄散落、家人接手會漏」。</p></div>
+        <div class="card phase"><h3>3. 用什麼方法</h3><p>結構化紀錄、提醒、家庭共享、趨勢圖、可控的公開旅程與居民頁。</p></div>
+        <div class="card phase"><h3>4. 現在有什麼證據</h3><p>iOS/LIFF 已可運作，99 個 Flutter 測試通過；但只有一位主要使用者、一個公開旅程，沒有真實付費與留存。</p></div>
+        <div class="card phase"><h3>5. 資金／下一步推進什麼</h3><p>不是買廣告，而是 90 天付費 pilot：30 位合格訪談、10 位付費、4 週留存與續訂原因。</p></div>
+        <div class="card phase"><h3>6. 本次希望對方做什麼</h3><p>介紹 3 家爬店／特寵獸醫與 10 位可受訪飼主；或提供 12 個月種子資源，換取可驗證的里程碑。</p></div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="kicker">12 questions · one judgment path</div>
+        <h3 style="font-size:18px">不是填分數，而是挑出關鍵問題</h3>
+        <div class="answers">
+          <div class="group-label">第一組 · 這是一個值得做的機會嗎？</div>
+          <div class="answer"><div class="n"></div><div><h4>公司一句話</h4><p>苔間把爬蟲照顧從散落的聊天與記憶，變成家人可以交接、可以選擇公開的照護紀錄。</p></div></div>
+          <div class="answer"><div class="n"></div><div><h4>客戶問題</h4><p>關鍵資訊分散、交接靠記憶、公開分享缺少隱私界線；新手不知道哪些指標該記。</p></div></div>
+          <div class="answer"><div class="n"></div><div><h4>解法與產品</h4><p>iOS 完整工作台＋LIFF 快速入口；紀錄、提醒、家庭共享、公開唯讀頁、匯出與權限。</p></div></div>
+          <div class="answer"><div class="n"></div><div><h4>為什麼現在</h4><p>LINE 滲透率極高、爬蟲市場年輕化、特殊寵物治理與動物福利討論升溫。</p></div></div>
+          <div class="answer"><div class="n"></div><div><h4>市場與切入</h4><p>先攻「已用 LINE 記錄、曾有交接需求」的飼主；從爬店、繁殖者、特寵獸醫與內容社群切入，不用廣泛廣告。</p></div></div>
+          <div class="group-label">第二組 · 這個團隊真的有機會做成嗎？</div>
+          <div class="answer"><div class="n"></div><div><h4>替代競爭</h4><p>LINE 記事本、Google Sheet、紙本、社群貼文、通用寵物 app。苔間必須證明「比記事本更省時間」，而不是功能清單更長。</p></div></div>
+          <div class="answer"><div class="n"></div><div><h4>收費模式</h4><p>99/199/399 元月訂閱；免費 60 張照片。價格不是已驗證事實；目前 sandbox，需真人付費測試。</p></div></div>
+          <div class="answer"><div class="n"></div><div><h4>握有進度</h4><p>已出貨的功能與測試是事實；使用者數、留存、付費意願不是。以「可運作產品」換「可驗證市場」。</p></div></div>
+          <div class="answer"><div class="n"></div><div><h4>第一批客戶怎麼來</h4><p>10 家爬店／繁殖者合作、2 場爬蟲活動、5 位內容創作者、現有飼主 referral；每一條都要量測 4 週留存與 CAC。</p></div></div>
+          <div class="answer"><div class="n"></div><div><h4>團隊能力</h4><p>強項是產品、iOS/Supabase/LINE 整合與快速迭代；缺口是成長實驗、特寵臨床顧問與規模化發佈（免費 Apple 簽署限制）。</p></div></div>
+          <div class="group-label">第三組 · 值得現在用什麼資源來支持它？</div>
+          <div class="answer"><div class="n"></div><div><h4>募資金額與用途</h4><p>現階段不建議為「擴大用戶」募資；若需要 12 個月驗證資源，假設 NT$3–5M：約 50% 產品與資料可攜性、30% 通路實驗、20% 特寵顧問／法務與 pilot 補助，不以大量廣告為主。</p></div></div>
+          <div class="answer"><div class="n"></div><div><h4>里程碑與本次請求</h4><p>90 天：30 位訪談、10 位付費、4 週留存 ≥ 50%、CAC 回收 &lt; 6 個月。請求：介紹通路與受訪者，或提供 12 個月種子資源。</p></div></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h3>事實、假設、目標：不要混在一起</h3>
+        <div class="table-wrap" style="margin-top:10px">
+          <table>
+            <thead><tr><th>類別</th><th>內容</th><th>現在能不能拿來對外承諾？</th></tr></thead>
+            <tbody>
+              <tr><td><span class="tag fact">已觀察事實</span></td><td>iOS/LIFF 功能已可運作；99 個 Flutter 測試通過；目前有一個公開旅程與公開居民紀錄；沒有真實訂閱、付款、續訂或可規模化 iOS 發佈。</td><td>可以，作為產品進度；不能當市場需求。</td></tr>
+              <tr><td><span class="tag assumption">商業假設</span></td><td>15–30 萬爬蟲家戶；LINE 可降低獲客成本；飼主願意付 99–399 元/月；月流失 3–9%；CAC 300–900 元。</td><td>不行；需要訪談、fake-door、真實付款與 cohort 留存驗證。</td></tr>
+              <tr><td><span class="tag goal">下一階段目標</span></td><td>90 天內 30 位合格訪談、10 位付費 pilot、4 週留存 ≥ 50%、至少 3 個爬店／獸醫通路；不是「已經有 10 位客戶」。</td><td>不行；這是目標，不是現況。</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap section" id="move">
+      <div class="section-head">
+        <div>
+          <div class="kicker">Phase 4 · Move Forward</div>
+          <h2>回答追問：先承認不知道，再說下一步。</h2>
+        </div>
+        <p>投資人最怕的不是沒有數據，而是把假設說成事實。</p>
+      </div>
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="kicker">Example question</div>
+          <h3>「你怎麼知道使用者願意一直續訂？」</h3>
+          <div class="callout" style="margin-top:12px"><strong>先直接回答</strong>目前還不知道，因為我們沒有完整的付費續訂資料。</div>
+          <div class="callout" style="margin-top:10px; border-color:var(--moss); background:var(--moss-pale); color:var(--moss-dark)"><strong>再說依據</strong>現在只有早期流程使用訊號與一位主要使用者，不能推論長期付費。模擬的留存曲線是假設，不是觀察。</div>
+          <div class="callout" style="margin-top:10px; border-color:var(--gold); background:#f1ead5; color:#5d4a1d"><strong>最後說下一步</strong>接下來讓真實付款者走完完整到期週期，記錄續訂／不續訂原因，並以 cohort 留存與退款率作為 gate。</div>
+        </div>
+        <div class="card">
+          <div class="kicker">90-day validation design</div>
+          <h3>把「市場調查」變成可判定的實驗</h3>
+          <ul class="mini-list">
+            <li><strong>招募：</strong>30 位已養爬蟲、過去 30 天用 LINE/Sheet 記過照顧的飼主；不要只找朋友。</li>
+            <li><strong>任務：</strong>4 週內至少记录 8 次餵食／蛻皮／體重；家庭成員接手一次。</li>
+            <li><strong>付費：</strong>10 位進入 99/199/399 的 fake-door 或 sandbox 付費意願流程；不把按讚當付款。</li>
+            <li><strong>判準：</strong>4 週留存 ≥ 50%、至少 6 位願意在一個月後續用、CAC 回收 &lt; 6 個月；未達標就改產品／客群，不加大廣告。</li>
+            <li><strong>通路：</strong>3 家爬店／繁殖者、2 位特寵獸醫、5 位內容創作者；每個通路分開計算轉換與留存。</li>
+          </ul>
+          <div class="callout" style="margin-top:12px"><strong>Kill criteria</strong>如果 30 位中少於 5 位在 4 週後仍有紀錄，或 10 位付費 pilot 少於 3 位願意付款，先不要擴大。問題可能在客群或價值主張，不是文案。</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap section" id="risks">
+      <div class="section-head">
+        <div>
+          <div class="kicker">Risks / limitations</div>
+          <h2>這份報告最不可靠的地方。</h2>
+        </div>
+        <p>把限制寫出來，比把模型包裝成預言更有用。</p>
+      </div>
+      <div class="grid grid-3">
+        <div class="card"><span class="tag risk">HIGH</span><h3 style="font-size:16px; margin-top:10px">沒有真實付款與留存</h3><p>所有 MRR、LTV、churn 都是假設。現有 sandbox 訂閱不能當營收證據。</p></div>
+        <div class="card"><span class="tag risk">HIGH</span><h3 style="font-size:16px; margin-top:10px">iOS 發佈受限</h3><p>免費 Apple 簽署每 7 天到期，沒有 TestFlight/App Store；這會限制種子使用者規模與留存實驗。</p></div>
+        <div class="card"><span class="tag risk">MEDIUM</span><h3 style="font-size:16px; margin-top:10px">市場統計不精確</h3><p>爬蟲家戶沒有官方戶口資料；15–30 萬戶是從非犬貓統計與媒體比例推估，不能當精算數字。</p></div>
+        <div class="card"><span class="tag risk">MEDIUM</span><h3 style="font-size:16px; margin-top:10px">OASIS 訊號太弱</h3><p>2 輪、3 則貼文、0 互動，不能代表社群反應；只保留方法與限制。</p></div>
+        <div class="card"><span class="tag risk">MEDIUM</span><h3 style="font-size:16px; margin-top:10px">公開分享的隱私風險</h3><p>公開居民頁會暴露所有紀錄；即使有 token 與關閉機制，仍需明確同意與內容審核。</p></div>
+        <div class="card"><span class="tag risk">LOW</span><h3 style="font-size:16px; margin-top:10px">模型過度簡化</h3><p>沒有退款、稅、支付手續費、季節性、B2B 銷售週期與口碑的非線性效應。</p></div>
+      </div>
+    </section>
+
+    <section class="wrap section" id="sources">
+      <div class="section-head">
+        <div>
+          <div class="kicker">Sources &amp; reproducibility</div>
+          <h2>數字從哪裡來？</h2>
+        </div>
+        <p>外部來源只作為量級錨點；所有產品與市場假設都在 <code>data.json</code> 與模擬腳本中。</p>
+      </div>
+      <div class="card">
+        <ul class="source-list" id="source-list">
+          <li><a href="https://animal.moa.gov.tw/public/files/LatestNews_anp_news/202503310609020001.pdf">農業部 2023 家犬貓調查會議紀錄</a>：28.3% 家戶養寵物、9.3% 非犬貓。</li>
+          <li><a href="https://www.taipeitimes.com/News/taiwan/archives/2024/06/03/2003818796">Taipei Times, 2024</a>：台灣寵物犬貓與非犬貓趨勢。</li>
+          <li><a href="https://news.tvbs.com.tw/local/2967043">TVBS, 2025</a>：爬蟲類約占寵物飼養量 10%（媒體引述，低信心）。</li>
+          <li><a href="https://www.cna.com.tw/postwrite/chi/401223">中央社, 2025</a>：台北國際兩棲爬蟲盛典 15,000 人次、1,500 萬元營業額。</li>
+          <li><a href="https://www.linecorp.com/tw/pr/news/2024/1217">LINE Taiwan, 2024</a>：2,200 萬用戶、約 94% 滲透率。</li>
+          <li><a href="https://vos.tier.org.tw/Viewpoint01More.aspx?DGUID=390c8a34-e293-4056-8aa2-b54c5315fdd7">台經院, 2024</a>：2023 台灣寵物產業約 631 億元。</li>
+          <li><a href="https://github.com/666ghj/MiroFish">MiroFish</a>：OASIS 多代理人引擎與 MiroFish repo。</li>
+        </ul>
+        <hr class="soft">
+        <p class="small" style="margin-bottom:0">
+          可重現檔案：<code>simulations/monte_carlo.py</code>、<code>simulations/results/monte_carlo.json</code>、
+          <code>simulations/mirofish_oasis/</code>、<code>simulations/structured_panel.py</code>、<code>site/data.json</code>。
+          網頁不包含任何 API key。THU LLM key 只存在本機 600 權限的 <code>MiroFish/.env</code>，未進 git。
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap footer">
+    <strong>苔間 · 2026-11 market simulation</strong><br>
+    這是一份決策輔助，不是投資建議、營收預測或市場保證。所有 persona 與模擬輸出皆為合成資料；真人訪談與真實付款才是下一代證據。
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <noscript><p class="wrap">此頁需要 JavaScript 才能顯示圖表與計算器。</p></noscript>
+</body>
+</html>
