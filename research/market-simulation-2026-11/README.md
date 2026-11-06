@@ -36,7 +36,7 @@ MiroFish/backend/.venv-arm/bin/python simulations/structured_panel.py
 python3 build_site_data.py
 ```
 
-MiroFish 原版完整 GraphRAG pipeline 使用 Zep Cloud（key 驗證：create user 201、delete 200）＋遠端 Ollama。遠端主機（i7-8700K / 30GB / Titan V 12GB）可跑 `qwen2.5:7b` 與 `qwen2.5:14b-instruct`；14B 使用約 9.7GB VRAM。Qwen ontology 成功產生 10 類實體／6 種關係，Zep graph 建出 19 nodes／27 edges，15 個 persona 完成。MiroFish 平行 manager 在初始貼文後停住，因此用同一個 OASIS 引擎直接跑：27 則貼文、0 留言；內容重複與空內容很多，不能當市場證據。本機資源沒有再被吃滿。
+MiroFish 原版完整 GraphRAG pipeline 使用 Zep Cloud（key 驗證：create user 201、delete 200）＋遠端 Ollama。遠端主機（i7-8700K / 30GB / Titan V 12GB）可跑 `qwen2.5:7b` 與 `qwen2.5:14b-instruct`；14B 使用約 9.7GB VRAM。Qwen ontology 成功產生 10 類實體／6 種關係，Zep graph 建出 19 nodes／27 edges，15 個 persona 完成。MiroFish 平行 API 預設使用 wait_for_commands，OASIS 完成後會保留環境等待 interview，run_state 因此維持 running；加上 hour 0 是 off-peak、5–7 agents/hour × 0.05 = 0 active agents，所以沒有 actions。GraphRAG 建圖／檢索本身成功；這是啟動設定與 IPC 模式問題，不是 GraphRAG 卡住。本機資源沒有再被吃滿。
 
 若要做完整 pipeline，換一個在 JSON schema 提示下會回傳文字的模型／provider（或自架 Ollama），或使用 Zep Cloud Free。`MiroFish/`、`MiroFish-local/`、`.env`、SQLite DB 與 log 都不進 git。
 

@@ -1,6 +1,6 @@
 {
   "status": "partial",
-  "reason": "遠端主機（i7-8700K / 30GB RAM / Titan V 12GB）上的 Ollama 可用：qwen2.5:7b 與 qwen2.5:14b-instruct 都能跑，14B 使用約 9.7GB VRAM。Zep ontology 與 15 個 persona 完成；MiroFish 的平行 simulation manager 在初始貼文後停住，因此改用同一個 MiroFish OASIS 引擎直接跑：15 agents、2 回合、27 則貼文、0 留言。貼文重複與空內容很多，不能當作可信市場證據。",
+  "reason": "MiroFish API 的 simulation 預設使用 wait_for_commands：OASIS 完成後會保留環境等待 interview 指令，不會自動退出，所以 run_state 會維持 running，看起來像卡住。這次 config 在 hour 0 的 off_peak_activity_multiplier=0.05、agents_per_hour=5–7，target_count=int(uniform(5,7)*0.05)=0，因此該輪沒有任何 agent actions。GraphRAG 建圖與檢索本身成功；問題是啟動時間／活躍設定與 IPC wait 模式，不是 GraphRAG。",
   "completed_checks": [
     "Remote Ollama：qwen2.5:7b / qwen2.5:14b-instruct 可用",
     "Remote GPU：Titan V 12GB，14B 使用約 9.7GB VRAM，利用率 97%",
@@ -10,5 +10,10 @@
     "Direct OASIS：27 posts / 0 comments；48–68 秒完成",
     "MiroFish 平行 manager：初始貼文後 0 actions，停了約 8 分鐘；未完成"
   ],
-  "recommendation": "遠端 GPU 解決了算力與本機記憶體問題，但 qwen2.5:14b 的 OASIS 內容品質仍然不足；需要更大/更強的模型、改寫 OASIS prompt，或使用可商用的雲端模型。現有 11 位 structured persona panel 仍是較可信的質性證據。"
+  "recommendation": "遠端 GPU 解決了算力與本機記憶體問題，但 qwen2.5:14b 的 OASIS 內容品質仍然不足；需要更大/更強的模型、改寫 OASIS prompt，或使用可商用的雲端模型。現有 11 位 structured persona panel 仍是較可信的質性證據。",
+  "root_cause": {
+    "no_actions": "hour 0 是 off-peak；5–7 agents/hour × 0.05 = 0 active agents",
+    "apparent_hang": "run_parallel_simulation 預設 wait_for_commands=True；OASIS 完成後等待 interview 指令，run_state 不會自動變 completed",
+    "not_graphrag": "Zep graph 19 nodes / 27 edges、retrieval 27 facts / 37 nodes 已完成"
+  }
 }
