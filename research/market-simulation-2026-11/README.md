@@ -62,6 +62,17 @@ MiroFish 原版完整 GraphRAG pipeline 使用 Zep Cloud（key 驗證：create u
 - 若 OASIS 沒有 actions，報告會標示 partial，不把沉默當市場結論。
 - 2026-11 執行結果：14 profiles、36 nodes / 41 edges、OASIS 9 posts / 0 comments、ReportAgent 2/3 sections。
 
+## 上線＋NFC 周邊商品模擬（2026-11-06）
+
+- 種子：`seeds/taijian_launch_nfc_seed.md`
+- 報告：`analysis/launch-nfc-report.md`
+- NFC 技術／產品分析：`analysis/nfc-sticker-feasibility.md`
+- 網頁：`site/launch-nfc.html`（<https://taijian.ycair.space/launch-nfc.html>）
+- 結果：`simulations/results/launch_nfc_final_summary.json`、`launch_nfc_analysis_round2.json`、`structured_panel_launch_nfc.json`
+- 圖譜：Zep Cloud `mirofish_4fc677f874214ea4`（86 nodes / 100 edges / 9 chunks）
+- OASIS：Twitter 18 posts；Reddit 8 posts＋8 comments（第一次）＋6 posts＋13 comments（第二次，部分離題已排除）
+- Panel：15 位；199 × 10、99 × 3、free × 2、399 × 0；NFC 3 張 299 可接受 5/15
+
 ## 報告站
 
 - 網址：<https://taijian.ycair.space>

@@ -1,0 +1,55 @@
+{
+  "status": "completed",
+  "project_id": "proj_f97ecd328e68",
+  "graph_id": "mirofish_4fc677f874214ea4",
+  "simulation_id": "sim_8395a3e78031",
+  "graph": {
+    "chunk_count": 9,
+    "edge_count": 100,
+    "graph_id": "mirofish_4fc677f874214ea4",
+    "node_count": 86,
+    "project_id": "proj_f97ecd328e68"
+  },
+  "oasis": {
+    "round1": {
+      "twitter_posts": 18,
+      "reddit_posts": 8,
+      "reddit_comments": 8,
+      "rounds": 8
+    },
+    "round2": {
+      "reddit_posts": 6,
+      "reddit_comments": 13,
+      "rounds_target": 12,
+      "note": "stopped at partial after ~6 minutes; DB saved"
+    }
+  },
+  "panel": {
+    "status": "completed",
+    "model": "qwen2.5:14b-instruct",
+    "n": 15,
+    "valid": 15,
+    "mean_interest_app": 3.67,
+    "mean_trial_app": 0.753,
+    "mean_pay_app": 0.313,
+    "plans": {
+      "free": 2,
+      "99": 3,
+      "199": 10,
+      "399": 0,
+      "unsure": 0
+    },
+    "median_max_price": 299,
+    "mean_nfc_interest": 2.53,
+    "mean_nfc_buy": 0.273,
+    "nfc_3pack_299_yes": 5,
+    "mean_merch_interest": 2.47,
+    "note": "Synthetic qualitative panel; not a representative survey or a revenue forecast."
+  },
+  "artifacts": {
+    "report": "analysis/launch-nfc-report.md",
+    "nfc_memo": "analysis/nfc-sticker-feasibility.md",
+    "site": "site/launch-nfc.html",
+    "analysis": "simulations/results/launch_nfc_analysis_round2.json"
+  }
+}

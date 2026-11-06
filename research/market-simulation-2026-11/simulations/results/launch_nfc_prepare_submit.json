@@ -1,0 +1,23 @@
+{
+  "data": {
+    "already_prepared": false,
+    "entity_types": [
+      "DIYer",
+      "Retailer",
+      "ReptileBreeder",
+      "Veterinarian",
+      "User",
+      "PetShopOwner",
+      "ContentCreator",
+      "Person",
+      "GiftGiver",
+      "Organization"
+    ],
+    "expected_entities_count": 20,
+    "message": "准备任务已启动，请通过 /api/simulation/prepare/status 查询进度",
+    "simulation_id": "sim_8395a3e78031",
+    "status": "preparing",
+    "task_id": "6c3dd49c-d8ac-4a51-84bd-8f91a97f19bb"
+  },
+  "success": true
+}

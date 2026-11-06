@@ -1,0 +1,828 @@
+{
+  "simulation_id": "sim_8395a3e78031",
+  "graph_id": "mirofish_4fc677f874214ea4",
+  "project_id": "proj_f97ecd328e68",
+  "counts": {
+    "total": 30,
+    "by_platform": {
+      "twitter": 14,
+      "reddit": 16
+    },
+    "by_kind": {
+      "twitter:post": 14,
+      "reddit:post": 8,
+      "reddit:comment": 8
+    },
+    "unique_authors": 16,
+    "top_authors": [
+      [
+        "林醫師",
+        3
+      ],
+      [
+        "陳老闆",
+        3
+      ],
+      [
+        "小美的男友",
+        3
+      ],
+      [
+        "老周",
+        3
+      ],
+      [
+        "阿凱",
+        2
+      ],
+      [
+        "Eric",
+        2
+      ],
+      [
+        "App Store",
+        2
+      ],
+      [
+        "雅婷",
+        2
+      ],
+      [
+        "貼紙綁定居民",
+        2
+      ],
+      [
+        "小安",
+        2
+      ],
+      [
+        "阿德",
+        1
+      ],
+      [
+        "Android 使用者",
+        1
+      ],
+      [
+        "米米",
+        1
+      ],
+      [
+        "阿宏",
+        1
+      ],
+      [
+        "Kevin",
+        1
+      ],
+      [
+        "王小姐",
+        1
+      ]
+    ],
+    "themes": {
+      "pricing": 11,
+      "nfc": 22,
+      "merch": 2,
+      "channel": 2,
+      "android": 7,
+      "privacy": 3
+    },
+    "sentiment": {
+      "positive": 12,
+      "neutral": 12,
+      "negative": 6
+    }
+  },
+  "records": [
+    {
+      "kind": "post",
+      "platform": "twitter",
+      "id": "T-P1",
+      "user_id": 0,
+      "author": "林醫師",
+      "content": "苔間 App 正式上線了：免費版每月 60 張照片，Pro 199 元。你會先試免費版，還是直接付 199？什麼情況下你才會覺得 199 值得？",
+      "created_at": 0,
+      "themes": [
+        "pricing"
+      ],
+      "sentiment": "positive",
+      "positive_hits": 1,
+      "negative_hits": 0
+    },
+    {
+      "kind": "post",
+      "platform": "twitter",
+      "id": "T-P2",
+      "user_id": 2,
+      "author": "阿凱",
+      "content": "苔間推出 NFC 貼紙：貼在缸上，iPhone 靠近就跳到這隻居民的快速記錄頁。3 張 299 元、5 張 399 元。你會買嗎？還是覺得很雞肋？",
+      "created_at": 0,
+      "themes": [
+        "nfc",
+        "pricing"
+      ],
+      "sentiment": "neutral",
+      "positive_hits": 1,
+      "negative_hits": 1
+    },
+    {
+      "kind": "post",
+      "platform": "twitter",
+      "id": "T-P3",
+      "user_id": 4,
+      "author": "Eric",
+      "content": "如果 NFC 貼紙只能綁定一隻居民，但一包有 3 張，你會怎麼用？貼在缸、貼在飼料盒、貼在保溫箱，還是送給朋友？",
+      "created_at": 0,
+      "themes": [
+        "nfc"
+      ],
+      "sentiment": "neutral",
+      "positive_hits": 0,
+      "negative_hits": 0
+    },
+    {
+      "kind": "post",
+      "platform": "twitter",
+      "id": "T-P4",
+      "user_id": 6,
+      "author": "App Store",
+      "content": "苔間說貼紙遺失可以撤銷重綁，但貼紙本身不是防偽晶片。你會擔心別人撿到貼紙，就能看到你的照護紀錄嗎？",
+      "created_at": 0,
+      "themes": [
+        "nfc"
+      ],
+      "sentiment": "negative",
+      "positive_hits": 0,
+      "negative_hits": 1
+    },
+    {
+      "kind": "post",
+      "platform": "twitter",
+      "id": "T-P5",
+      "user_id": 8,
+      "author": "雅婷",
+      "content": "苔間除了 App，還要賣照護記錄卡、缸邊標籤、托特包與徽章。你覺得這是品牌加分，還是本業都還沒站穩就開始做周邊？",
+      "created_at": 0,
+      "themes": [
+        "merch"
+      ],
+      "sentiment": "positive",
+      "positive_hits": 1,
+      "negative_hits": 0
+    },
+    {
+      "kind": "post",
+      "platform": "twitter",
+      "id": "T-P6",
+      "user_id": 10,
+      "author": "陳老闆",
+      "content": "如果爬店賣動物時附贈苔間 NFC 貼紙，客人回家刷貼紙就能看售後紀錄，店家會想用嗎？客人會信任嗎？",
+      "created_at": 0,
+      "themes": [
+        "nfc",
+        "channel"
+      ],
+      "sentiment": "neutral",
+      "positive_hits": 0,
+      "negative_hits": 0
+    },
+    {
+      "kind": "post",
+      "platform": "twitter",
+      "id": "T-P7",
+      "user_id": 12,
+      "author": "小美的男友",
+      "content": "Android 用戶目前只能用貼紙上的 QR code fallback，不能直接感應。這會不會讓你覺得苔間是 iPhone 用戶的俱樂部？",
+      "created_at": 0,
+      "themes": [
+        "nfc",
+        "android"
+      ],
+      "sentiment": "negative",
+      "positive_hits": 0,
+      "negative_hits": 1
+    },
+    {
+      "kind": "post",
+      "platform": "twitter",
+      "id": "T-P8",
+      "user_id": 14,
+      "author": "老周",
+      "content": "如果 199 元 Pro 方案直接含 3 張 NFC 貼紙，你會不會覺得比單買貼紙更划算？還是你根本不需要貼紙？",
+      "created_at": 0,
+      "themes": [
+        "nfc",
+        "pricing"
+      ],
+      "sentiment": "neutral",
+      "positive_hits": 2,
+      "negative_hits": 2
+    },
+    {
+      "kind": "post",
+      "platform": "twitter",
+      "id": "T-P9",
+      "user_id": 19,
+      "author": "貼紙綁定居民",
+      "content": "Android 用戶目前只能用貼紙上的 QR code fallback，不能直接感應。這會不會讓你覺得苔間是 iPhone 用戶的俱樂部？",
+      "created_at": 1,
+      "themes": [
+        "nfc",
+        "android"
+      ],
+      "sentiment": "negative",
+      "positive_hits": 0,
+      "negative_hits": 1
+    },
+    {
+      "kind": "post",
+      "platform": "twitter",
+      "id": "T-P11",
+      "user_id": 15,
+      "author": "阿德",
+      "content": "苔間 App 正式上線了：免費版每月 60 張照片，Pro 199 元。你會先試免費版，還是直接付 199？什麼情況下你才會覺得 199 值得？",
+      "created_at": 1,
+      "themes": [
+        "pricing"
+      ],
+      "sentiment": "positive",
+      "positive_hits": 1,
+      "negative_hits": 0
+    },
+    {
+      "kind": "post",
+      "platform": "twitter",
+      "id": "T-P13",
+      "user_id": 9,
+      "author": "Android 使用者",
+      "content": "Android 用戶目前只能用貼紙上的 QR code fallback，不能直接感應。這會不會讓你覺得苔間是 iPhone 用戶的俱樂部？",
+      "created_at": 1,
+      "themes": [
+        "nfc",
+        "android"
+      ],
+      "sentiment": "negative",
+      "positive_hits": 0,
+      "negative_hits": 1
+    },
+    {
+      "kind": "post",
+      "platform": "twitter",
+      "id": "T-P14",
+      "user_id": 13,
+      "author": "小安",
+      "content": "苔間 App 正式上線了：免費版每月 60 張照片，Pro 199 元。你會先試免費版，還是直接付 199？什麼情況下你才會覺得 199 值得？",
+      "created_at": 1,
+      "themes": [
+        "pricing"
+      ],
+      "sentiment": "positive",
+      "positive_hits": 1,
+      "negative_hits": 0
+    },
+    {
+      "kind": "post",
+      "platform": "twitter",
+      "id": "T-P15",
+      "user_id": 14,
+      "author": "老周",
+      "content": "苔間 App 正式上線了：免費版每月 60 張照片，Pro 199 元。你會先試免費版，還是直接付 199？什麼情況下你才會覺得 199 值得？",
+      "created_at": 1,
+      "themes": [
+        "pricing"
+      ],
+      "sentiment": "positive",
+      "positive_hits": 1,
+      "negative_hits": 0
+    },
+    {
+      "kind": "post",
+      "platform": "twitter",
+      "id": "T-P17",
+      "user_id": 10,
+      "author": "陳老闆",
+      "content": "如果 NFC 貼紙只能綁定一隻居民，但一包有 3 張，你會怎麼用？貼在缸、貼在飼料盒、貼在保溫箱，還是送給朋友？",
+      "created_at": 1,
+      "themes": [
+        "nfc"
+      ],
+      "sentiment": "neutral",
+      "positive_hits": 0,
+      "negative_hits": 0
+    },
+    {
+      "kind": "post",
+      "platform": "reddit",
+      "id": "R-P1",
+      "user_id": 0,
+      "author": "林醫師",
+      "content": "苔間 App 正式上線了：免費版每月 60 張照片，Pro 199 元。你會先試免費版，還是直接付 199？什麼情況下你才會覺得 199 值得？",
+      "created_at": "2026-11-06 17:12:42.532423",
+      "themes": [
+        "pricing"
+      ],
+      "sentiment": "positive",
+      "positive_hits": 1,
+      "negative_hits": 0
+    },
+    {
+      "kind": "post",
+      "platform": "reddit",
+      "id": "R-P2",
+      "user_id": 2,
+      "author": "阿凱",
+      "content": "苔間推出 NFC 貼紙：貼在缸上，iPhone 靠近就跳到這隻居民的快速記錄頁。3 張 299 元、5 張 399 元。你會買嗎？還是覺得很雞肋？",
+      "created_at": "2026-11-06 17:12:42.622723",
+      "themes": [
+        "nfc",
+        "pricing"
+      ],
+      "sentiment": "neutral",
+      "positive_hits": 1,
+      "negative_hits": 1
+    },
+    {
+      "kind": "post",
+      "platform": "reddit",
+      "id": "R-P3",
+      "user_id": 4,
+      "author": "Eric",
+      "content": "如果 NFC 貼紙只能綁定一隻居民，但一包有 3 張，你會怎麼用？貼在缸、貼在飼料盒、貼在保溫箱，還是送給朋友？",
+      "created_at": "2026-11-06 17:12:42.669343",
+      "themes": [
+        "nfc"
+      ],
+      "sentiment": "neutral",
+      "positive_hits": 0,
+      "negative_hits": 0
+    },
+    {
+      "kind": "post",
+      "platform": "reddit",
+      "id": "R-P4",
+      "user_id": 6,
+      "author": "App Store",
+      "content": "苔間說貼紙遺失可以撤銷重綁，但貼紙本身不是防偽晶片。你會擔心別人撿到貼紙，就能看到你的照護紀錄嗎？",
+      "created_at": "2026-11-06 17:12:42.719683",
+      "themes": [
+        "nfc"
+      ],
+      "sentiment": "negative",
+      "positive_hits": 0,
+      "negative_hits": 1
+    },
+    {
+      "kind": "post",
+      "platform": "reddit",
+      "id": "R-P5",
+      "user_id": 8,
+      "author": "雅婷",
+      "content": "苔間除了 App，還要賣照護記錄卡、缸邊標籤、托特包與徽章。你覺得這是品牌加分，還是本業都還沒站穩就開始做周邊？",
+      "created_at": "2026-11-06 17:12:42.763483",
+      "themes": [
+        "merch"
+      ],
+      "sentiment": "positive",
+      "positive_hits": 1,
+      "negative_hits": 0
+    },
+    {
+      "kind": "post",
+      "platform": "reddit",
+      "id": "R-P6",
+      "user_id": 10,
+      "author": "陳老闆",
+      "content": "如果爬店賣動物時附贈苔間 NFC 貼紙，客人回家刷貼紙就能看售後紀錄，店家會想用嗎？客人會信任嗎？",
+      "created_at": "2026-11-06 17:12:42.810583",
+      "themes": [
+        "nfc",
+        "channel"
+      ],
+      "sentiment": "neutral",
+      "positive_hits": 0,
+      "negative_hits": 0
+    },
+    {
+      "kind": "post",
+      "platform": "reddit",
+      "id": "R-P7",
+      "user_id": 12,
+      "author": "小美的男友",
+      "content": "Android 用戶目前只能用貼紙上的 QR code fallback，不能直接感應。這會不會讓你覺得苔間是 iPhone 用戶的俱樂部？",
+      "created_at": "2026-11-06 17:12:42.853303",
+      "themes": [
+        "nfc",
+        "android"
+      ],
+      "sentiment": "negative",
+      "positive_hits": 0,
+      "negative_hits": 1
+    },
+    {
+      "kind": "post",
+      "platform": "reddit",
+      "id": "R-P8",
+      "user_id": 14,
+      "author": "老周",
+      "content": "如果 199 元 Pro 方案直接含 3 張 NFC 貼紙，你會不會覺得比單買貼紙更划算？還是你根本不需要貼紙？",
+      "created_at": "2026-11-06 17:12:42.897043",
+      "themes": [
+        "nfc",
+        "pricing"
+      ],
+      "sentiment": "neutral",
+      "positive_hits": 2,
+      "negative_hits": 2
+    },
+    {
+      "kind": "comment",
+      "platform": "reddit",
+      "id": "R-C1",
+      "user_id": 3,
+      "author": "米米",
+      "content": "NFC门禁卡确实方便，无需带实体钥匙，不过安全性和隐私问题需要仔细权衡。",
+      "created_at": "2026-11-06 17:55:29.422003",
+      "post_id": 2,
+      "themes": [
+        "nfc",
+        "privacy"
+      ],
+      "sentiment": "positive",
+      "positive_hits": 2,
+      "negative_hits": 0
+    },
+    {
+      "kind": "comment",
+      "platform": "reddit",
+      "id": "R-C2",
+      "user_id": 7,
+      "author": "阿宏",
+      "content": "雖然我對這些附加工具沒那麼感興趣，但我很重視照片的保存和質量。有沒有辦法在免費版的基礎上，也能達到同樣的效果呢？",
+      "created_at": "2026-11-06 17:59:39.758743",
+      "post_id": 1,
+      "themes": [
+        "pricing"
+      ],
+      "sentiment": "neutral",
+      "positive_hits": 0,
+      "negative_hits": 0
+    },
+    {
+      "kind": "comment",
+      "platform": "reddit",
+      "id": "R-C3",
+      "user_id": 13,
+      "author": "小安",
+      "content": "这个新的NFC贴纸功能听起来很有意思，但是我只有一只宠物，还需要另外支付费用，所以现在还不确定是否要购买。感觉有时候这些高级功能就是有点贵。",
+      "created_at": "2026-11-06 18:03:53.352523",
+      "post_id": 2,
+      "themes": [
+        "nfc"
+      ],
+      "sentiment": "positive",
+      "positive_hits": 1,
+      "negative_hits": 0
+    },
+    {
+      "kind": "comment",
+      "platform": "reddit",
+      "id": "R-C4",
+      "user_id": 12,
+      "author": "小美的男友",
+      "content": "虽然我对NFC的限制感到失望，但这也激发了我对安卓设备和移动应用的进一步探索。我认为，虽然199元的Pro版本可能不包括NFC，但它仍然是一款值得尝试的产品。#守宫的每一天都是一段美好的旅程",
+      "created_at": "2026-11-06 18:08:27.746563",
+      "post_id": 5,
+      "themes": [
+        "nfc",
+        "pricing",
+        "android"
+      ],
+      "sentiment": "positive",
+      "positive_hits": 1,
+      "negative_hits": 0
+    },
+    {
+      "kind": "comment",
+      "platform": "reddit",
+      "id": "R-C5",
+      "user_id": 19,
+      "author": "貼紙綁定居民",
+      "content": "我们的NFC贴纸设计是为了提供一个更加便捷且私密的宠物照顾解决方案。我们的服务不仅仅服务于iPhone用户，Android用户也能使用QR code fallback功能。\n\n而且，我们的贴纸附带的App还提供许多关于宠物照顾的知识和小贴士，我们希望所有宠物爱好者能从中受益。",
+      "created_at": "2026-11-06 18:13:13.443283",
+      "post_id": 2,
+      "themes": [
+        "nfc",
+        "privacy",
+        "android"
+      ],
+      "sentiment": "neutral",
+      "positive_hits": 0,
+      "negative_hits": 0
+    },
+    {
+      "kind": "comment",
+      "platform": "reddit",
+      "id": "R-C6",
+      "user_id": 17,
+      "author": "Kevin",
+      "content": "我作为Android用户，确实觉得NFC功能支持有限是个遗憾。不过，我认为苔间App团队会考虑这个问题，毕竟他们也经常与社区互动，收集反馈。我们可以通过更多的方式，比如社交媒体平台讨论，让他们知道我们需要一个跨平台的NFC解决方案。",
+      "created_at": "2026-11-06 18:17:48.567223",
+      "post_id": 7,
+      "themes": [
+        "nfc",
+        "android"
+      ],
+      "sentiment": "positive",
+      "positive_hits": 1,
+      "negative_hits": 0
+    },
+    {
+      "kind": "comment",
+      "platform": "reddit",
+      "id": "R-C7",
+      "user_id": 0,
+      "author": "林醫師",
+      "content": "NFC标签确实可以绑定多户主，但是安全性如何保障呢？如果一个房间有3个室友，怎么确保信息安全？确实需要谨慎考虑标签的使用方式。",
+      "created_at": "2026-11-06 18:21:58.756723",
+      "post_id": 3,
+      "themes": [
+        "nfc",
+        "privacy"
+      ],
+      "sentiment": "positive",
+      "positive_hits": 1,
+      "negative_hits": 0
+    },
+    {
+      "kind": "comment",
+      "platform": "reddit",
+      "id": "R-C8",
+      "user_id": 1,
+      "author": "王小姐",
+      "content": "虽然我对NFC不是很了解，不过听起来似乎很有趣。我经常逛宠物店，它们可能正在寻找新的营销方式来吸引顾客。也许我可以去探索一下，看看这个新的功能会带来怎样的改变。",
+      "created_at": "2026-11-06 18:29:30.140683",
+      "post_id": 6,
+      "themes": [
+        "nfc"
+      ],
+      "sentiment": "neutral",
+      "positive_hits": 0,
+      "negative_hits": 0
+    }
+  ],
+  "evidence_by_theme": {
+    "pricing": [
+      {
+        "id": "R-C4",
+        "platform": "reddit",
+        "kind": "comment",
+        "author": "小美的男友",
+        "content": "虽然我对NFC的限制感到失望，但这也激发了我对安卓设备和移动应用的进一步探索。我认为，虽然199元的Pro版本可能不包括NFC，但它仍然是一款值得尝试的产品。#守宫的每一天都是一段美好的旅程",
+        "sentiment": "positive"
+      },
+      {
+        "id": "T-P2",
+        "platform": "twitter",
+        "kind": "post",
+        "author": "阿凱",
+        "content": "苔間推出 NFC 貼紙：貼在缸上，iPhone 靠近就跳到這隻居民的快速記錄頁。3 張 299 元、5 張 399 元。你會買嗎？還是覺得很雞肋？",
+        "sentiment": "neutral"
+      },
+      {
+        "id": "R-P2",
+        "platform": "reddit",
+        "kind": "post",
+        "author": "阿凱",
+        "content": "苔間推出 NFC 貼紙：貼在缸上，iPhone 靠近就跳到這隻居民的快速記錄頁。3 張 299 元、5 張 399 元。你會買嗎？還是覺得很雞肋？",
+        "sentiment": "neutral"
+      },
+      {
+        "id": "T-P1",
+        "platform": "twitter",
+        "kind": "post",
+        "author": "林醫師",
+        "content": "苔間 App 正式上線了：免費版每月 60 張照片，Pro 199 元。你會先試免費版，還是直接付 199？什麼情況下你才會覺得 199 值得？",
+        "sentiment": "positive"
+      },
+      {
+        "id": "T-P11",
+        "platform": "twitter",
+        "kind": "post",
+        "author": "阿德",
+        "content": "苔間 App 正式上線了：免費版每月 60 張照片，Pro 199 元。你會先試免費版，還是直接付 199？什麼情況下你才會覺得 199 值得？",
+        "sentiment": "positive"
+      },
+      {
+        "id": "T-P14",
+        "platform": "twitter",
+        "kind": "post",
+        "author": "小安",
+        "content": "苔間 App 正式上線了：免費版每月 60 張照片，Pro 199 元。你會先試免費版，還是直接付 199？什麼情況下你才會覺得 199 值得？",
+        "sentiment": "positive"
+      },
+      {
+        "id": "T-P15",
+        "platform": "twitter",
+        "kind": "post",
+        "author": "老周",
+        "content": "苔間 App 正式上線了：免費版每月 60 張照片，Pro 199 元。你會先試免費版，還是直接付 199？什麼情況下你才會覺得 199 值得？",
+        "sentiment": "positive"
+      },
+      {
+        "id": "R-P1",
+        "platform": "reddit",
+        "kind": "post",
+        "author": "林醫師",
+        "content": "苔間 App 正式上線了：免費版每月 60 張照片，Pro 199 元。你會先試免費版，還是直接付 199？什麼情況下你才會覺得 199 值得？",
+        "sentiment": "positive"
+      }
+    ],
+    "nfc": [
+      {
+        "id": "R-C5",
+        "platform": "reddit",
+        "kind": "comment",
+        "author": "貼紙綁定居民",
+        "content": "我们的NFC贴纸设计是为了提供一个更加便捷且私密的宠物照顾解决方案。我们的服务不仅仅服务于iPhone用户，Android用户也能使用QR code fallback功能。\n\n而且，我们的贴纸附带的App还提供许多关于宠物照顾的知识和小贴士，我们希望所有宠物爱好者能从中受益。",
+        "sentiment": "neutral"
+      },
+      {
+        "id": "R-C6",
+        "platform": "reddit",
+        "kind": "comment",
+        "author": "Kevin",
+        "content": "我作为Android用户，确实觉得NFC功能支持有限是个遗憾。不过，我认为苔间App团队会考虑这个问题，毕竟他们也经常与社区互动，收集反馈。我们可以通过更多的方式，比如社交媒体平台讨论，让他们知道我们需要一个跨平台的NFC解决方案。",
+        "sentiment": "positive"
+      },
+      {
+        "id": "R-C4",
+        "platform": "reddit",
+        "kind": "comment",
+        "author": "小美的男友",
+        "content": "虽然我对NFC的限制感到失望，但这也激发了我对安卓设备和移动应用的进一步探索。我认为，虽然199元的Pro版本可能不包括NFC，但它仍然是一款值得尝试的产品。#守宫的每一天都是一段美好的旅程",
+        "sentiment": "positive"
+      },
+      {
+        "id": "R-C8",
+        "platform": "reddit",
+        "kind": "comment",
+        "author": "王小姐",
+        "content": "虽然我对NFC不是很了解，不过听起来似乎很有趣。我经常逛宠物店，它们可能正在寻找新的营销方式来吸引顾客。也许我可以去探索一下，看看这个新的功能会带来怎样的改变。",
+        "sentiment": "neutral"
+      },
+      {
+        "id": "T-P2",
+        "platform": "twitter",
+        "kind": "post",
+        "author": "阿凱",
+        "content": "苔間推出 NFC 貼紙：貼在缸上，iPhone 靠近就跳到這隻居民的快速記錄頁。3 張 299 元、5 張 399 元。你會買嗎？還是覺得很雞肋？",
+        "sentiment": "neutral"
+      },
+      {
+        "id": "R-P2",
+        "platform": "reddit",
+        "kind": "post",
+        "author": "阿凱",
+        "content": "苔間推出 NFC 貼紙：貼在缸上，iPhone 靠近就跳到這隻居民的快速記錄頁。3 張 299 元、5 張 399 元。你會買嗎？還是覺得很雞肋？",
+        "sentiment": "neutral"
+      },
+      {
+        "id": "R-C3",
+        "platform": "reddit",
+        "kind": "comment",
+        "author": "小安",
+        "content": "这个新的NFC贴纸功能听起来很有意思，但是我只有一只宠物，还需要另外支付费用，所以现在还不确定是否要购买。感觉有时候这些高级功能就是有点贵。",
+        "sentiment": "positive"
+      },
+      {
+        "id": "T-P7",
+        "platform": "twitter",
+        "kind": "post",
+        "author": "小美的男友",
+        "content": "Android 用戶目前只能用貼紙上的 QR code fallback，不能直接感應。這會不會讓你覺得苔間是 iPhone 用戶的俱樂部？",
+        "sentiment": "negative"
+      }
+    ],
+    "merch": [
+      {
+        "id": "T-P5",
+        "platform": "twitter",
+        "kind": "post",
+        "author": "雅婷",
+        "content": "苔間除了 App，還要賣照護記錄卡、缸邊標籤、托特包與徽章。你覺得這是品牌加分，還是本業都還沒站穩就開始做周邊？",
+        "sentiment": "positive"
+      },
+      {
+        "id": "R-P5",
+        "platform": "reddit",
+        "kind": "post",
+        "author": "雅婷",
+        "content": "苔間除了 App，還要賣照護記錄卡、缸邊標籤、托特包與徽章。你覺得這是品牌加分，還是本業都還沒站穩就開始做周邊？",
+        "sentiment": "positive"
+      }
+    ],
+    "channel": [
+      {
+        "id": "T-P6",
+        "platform": "twitter",
+        "kind": "post",
+        "author": "陳老闆",
+        "content": "如果爬店賣動物時附贈苔間 NFC 貼紙，客人回家刷貼紙就能看售後紀錄，店家會想用嗎？客人會信任嗎？",
+        "sentiment": "neutral"
+      },
+      {
+        "id": "R-P6",
+        "platform": "reddit",
+        "kind": "post",
+        "author": "陳老闆",
+        "content": "如果爬店賣動物時附贈苔間 NFC 貼紙，客人回家刷貼紙就能看售後紀錄，店家會想用嗎？客人會信任嗎？",
+        "sentiment": "neutral"
+      }
+    ],
+    "android": [
+      {
+        "id": "R-C5",
+        "platform": "reddit",
+        "kind": "comment",
+        "author": "貼紙綁定居民",
+        "content": "我们的NFC贴纸设计是为了提供一个更加便捷且私密的宠物照顾解决方案。我们的服务不仅仅服务于iPhone用户，Android用户也能使用QR code fallback功能。\n\n而且，我们的贴纸附带的App还提供许多关于宠物照顾的知识和小贴士，我们希望所有宠物爱好者能从中受益。",
+        "sentiment": "neutral"
+      },
+      {
+        "id": "R-C6",
+        "platform": "reddit",
+        "kind": "comment",
+        "author": "Kevin",
+        "content": "我作为Android用户，确实觉得NFC功能支持有限是个遗憾。不过，我认为苔间App团队会考虑这个问题，毕竟他们也经常与社区互动，收集反馈。我们可以通过更多的方式，比如社交媒体平台讨论，让他们知道我们需要一个跨平台的NFC解决方案。",
+        "sentiment": "positive"
+      },
+      {
+        "id": "R-C4",
+        "platform": "reddit",
+        "kind": "comment",
+        "author": "小美的男友",
+        "content": "虽然我对NFC的限制感到失望，但这也激发了我对安卓设备和移动应用的进一步探索。我认为，虽然199元的Pro版本可能不包括NFC，但它仍然是一款值得尝试的产品。#守宫的每一天都是一段美好的旅程",
+        "sentiment": "positive"
+      },
+      {
+        "id": "T-P7",
+        "platform": "twitter",
+        "kind": "post",
+        "author": "小美的男友",
+        "content": "Android 用戶目前只能用貼紙上的 QR code fallback，不能直接感應。這會不會讓你覺得苔間是 iPhone 用戶的俱樂部？",
+        "sentiment": "negative"
+      },
+      {
+        "id": "T-P9",
+        "platform": "twitter",
+        "kind": "post",
+        "author": "貼紙綁定居民",
+        "content": "Android 用戶目前只能用貼紙上的 QR code fallback，不能直接感應。這會不會讓你覺得苔間是 iPhone 用戶的俱樂部？",
+        "sentiment": "negative"
+      },
+      {
+        "id": "T-P13",
+        "platform": "twitter",
+        "kind": "post",
+        "author": "Android 使用者",
+        "content": "Android 用戶目前只能用貼紙上的 QR code fallback，不能直接感應。這會不會讓你覺得苔間是 iPhone 用戶的俱樂部？",
+        "sentiment": "negative"
+      },
+      {
+        "id": "R-P7",
+        "platform": "reddit",
+        "kind": "post",
+        "author": "小美的男友",
+        "content": "Android 用戶目前只能用貼紙上的 QR code fallback，不能直接感應。這會不會讓你覺得苔間是 iPhone 用戶的俱樂部？",
+        "sentiment": "negative"
+      }
+    ],
+    "privacy": [
+      {
+        "id": "R-C5",
+        "platform": "reddit",
+        "kind": "comment",
+        "author": "貼紙綁定居民",
+        "content": "我们的NFC贴纸设计是为了提供一个更加便捷且私密的宠物照顾解决方案。我们的服务不仅仅服务于iPhone用户，Android用户也能使用QR code fallback功能。\n\n而且，我们的贴纸附带的App还提供许多关于宠物照顾的知识和小贴士，我们希望所有宠物爱好者能从中受益。",
+        "sentiment": "neutral"
+      },
+      {
+        "id": "R-C7",
+        "platform": "reddit",
+        "kind": "comment",
+        "author": "林醫師",
+        "content": "NFC标签确实可以绑定多户主，但是安全性如何保障呢？如果一个房间有3个室友，怎么确保信息安全？确实需要谨慎考虑标签的使用方式。",
+        "sentiment": "positive"
+      },
+      {
+        "id": "R-C1",
+        "platform": "reddit",
+        "kind": "comment",
+        "author": "米米",
+        "content": "NFC门禁卡确实方便，无需带实体钥匙，不过安全性和隐私问题需要仔细权衡。",
+        "sentiment": "positive"
+      }
+    ]
+  }
+}

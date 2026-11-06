@@ -1,0 +1,22 @@
+{
+  "data": {
+    "created_at": "2026-11-06T17:05:27.307935",
+    "error": null,
+    "message": "图谱构建完成",
+    "metadata": {},
+    "progress": 100,
+    "progress_detail": {},
+    "result": {
+      "chunk_count": 9,
+      "edge_count": 100,
+      "graph_id": "mirofish_4fc677f874214ea4",
+      "node_count": 86,
+      "project_id": "proj_f97ecd328e68"
+    },
+    "status": "completed",
+    "task_id": "458c7d73-6d77-4d5f-bbed-a62024a6f8be",
+    "task_type": "构建图谱: 苔間 2026-11 上線＋NFC 周邊模擬",
+    "updated_at": "2026-11-06T17:07:37.680115"
+  },
+  "success": true
+}

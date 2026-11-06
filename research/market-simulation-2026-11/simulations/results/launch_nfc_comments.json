@@ -1,0 +1,80 @@
+{
+  "data": {
+    "comments": [
+      {
+        "comment_id": 8,
+        "content": "虽然我对NFC不是很了解，不过听起来似乎很有趣。我经常逛宠物店，它们可能正在寻找新的营销方式来吸引顾客。也许我可以去探索一下，看看这个新的功能会带来怎样的改变。",
+        "created_at": "2026-11-06 18:29:30.140683",
+        "num_dislikes": 0,
+        "num_likes": 0,
+        "post_id": 6,
+        "user_id": 1
+      },
+      {
+        "comment_id": 7,
+        "content": "NFC标签确实可以绑定多户主，但是安全性如何保障呢？如果一个房间有3个室友，怎么确保信息安全？确实需要谨慎考虑标签的使用方式。",
+        "created_at": "2026-11-06 18:21:58.756723",
+        "num_dislikes": 0,
+        "num_likes": 0,
+        "post_id": 3,
+        "user_id": 0
+      },
+      {
+        "comment_id": 6,
+        "content": "我作为Android用户，确实觉得NFC功能支持有限是个遗憾。不过，我认为苔间App团队会考虑这个问题，毕竟他们也经常与社区互动，收集反馈。我们可以通过更多的方式，比如社交媒体平台讨论，让他们知道我们需要一个跨平台的NFC解决方案。",
+        "created_at": "2026-11-06 18:17:48.567223",
+        "num_dislikes": 0,
+        "num_likes": 0,
+        "post_id": 7,
+        "user_id": 17
+      },
+      {
+        "comment_id": 5,
+        "content": "我们的NFC贴纸设计是为了提供一个更加便捷且私密的宠物照顾解决方案。我们的服务不仅仅服务于iPhone用户，Android用户也能使用QR code fallback功能。\n\n而且，我们的贴纸附带的App还提供许多关于宠物照顾的知识和小贴士，我们希望所有宠物爱好者能从中受益。",
+        "created_at": "2026-11-06 18:13:13.443283",
+        "num_dislikes": 0,
+        "num_likes": 0,
+        "post_id": 2,
+        "user_id": 19
+      },
+      {
+        "comment_id": 4,
+        "content": "虽然我对NFC的限制感到失望，但这也激发了我对安卓设备和移动应用的进一步探索。我认为，虽然199元的Pro版本可能不包括NFC，但它仍然是一款值得尝试的产品。#守宫的每一天都是一段美好的旅程",
+        "created_at": "2026-11-06 18:08:27.746563",
+        "num_dislikes": 0,
+        "num_likes": 0,
+        "post_id": 5,
+        "user_id": 12
+      },
+      {
+        "comment_id": 3,
+        "content": "这个新的NFC贴纸功能听起来很有意思，但是我只有一只宠物，还需要另外支付费用，所以现在还不确定是否要购买。感觉有时候这些高级功能就是有点贵。",
+        "created_at": "2026-11-06 18:03:53.352523",
+        "num_dislikes": 0,
+        "num_likes": 0,
+        "post_id": 2,
+        "user_id": 13
+      },
+      {
+        "comment_id": 2,
+        "content": "雖然我對這些附加工具沒那麼感興趣，但我很重視照片的保存和質量。有沒有辦法在免費版的基礎上，也能達到同樣的效果呢？",
+        "created_at": "2026-11-06 17:59:39.758743",
+        "num_dislikes": 0,
+        "num_likes": 0,
+        "post_id": 1,
+        "user_id": 7
+      },
+      {
+        "comment_id": 1,
+        "content": "NFC门禁卡确实方便，无需带实体钥匙，不过安全性和隐私问题需要仔细权衡。",
+        "created_at": "2026-11-06 17:55:29.422003",
+        "num_dislikes": 0,
+        "num_likes": 0,
+        "post_id": 2,
+        "user_id": 3
+      }
+    ],
+    "count": 8
+  },
+  "success": true
+}

@@ -1,0 +1,8 @@
+{
+  "status": "simulation_completed",
+  "project_id": "proj_f97ecd328e68",
+  "graph_id": "mirofish_4fc677f874214ea4",
+  "simulation_id": "sim_8395a3e78031",
+  "max_rounds": 8,
+  "platform": "parallel"
+}

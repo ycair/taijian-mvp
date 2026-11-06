@@ -1,0 +1,211 @@
+{
+  "data": {
+    "analysis_summary": "",
+    "files": [
+      {
+        "filename": "taijian_launch_nfc_seed.md",
+        "size": 7611
+      }
+    ],
+    "ontology": {
+      "edge_types": [],
+      "entity_types": [
+        {
+          "attributes": [
+            {
+              "description": "使用者類型，如新手、家庭、繁殖者等",
+              "name": "user_type",
+              "type": "text"
+            },
+            {
+              "description": "使用的裝置類型，如iOS、Android",
+              "name": "device_type",
+              "type": "text"
+            }
+          ],
+          "description": "苔間 App 的一般使用者",
+          "examples": [
+            "小安",
+            "阿凱"
+          ],
+          "name": "User"
+        },
+        {
+          "attributes": [
+            {
+              "description": "店鋪名稱",
+              "name": "store_name",
+              "type": "text"
+            },
+            {
+              "description": "店鋪位置",
+              "name": "location",
+              "type": "text"
+            }
+          ],
+          "description": "爬蟲店的老闆",
+          "examples": [
+            "陳老闆"
+          ],
+          "name": "PetShopOwner"
+        },
+        {
+          "attributes": [
+            {
+              "description": "診所名稱",
+              "name": "clinic_name",
+              "type": "text"
+            },
+            {
+              "description": "診所位置",
+              "name": "location",
+              "type": "text"
+            }
+          ],
+          "description": "特寵獸醫",
+          "examples": [
+            "林醫師"
+          ],
+          "name": "Veterinarian"
+        },
+        {
+          "attributes": [
+            {
+              "description": "社交媒體平台",
+              "name": "social_media",
+              "type": "text"
+            },
+            {
+              "description": "追隨者數量",
+              "name": "follower_count",
+              "type": "integer"
+            }
+          ],
+          "description": "爬蟲內容創作者",
+          "examples": [
+            "米米"
+          ],
+          "name": "ContentCreator"
+        },
+        {
+          "attributes": [
+            {
+              "description": "參加的展覽名稱",
+              "name": "event_name",
+              "type": "text"
+            },
+            {
+              "description": "展覽地點",
+              "name": "location",
+              "type": "text"
+            }
+          ],
+          "description": "寵物展消費者",
+          "examples": [
+            "王小姐"
+          ],
+          "name": "Retailer"
+        },
+        {
+          "attributes": [
+            {
+              "description": "繁殖地點",
+              "name": "breeding_location",
+              "type": "text"
+            },
+            {
+              "description": "繁殖的品種",
+              "name": "species",
+              "type": "text"
+            }
+          ],
+          "description": "爬蟲繁殖者",
+          "examples": [
+            "老周"
+          ],
+          "name": "ReptileBreeder"
+        },
+        {
+          "attributes": [
+            {
+              "description": "禮物的接收者",
+              "name": "recipient",
+              "type": "text"
+            },
+            {
+              "description": "禮物類型，如貼紙、記錄卡等",
+              "name": "gift_type",
+              "type": "text"
+            }
+          ],
+          "description": "禮物購買者",
+          "examples": [
+            "小美"
+          ],
+          "name": "GiftGiver"
+        },
+        {
+          "attributes": [
+            {
+              "description": "DIY項目類型，如3D列印、改造展示缸等",
+              "name": "project_type",
+              "type": "text"
+            },
+            {
+              "description": "DIY愛好者的所在地",
+              "name": "location",
+              "type": "text"
+            }
+          ],
+          "description": "DIY愛好者",
+          "examples": [
+            "阿德"
+          ],
+          "name": "DIYer"
+        },
+        {
+          "attributes": [
+            {
+              "description": "全名",
+              "name": "full_name",
+              "type": "text"
+            },
+            {
+              "description": "所在地",
+              "name": "location",
+              "type": "text"
+            }
+          ],
+          "description": "兜底類型，適用於未定義的個人",
+          "examples": [
+            "Kevin"
+          ],
+          "name": "Person"
+        },
+        {
+          "attributes": [
+            {
+              "description": "組織名稱",
+              "name": "org_name",
+              "type": "text"
+            },
+            {
+              "description": "組織所在地",
+              "name": "location",
+              "type": "text"
+            }
+          ],
+          "description": "兜底類型，適用於未定義的組織",
+          "examples": [
+            "爬蟲店"
+          ],
+          "name": "Organization"
+        }
+      ]
+    },
+    "project_id": "proj_f97ecd328e68",
+    "project_name": "苔間 2026-11 上線＋NFC 周邊模擬",
+    "total_text_length": 3223
+  },
+  "success": true
+}

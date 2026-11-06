@@ -1,0 +1,31 @@
+{
+  "data": {
+    "completed_at": null,
+    "current_round": 0,
+    "error": null,
+    "force_restarted": false,
+    "graph_memory_update_enabled": false,
+    "max_rounds_applied": 8,
+    "process_pid": 66573,
+    "progress_percent": 0.0,
+    "reddit_actions_count": 0,
+    "reddit_completed": false,
+    "reddit_current_round": 0,
+    "reddit_running": true,
+    "reddit_simulated_hours": 0,
+    "runner_status": "running",
+    "simulated_hours": 0,
+    "simulation_id": "sim_8395a3e78031",
+    "started_at": "2026-11-06T17:11:48.432205",
+    "total_actions_count": 0,
+    "total_rounds": 8,
+    "total_simulation_hours": 24,
+    "twitter_actions_count": 0,
+    "twitter_completed": false,
+    "twitter_current_round": 0,
+    "twitter_running": true,
+    "twitter_simulated_hours": 0,
+    "updated_at": "2026-11-06T17:11:48.432256"
+  },
+  "success": true
+}

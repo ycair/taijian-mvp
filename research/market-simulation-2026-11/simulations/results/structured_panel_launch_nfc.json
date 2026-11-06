@@ -1,0 +1,551 @@
+{
+  "summary": {
+    "status": "completed",
+    "model": "qwen2.5:14b-instruct",
+    "n": 15,
+    "valid": 15,
+    "mean_interest_app": 3.67,
+    "mean_trial_app": 0.753,
+    "mean_pay_app": 0.313,
+    "plans": {
+      "free": 2,
+      "99": 3,
+      "199": 10,
+      "399": 0,
+      "unsure": 0
+    },
+    "median_max_price": 299,
+    "mean_nfc_interest": 2.53,
+    "mean_nfc_buy": 0.273,
+    "nfc_3pack_299_yes": 5,
+    "mean_merch_interest": 2.47,
+    "note": "Synthetic qualitative panel; not a representative survey or a revenue forecast."
+  },
+  "responses": [
+    {
+      "agent_id": 0,
+      "name": "林醫師",
+      "username": "林醫師_258",
+      "persona": "林医师，台北特宠兽医助理，专注于宠物医疗护理。致力于提升宠物健康，提供专业的兽医服务，为宠物主人们带来安心与保障。 林医师是台北的一名兽医助理，专门从事宠物医疗护理工作。她目前在台北的一家宠物医院工作，负责照顾各种宠物，尤其是小型宠物。林医师致力于提升宠物的健康状况，她认为宠物主人们的详细记录是治疗过程中不可或缺的一部分，因此她总是要求主人们提供详细的用药物记录、饮食习惯、排便情况以及体重变化。她对这些信息的准确性要求非常高，认为这些细节对宠物的治疗至关重要。林医师还担心NFC贴纸可能会被随意重写，这样的行为可能会导致宠物的医疗记录出现错误，影响治疗效果。因此，她对这些技术手段的使用持谨慎态度，并希望宠物主人们能够充分理解这些工具的使用方法。",
+      "answer": {
+        "interest_app": 4,
+        "trial_app": 0.9,
+        "pay_app": 0.3,
+        "preferred_plan": "199",
+        "max_price_twd": 499,
+        "nfc_interest": 3,
+        "nfc_buy": 0.2,
+        "nfc_3pack_299_ok": false,
+        "nfc_use_case": "快速記錄爬蟲健康狀況",
+        "merch_interest": 2,
+        "merch_which": "照護記錄卡",
+        "biggest_concern": "NFC貼紙可能被誤用，影響記錄準確性",
+        "channel": "獸醫同僚推薦",
+        "quote": "詳細的健康記錄是治療成功的重要關鍵，但技術手段需小心使用。"
+      },
+      "usage": {
+        "completion_tokens": 182,
+        "prompt_tokens": 787,
+        "total_tokens": 969,
+        "completion_tokens_details": null,
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cache_write_tokens": null,
+          "cached_tokens": 2,
+          "image_tokens": null,
+          "text_tokens": null
+        }
+      }
+    },
+    {
+      "agent_id": 1,
+      "name": "王小姐",
+      "username": "王小姐_651",
+      "persona": "王小姐，35岁，高雄居民，宠物展爱好者，特别关注仓鼠和兔子。热衷于逛展购物，偏爱现场互动体验和精美包装。对宠物周边产品有一定兴趣，但没有长期记录的习惯。 王小姐，35岁，居住在高雄，是一名宠物展的忠实消费者，尤其喜爱仓鼠和兔子。在宠物展览会上，她容易被现场的互动和示范所吸引，通常会选择购买那些包装可爱、设计新颖的产品。她对宠物周边商品有一定的兴趣，但更倾向于即买即用，不会长期记录或关注这些产品的信息。与其他宠物爱好者相比，王小姐更注重当下的体验和享受，对社交媒体上的宠物社区互动度有限，通常不会在平台上频繁留言或分享自己的宠物照。",
+      "answer": {
+        "interest_app": 2,
+        "trial_app": 0.2,
+        "pay_app": 0.1,
+        "preferred_plan": "free",
+        "max_price_twd": 100,
+        "nfc_interest": 1,
+        "nfc_buy": 0.0,
+        "nfc_3pack_299_ok": false,
+        "nfc_use_case": "不會買，因為不常用iPhone XS以上機型",
+        "merch_interest": 3,
+        "merch_which": "照護記錄卡",
+        "biggest_concern": "App功能對我幫助不大，NFC和周邊商品價格偏高",
+        "channel": "朋友推薦或在寵物展上看到",
+        "quote": "逛展時偶爾會買些可愛的周邊，但App和NFC實用性不高"
+      },
+      "usage": {
+        "completion_tokens": 196,
+        "prompt_tokens": 778,
+        "total_tokens": 974,
+        "completion_tokens_details": null,
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cache_write_tokens": null,
+          "cached_tokens": 42,
+          "image_tokens": null,
+          "text_tokens": null
+        }
+      }
+    },
+    {
+      "agent_id": 2,
+      "name": "阿凱",
+      "username": "阿凱_797",
+      "persona": "阿凱，31岁的新北居民，热爱球蟒饲养，日常用Google Sheet记录球蟒的喂食和蜕皮情况。重视数据隐私与同步，对于可靠工具愿意付费使用。热衷于探讨宠物照护工具的实用性和安全性。 阿凱，31岁，是一位居住在新北的球蟒饲养爱好者，他的生活围绕着照顾三只球蟒进行。阿凯非常重视对宠物的细心照料，为了更好地管理饲养细节，他使用Google Sheet来记录喂食和蜕皮的时间，确保每只球蟒都能得到适当的照顾。他对电子工具的应用有着严谨的态度，尤其是在跨设备同步和数据备份方面，坚信可靠的工具能够带来便利，愿意为此支付费用。阿凯对隐私保护有着高度关注，常常会思考宠物照护工具的安全性和可靠性，并且对新技术持开放态度，但也会提出质疑，比如他会问：“贴纸掉了怎么办？资料会不会绑死在贴纸上？”这种问题体现了他对技术应用的深入思考。他关注宠物照护工具的发展，比如苔间App，尽管是一款针对iOS用户的工具，但阿凯仍然对其核心功能和隐私保护措施表示兴趣，希望能找到最适合养宠人士的解决方案。",
+      "answer": {
+        "interest_app": 4,
+        "trial_app": 0.9,
+        "pay_app": 0.6,
+        "preferred_plan": "199",
+        "max_price_twd": 250,
+        "nfc_interest": 3,
+        "nfc_buy": 0.4,
+        "nfc_3pack_299_ok": false,
+        "nfc_use_case": "快速記錄球蟒喂食和蜕皮",
+        "merch_interest": 2,
+        "merch_which": "不會買",
+        "biggest_concern": "資料安全和隱私保護，以及NFC貼紙的耐用性",
+        "channel": "網路論壇和社群媒體",
+        "quote": "苔間App看起來不錯，但NFC貼紙的使用限制讓我有點猶豫。"
+      },
+      "usage": {
+        "completion_tokens": 187,
+        "prompt_tokens": 876,
+        "total_tokens": 1063,
+        "completion_tokens_details": null,
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cache_write_tokens": null,
+          "cached_tokens": 42,
+          "image_tokens": null,
+          "text_tokens": null
+        }
+      }
+    },
+    {
+      "agent_id": 3,
+      "name": "米米",
+      "username": "米米_811",
+      "persona": "米米，专注于爬蟲内容创作，27岁，居住在台北。她通过分享旅程和宠物日常，吸引了一群忠实的粉丝。米米非常重视个人隐私，因此她使用封鎖、檢舉与公开範围控制功能来保护自己免受骚扰。她经常发布有关贴纸开箱和宠物照顾技巧的内容，以高质量的视觉呈现和实用信息赢得好评。 米米是一个27岁的台北居民，职业为爬蟲内容创作者。她以分享自己与宠物的日常生活为主，通过社交媒体平台记录和分享她的旅行经历与爬蟲照护心得。米米的账号是一个内容创作者型账户，目标受众主要是对爬蟲有兴趣的宠物爱好者和关注旅行分享的用户。她的发言风格简洁明了，注重实用性与高质量的视觉呈现，同时也避免涉及可能引起争议的话题。发布内容包括宠物开箱视频、日常照顾技巧和旅行见闻，发布频率每周至少一次，活跃时间段主要集中在晚上和周末。米米对宠物健康和照护知识的传播持积极态度，面对争议时会保持冷静并提供准确的信息和建议。她所在的群体是宠物爱好者和旅行爱好者，同时也是一个保护隐私意识很强的社群成员。米米是苔间App的忠实用户，她利用该平台记录爬蟲的日常，分享宠物的健康成长状态，并与粉丝们互动。她曾因为平台的安全措施完善而对苔间App表示赞赏。米米的机构记忆包括她在社交媒体上通过苔间App分享的信息，这些信息帮助她建立了良好的个人品牌和忠实的粉丝基础。",
+      "answer": {
+        "interest_app": 4,
+        "trial_app": 0.8,
+        "pay_app": 0.3,
+        "preferred_plan": "199",
+        "max_price_twd": 299,
+        "nfc_interest": 3,
+        "nfc_buy": 0.2,
+        "nfc_3pack_299_ok": false,
+        "nfc_use_case": "快速記錄爬蟲日常",
+        "merch_interest": 3,
+        "merch_which": "照護記錄卡",
+        "biggest_concern": "隱私保護和數據安全",
+        "channel": "社群媒體分享",
+        "quote": "保護隱私很重要，希望苔間能做得更好。"
+      },
+      "usage": {
+        "completion_tokens": 164,
+        "prompt_tokens": 980,
+        "total_tokens": 1144,
+        "completion_tokens_details": null,
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cache_write_tokens": null,
+          "cached_tokens": 42,
+          "image_tokens": null,
+          "text_tokens": null
+        }
+      }
+    },
+    {
+      "agent_id": 4,
+      "name": "Eric",
+      "username": "eric_356",
+      "persona": "Eric，一名35岁的新竹工程师，热爱饲养守宫，时常出国旅行。他依赖苔间App记录守宫生活，但对服务稳定性及数据安全性有高度关注。 Eric是一名35岁的工程师，居住在新竹，是一名专业的爬虫宠物饲养者，特别喜欢养守宫。他的工作需要经常出差，因此会委托家人照顾他的守宫，通过苔间App进行远程记录与提醒。Eric在使用NFC贴纸时，会仔细研究写入格式和权限设置，以确保数据的安全性和可备份性。他非常关心服务的稳定性，不希望因为服务停止而丢失宝贵的饲养记录。Eric也会在社交媒体上分享他的养宠经验和旅行照片，与其他养宠爱好者交流心得。他对苔间App的开发团队有些建设性的反馈，尤其是关于数据备份和权限管理的功能。",
+      "answer": {
+        "interest_app": 4,
+        "trial_app": 0.9,
+        "pay_app": 0.6,
+        "preferred_plan": "199",
+        "max_price_twd": 300,
+        "nfc_interest": 3,
+        "nfc_buy": 0.5,
+        "nfc_3pack_299_ok": true,
+        "nfc_use_case": "遠端記錄守宮生活，確保數據安全",
+        "merch_interest": 2,
+        "merch_which": "照護記錄卡",
+        "biggest_concern": "服務穩定性及數據安全性，不希望因服務中斷而失去記錄",
+        "channel": "爬蟲社群及苔間App宣傳",
+        "quote": "苔間App如果能確保數據安全和服務穩定性，我會考慮長期使用。"
+      },
+      "usage": {
+        "completion_tokens": 194,
+        "prompt_tokens": 781,
+        "total_tokens": 975,
+        "completion_tokens_details": null,
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cache_write_tokens": null,
+          "cached_tokens": 42,
+          "image_tokens": null,
+          "text_tokens": null
+        }
+      }
+    },
+    {
+      "agent_id": 5,
+      "name": "小美",
+      "username": "小美_884",
+      "persona": "小美，28岁，来自台北，热衷于为男友挑选礼物，尤其喜欢购买精美的三张贴纸礼盒，注重礼物的包装、价格和心意。 小美，28岁，来自台北，是一名注重细节的礼物购买者。她在为男友挑选礼物时，非常重视礼物的包装、价格以及是否显得用心。小美虽然自己没有养爬虫，但她会为男友购买相关礼物，如三张贴纸礼盒。她可能选择299元的三张贴纸礼盒，但对如何正确设置和使用并不了解。小美在选择礼物时倾向于寻找那些看起来精致且价格适中的商品，同时对于贴纸的品牌和外观也非常在意。她喜欢在社交媒体上分享自己的购物体验和心得，与朋友们交流礼物挑选的心得。她会关注有关宠物和礼物购买的相关信息，但对其它话题的关注度较低。",
+      "answer": {
+        "interest_app": 2,
+        "trial_app": 0.1,
+        "pay_app": 0.0,
+        "preferred_plan": "free",
+        "max_price_twd": 299,
+        "nfc_interest": 2,
+        "nfc_buy": 0.0,
+        "nfc_3pack_299_ok": false,
+        "nfc_use_case": "男友的爬蟲貼紙，但不懂如何使用",
+        "merch_interest": 3,
+        "merch_which": "照護記錄卡，因為看起來很美觀",
+        "biggest_concern": "不懂如何使用NFC貼紙，怕買了也用不好",
+        "channel": "朋友分享的貼紙禮盒",
+        "quote": "禮盒好漂亮，但希望有更多使用說明"
+      },
+      "usage": {
+        "completion_tokens": 187,
+        "prompt_tokens": 791,
+        "total_tokens": 978,
+        "completion_tokens_details": null,
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cache_write_tokens": null,
+          "cached_tokens": 42,
+          "image_tokens": null,
+          "text_tokens": null
+        }
+      }
+    },
+    {
+      "agent_id": 7,
+      "name": "阿宏",
+      "username": "阿宏_600",
+      "persona": "阿宏，21岁，桃園的学生，热爱饲养肥尾守宫。预算有限，以免费优先，最多接受99元的花费，强调高照片额度，对NFC贴纸持保留态度。 阿宏，21岁的桃園学生，以饲养肥尾守宫为主，对宠物的照顾有着深深的热情和投入。阿宏的生活节俭，对花费有严格的预算限制，尤其是对于需要付费的商品或服务，他倾向于选择免费选项，最多接受99元以内的价格。因此，他对苔间App的周边商品如NFC贴纸持保留态度，认为虽然酷炫但并非必要，更偏向于使用免费版功能来满足日常需求。阿宏对照片的记录有着极高的要求，重视高像素和大容量的照片存储，这在养宠物的过程中非常重要，因为他相信照片可以记录下宠物成长的每一个细节。他经常在社交媒体上分享自己的养宠经验和心得，尤其是关于如何以低成本但高质量的方式来照料宠物。他也会关注其他养宠者的分享，并从中学习新的照顾技巧。",
+      "answer": {
+        "interest_app": 4,
+        "trial_app": 0.8,
+        "pay_app": 0.2,
+        "preferred_plan": "99",
+        "max_price_twd": 99,
+        "nfc_interest": 2,
+        "nfc_buy": 0.1,
+        "nfc_3pack_299_ok": false,
+        "nfc_use_case": "快速記錄肥尾守宮的活動",
+        "merch_interest": 3,
+        "merch_which": "照護記錄卡",
+        "biggest_concern": "NFC貼紙價格偏高，不適合我預算",
+        "channel": "朋友推薦或社群媒體",
+        "quote": "養肥尾守宮很開心，但預算有限，希望有更多免費資源。"
+      },
+      "usage": {
+        "completion_tokens": 184,
+        "prompt_tokens": 835,
+        "total_tokens": 1019,
+        "completion_tokens_details": null,
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cache_write_tokens": null,
+          "cached_tokens": 42,
+          "image_tokens": null,
+          "text_tokens": null
+        }
+      }
+    },
+    {
+      "agent_id": 8,
+      "name": "雅婷",
+      "username": "雅婷_722",
+      "persona": "雅婷，40岁的台南两孩家庭主妇，关注宠物乌龟的饲养与家庭健康管理，致力于通过科技手段改善家庭生活。 雅婷是一位40岁的台南两孩家庭的母亲，她养了几只乌龟，希望孩子们能参与到照顾乌龟的过程中。雅婷通过购买NFC贴纸来让孩子们通过简单的操作记录乌龟的日常情况，但她同时注重保护家庭成员的隐私，尤其是孩子的隐私，避免他们接触到家庭成员的医疗记录等私密信息。雅婷是一个细心的妈妈，她非常注重家庭中的安全与隐私保护。她认为家庭共享应用应该能够提供足够的权限控制，让孩子参与其中而不影响到其他家庭成员的隐私。雅婷喜欢使用LINE来分享孩子们的照片与日常点滴，但没有固定的时间来记录这些内容。她希望通过科技手段来简化家庭管理，同时保证家庭成员的隐私和信息安全。雅婷关注社区中的讨论，尤其是关于家庭共享与隐私保护的话题。她也关心NFC技术在家庭生活中的应用，以及如何通过这些技术改善家庭成员之间的互动。",
+      "answer": {
+        "interest_app": 4,
+        "trial_app": 0.8,
+        "pay_app": 0.2,
+        "preferred_plan": "199",
+        "max_price_twd": 250,
+        "nfc_interest": 3,
+        "nfc_buy": 0.4,
+        "nfc_3pack_299_ok": false,
+        "nfc_use_case": "記錄烏龜的飲食和活動",
+        "merch_interest": 2,
+        "merch_which": "不會買",
+        "biggest_concern": "隱私保護和家庭成員的權限控制",
+        "channel": "LINE群組分享",
+        "quote": "科技能讓生活更便利，但保護隱私也很重要。"
+      },
+      "usage": {
+        "completion_tokens": 174,
+        "prompt_tokens": 822,
+        "total_tokens": 996,
+        "completion_tokens_details": null,
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cache_write_tokens": null,
+          "cached_tokens": 42,
+          "image_tokens": null,
+          "text_tokens": null
+        }
+      }
+    },
+    {
+      "agent_id": 10,
+      "name": "陳老闆",
+      "username": "陳老闆_536",
+      "persona": "陳老闆，38歲，高雄爬蟲店老闆。專注於經營爬蟲養殖店，提供客戶專業的養殖建議和售後服務，推動業界資料歸屬與B2B合作，致力於讓飼主與業者生活更輕鬆。 陳老闆是38岁的高雄爬蟲店老闆，經營一家專門為爬蟲養殖者提供養殖用品和服務的商店。陳老闆的商店在高雄當地小有名氣，主要服務對象是對爬蟲養殖有熱情的業界人士和業餘愛好者。陳老闆對於業界資訊和技術有著深厚的了解，經常回答客戶關於爬蟲養殖的疑問，如餵食指南和蛻皮問題，並積極推廣售後服務和客戶绑定，希望通過這些措施來提升客戶滿意度，並解決資料歸屬和B2B合作的問題。陳老闆注重商業合作的專業性和透明性，對於業界標準和規範有著堅定的立場。他強烈支持與客戶和業界合作，推動爬蟲養殖業界的健康發展。陳老闆的言辭謹慎，言語間充滿專業知識，但也不忘幽默感，和客戶分享養殖樂趣，經常會在網絡上分享養殖技巧和店內新產品資訊，與客戶建立良好的關係。陳老闆的發言風格穩健，語言專業，常見話題包括爬蟲養殖技術、行業動態和商業合作，避免爭議話題，特別是與業界規範和客戶權益相關的問題。他對於業界標準和規範有著堅定的立場，並會積極提供專業建議，幫助客戶解決問題和提升養殖技能。他有著深厚的業界背景，對於爬蟲養殖和相關產品有著深厚的認識，為業界人士提供專業建議和指導。陳老闆的目標受众是爬蟲養殖業界人士和業餘愛好者，這些人對於爬蟲養殖有著濃厚的興趣和專業知識，並且需要專業的售後服務和客戶绑定。陳老闆的發言風格謹慎且專業，常用話題包括技術分享、業界資訊和商業合作。他在業界內享有良好的聲譽，並致力於推動爬蟲養殖業界的發展和進步。陳老闆關注的領域包括爬蟲養殖技術、業界動態和商業合作。他對於業界標準和規範有著堅定的立場，並會積極提供專業建議，幫助客戶解決問題和提升養殖技能。他對於業界標準和規範有著堅定的立場，並會積極提供專業建議，幫助客戶解決問題和提升養殖技能。陳老闆在業界內享有良好的聲譽，並致力於推動爬蟲養殖業界的發展和進步。",
+      "answer": {
+        "interest_app": 4,
+        "trial_app": 0.8,
+        "pay_app": 0.2,
+        "preferred_plan": "199",
+        "max_price_twd": 500,
+        "nfc_interest": 3,
+        "nfc_buy": 0.5,
+        "nfc_3pack_299_ok": true,
+        "nfc_use_case": "快速記錄爬蟲蛻皮和餵食情況",
+        "merch_interest": 2,
+        "merch_which": "不會買",
+        "biggest_concern": "iPhone 7/8/X 需手動感應，使用不便",
+        "channel": "爬蟲養殖社群和業界推廣",
+        "quote": "養殖工具要實用，不然再好也只是擺設。"
+      },
+      "usage": {
+        "completion_tokens": 190,
+        "prompt_tokens": 1280,
+        "total_tokens": 1470,
+        "completion_tokens_details": null,
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cache_write_tokens": null,
+          "cached_tokens": 42,
+          "image_tokens": null,
+          "text_tokens": null
+        }
+      }
+    },
+    {
+      "agent_id": 13,
+      "name": "小安",
+      "username": "小安_312",
+      "persona": "小安，24岁，台中居民，宠物守宫爱好者，热爱记录生活点滴，尤其专注于豹纹守宫的日常护理和成长过程。对新科技产品如苔间App持有开放态度，但也对复杂操作和高昂价格有所顾虑。 小安，24岁，居住在台中，是一名豹纹守宫的新手饲养者。她目前只拥有一个宠物，每天通过LINE应用发送照片记录守宫的日常生活。小安对价格敏感，对过于复杂的功能和操作流程感到头疼，最担心的是照片存储额度的限制。她对苔间App的NFC贴纸功能的第一反应是：虽然觉得贴在展示缸上很酷，但考虑到自己只有一只宠物，是否值得购买仍然感到犹豫。小安的语言特点偏向直接且口语化，常用表达包括“不知道花那么多钱值不值”和“这个功能对我来说太复杂了”。她不希望在社交媒体上讨论过于技术性的内容，也不会参与到复杂的辩论中去。发布内容主要是宠物守宫的相关照片和简短的饲养心得，发布频率较低，通常在晚间空闲时发布。她的活跃时间段主要集中在晚上7点到10点之间。面对争议，小安会尽量保持中立，不参与激烈的争论。她的账号风格偏向于个人分享，很少提及专业饲养知识或深入探讨宠物饲养的话题。小安的人设定位是普通的宠物爱好者，主要目标受众是和她相似的宠物爱好者，她希望通过分享日常经历，建立一个轻松有趣的宠物饲养社区。",
+      "answer": {
+        "interest_app": 3,
+        "trial_app": 0.7,
+        "pay_app": 0.2,
+        "preferred_plan": "99",
+        "max_price_twd": 150,
+        "nfc_interest": 2,
+        "nfc_buy": 0.1,
+        "nfc_3pack_299_ok": false,
+        "nfc_use_case": "展示缸裝飾，但不常用",
+        "merch_interest": 2,
+        "merch_which": "照護記錄卡",
+        "biggest_concern": "功能複雜，擔心操作困難",
+        "channel": "朋友推薦",
+        "quote": "這個功能聽起來不錯，但不知道花那麼多錢值不值。"
+      },
+      "usage": {
+        "completion_tokens": 172,
+        "prompt_tokens": 944,
+        "total_tokens": 1116,
+        "completion_tokens_details": null,
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cache_write_tokens": null,
+          "cached_tokens": 42,
+          "image_tokens": null,
+          "text_tokens": null
+        }
+      }
+    },
+    {
+      "agent_id": 14,
+      "name": "老周",
+      "username": "老周_399",
+      "persona": "老周，屏東爬蟲繁殖者，专精蛇类与蜥蜴类的繁殖与管理。他致力于提供高标准的饲养记录及繁育服务，为其他繁殖者与爱好者提供优质的血统和管理解决方案。 老周，正式名称为“老周爬虫繁殖中心”，是一家位于屏東的爬虫繁殖者。该中心成立于2007年，旨在为爬虫爱好者提供高品质的繁殖服务和饲养管理。老周专注于蛇类和蜥蜴类的繁殖，并致力于保持繁殖记录的准确性。他需要详尽的血统、繁殖及转移动态记录，以便为客户提供可靠的信息。目标受众主要是其他爬虫繁殖者和爱好者。老周的发言风格严谨而不失友好，常使用专业术语并分享繁殖心得。禁忌话题包括涉及非法获取或贩卖爬虫的行为。他的发布内容以分享繁殖记录、饲养技巧和市场动态为主，频率为每周至少一次，活跃时间段集中在工作日的下午。面对争议，老周秉持事实为导向的态度，强调数据的准确性和透明度。他代表的群体是注重饲养记录和管理标准的爬虫繁殖者。老周的账号定位为“专业繁殖者”，通过苔间App提供B2B套组的解决方案，以实现高效的饲养管理和数据备份。老周已就苔间App的使用体验进行了反馈，并对CSV汇出和数据备份功能表示了强烈的兴趣。",
+      "answer": {
+        "interest_app": 4,
+        "trial_app": 1.0,
+        "pay_app": 0.8,
+        "preferred_plan": "199",
+        "max_price_twd": 300,
+        "nfc_interest": 3,
+        "nfc_buy": 0.5,
+        "nfc_3pack_299_ok": true,
+        "nfc_use_case": "快速記錄爬蟲的進食、排泄等日常活動",
+        "merch_interest": 3,
+        "merch_which": "照護記錄卡和缸邊標籤",
+        "biggest_concern": "App的穩定性和數據安全性",
+        "channel": "爬蟲繁殖者社群的推廣",
+        "quote": "數據的準確性和透明度是我們的首要考量，苔間App在這方面有潛力。"
+      },
+      "usage": {
+        "completion_tokens": 196,
+        "prompt_tokens": 914,
+        "total_tokens": 1110,
+        "completion_tokens_details": null,
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cache_write_tokens": null,
+          "cached_tokens": 42,
+          "image_tokens": null,
+          "text_tokens": null
+        }
+      }
+    },
+    {
+      "agent_id": 15,
+      "name": "阿德",
+      "username": "阿德_982",
+      "persona": "阿德，26岁，台中居民，DIY爱好者，3D打印玩家。他热衷于改造展示缸，研究NFC标签与自动化技术，致力于提升宠物照护记录的效率。 阿德，26岁，是一名居住在台中的DIY玩家，热衷于3D打印和宠物照护记录技术的研究。他拥有一只展示缸，里面养着三只守宫，他经常自己改造展示缸以创造更理想的生活环境。他擅长使用NFC标签与App自动化以实现智能家居的功能，关注技术的开放性和可定制性。他对iOS平台上的“苔间App”很感兴趣，虽然认为该软件存在一些限制，但可能成为这一产品的进阶推广者。阿德会定期在社交媒体上分享自己的项目进展、心得感悟和使用体验，积极参与社区讨论和技术交流，他还会批评那些限制用户自由和开放性的产品。",
+      "answer": {
+        "interest_app": 4,
+        "trial_app": 0.9,
+        "pay_app": 0.5,
+        "preferred_plan": "199",
+        "max_price_twd": 300,
+        "nfc_interest": 3,
+        "nfc_buy": 0.6,
+        "nfc_3pack_299_ok": true,
+        "nfc_use_case": "用NFC快速記錄守宮的日常照護",
+        "merch_interest": 2,
+        "merch_which": "不會買",
+        "biggest_concern": "iOS限制太多，希望能開放更多自定義功能",
+        "channel": "技術論壇和DIY社群",
+        "quote": "苔間App有潛力，但開放性不足，希望未來能更自由些。"
+      },
+      "usage": {
+        "completion_tokens": 187,
+        "prompt_tokens": 802,
+        "total_tokens": 989,
+        "completion_tokens_details": null,
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cache_write_tokens": null,
+          "cached_tokens": 42,
+          "image_tokens": null,
+          "text_tokens": null
+        }
+      }
+    },
+    {
+      "agent_id": 16,
+      "name": "阿珍",
+      "username": "阿珍_539",
+      "persona": "阿珍，33岁，来自彰化的上班族，是一名热情的宠物主人，特别钟爱养玉米蛇。她积极使用社交媒体分享养蛇心得和日常生活趣事，同时关注宠物照护相关的最新资讯和应用。 阿珍是33岁的彰化居民，作为一名上班族，她的时间和经济能力都有限，因此在选择应用程序时非常谨慎，更倾向于寻找免费或低成本的选择。她喜欢养宠物，特别是玉米蛇，这让她在社交媒体上分享养宠经历时显得非常有见解。阿珍对新应用持开放态度，但倾向于选择那些能满足她需求又不会造成太大财务负担的工具。在使用社交媒体时，她经常讨论养宠心得、分享日常生活的温馨瞬间，同时也会询问有关宠物照护应用的使用技巧和建议。她特别关注那些能够帮助她更好地照料宠物的应用程序，但对付费功能较为谨慎。",
+      "answer": {
+        "interest_app": 4,
+        "trial_app": 0.8,
+        "pay_app": 0.2,
+        "preferred_plan": "99",
+        "max_price_twd": 150,
+        "nfc_interest": 2,
+        "nfc_buy": 0.1,
+        "nfc_3pack_299_ok": false,
+        "nfc_use_case": "快速記錄蛇的健康狀況",
+        "merch_interest": 3,
+        "merch_which": "照護記錄卡",
+        "biggest_concern": "擔心Pro版費用太高，且NFC貼紙價格不實惠",
+        "channel": "朋友推薦和社群媒體",
+        "quote": "養蛇好辛苦，希望能找到實惠的工具來輔助我照顧蛇寶貝。"
+      },
+      "usage": {
+        "completion_tokens": 185,
+        "prompt_tokens": 801,
+        "total_tokens": 986,
+        "completion_tokens_details": null,
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cache_write_tokens": null,
+          "cached_tokens": 43,
+          "image_tokens": null,
+          "text_tokens": null
+        }
+      }
+    },
+    {
+      "agent_id": 17,
+      "name": "Kevin",
+      "username": "kevin_798",
+      "persona": "Kevin，33岁，新竹的Android工程师，养了两只松狮蜥。我关注爬虫宠物的照顾和科技产品的结合，同时也关心软件的隐私保护和资料安全性。 Kevin，33岁，新竹的Android工程师，目前在一家知名科技公司担任软件工程师，负责开发和维护与爬虫宠物管理相关的移动应用程序。他在新竹的一个温馨公寓里生活，家里养了两只松狮蜥，每天花费大量时间照顾它们，从喂食到记录它们的健康状况。Kevin对宠物的照顾非常细致，他使用苔间App记录松狮蜥的体征和日常生活，这让他能够更好地了解宠物的生长情况和健康状态。他对苔间App的功能和设计有着深刻的理解，经常在社交媒体上分享自己在使用过程中的体验和建议。Kevin认为苔间App的NFC功能虽然很有创意，但因为只支持iPhone，这让他感到很可惜，因为他的手机是Android，无法使用NFC贴纸。他担心如果苔间App停止服务，自己记录的数据会丢失，因此他特别关注如何备份数据和确保个人隐私的安全。他经常浏览科技新闻和宠物网站，对宠物护理和科技结合的话题很感兴趣，也常常参与相关社区的讨论。",
+      "answer": {
+        "interest_app": 4,
+        "trial_app": 0.9,
+        "pay_app": 0.2,
+        "preferred_plan": "199",
+        "max_price_twd": 299,
+        "nfc_interest": 2,
+        "nfc_buy": 0.0,
+        "nfc_3pack_299_ok": false,
+        "nfc_use_case": "若支持Android，會用來快速記錄體溫和體重",
+        "merch_interest": 3,
+        "merch_which": "照護記錄卡",
+        "biggest_concern": "NFC功能只支持iPhone，無法使用；數據安全和備份問題",
+        "channel": "爬蟲寵物論壇和社群媒體",
+        "quote": "苔間App功能不錯，但NFC功能對我來說實用性低，希望未來能支援Android"
+      },
+      "usage": {
+        "completion_tokens": 203,
+        "prompt_tokens": 867,
+        "total_tokens": 1070,
+        "completion_tokens_details": null,
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cache_write_tokens": null,
+          "cached_tokens": 42,
+          "image_tokens": null,
+          "text_tokens": null
+        }
+      }
+    },
+    {
+      "agent_id": 18,
+      "name": "小林",
+      "username": "小林_684",
+      "persona": "小林是爬店店長，位于桃園，专注于为客户提供优质的宠物服务。通过苔間App和NFC贴纸，旨在提升售后服务水平。 小林，30岁的爬店店长，位于台湾的桃園。他经营的宠物店主要以销售和照顾爬虫类动物为主，致力于为宠物主人提供专业的咨询和服务。小林希望通过引入NFC贴纸和苔間App，让顾客获取宠物的照护记录更加便捷，从而提升顾客的满意度和忠诚度。他希望通过该技术，不仅能够简化客户的操作流程，同时也提升店铺的专业形象和客户服务水准。小林的账号定位是向宠物主人展示店铺的新技术和售后服务，核心功能主要是推广宠物照护知识和提供售后支持。他的发言风格严谨而专业，注重信息的准确性和实用性，避免涉及宠物虐待等争议话题。发布内容特点主要是分享宠物照护建议和产品更新通知，每周发布3到4次，主要活跃时间是每天晚上7点至9点。面对争议，他倾向于以官方立场进行解释，避免直接参与争议。特殊说明：小林代表的是一个追求进步并注重顾客体验的宠物店经营者的形象。运营习惯上，他注重与顾客的互动，定期收集用户反馈以改进服务。",
+      "answer": {
+        "interest_app": 4,
+        "trial_app": 0.8,
+        "pay_app": 0.3,
+        "preferred_plan": "199",
+        "max_price_twd": 300,
+        "nfc_interest": 3,
+        "nfc_buy": 0.5,
+        "nfc_3pack_299_ok": true,
+        "nfc_use_case": "快速記錄和查詢爬蟲照護資訊",
+        "merch_interest": 2,
+        "merch_which": "照護記錄卡",
+        "biggest_concern": "App穩定性和數據隱私保護",
+        "channel": "苔間App官方推廣",
+        "quote": "苔間App能提升客戶體驗，但需確保數據安全。"
+      },
+      "usage": {
+        "completion_tokens": 175,
+        "prompt_tokens": 864,
+        "total_tokens": 1039,
+        "completion_tokens_details": null,
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cache_write_tokens": null,
+          "cached_tokens": 42,
+          "image_tokens": null,
+          "text_tokens": null
+        }
+      }
+    }
+  ]
+}
