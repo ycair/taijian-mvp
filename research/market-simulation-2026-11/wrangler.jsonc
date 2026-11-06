@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "taijian-report",
+  "compatibility_date": "2026-11-06",
+  "assets": {
+    "directory": "./site"
+  },
+  "routes": [
+    {
+      "pattern": "taijian.ycair.space",
+      "custom_domain": true
+    }
+  ]
+}

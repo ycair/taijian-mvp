@@ -38,12 +38,12 @@ python3 build_site_data.py
 
 MiroFish 原版完整 GraphRAG pipeline 使用 Zep Cloud（key 驗證：create user 201、delete 200）＋遠端 Ollama。遠端主機（i7-8700K / 30GB / Titan V 12GB）可跑 `qwen2.5:7b` 與 `qwen2.5:14b-instruct`；14B 使用約 9.7GB VRAM。Qwen ontology 成功產生 10 類實體／6 種關係，Zep graph 建出 19 nodes／27 edges，15 個 persona 完成。已修正：API 啟動 simulation 加上 `--no-wait`，並在第一輪 off-peak 導致 0 個 active agents 時強制至少選 1 個 agent。修正後 simulation 48 秒完成，report 已生成 2/3 章節；內容品質仍受 qwen2.5:14b 限制。GraphRAG 建圖／檢索本身成功。本機資源沒有再被吃滿。
 
-若要做完整 pipeline，換一個在 JSON schema 提示下會回傳文字的模型／provider（或自架 Ollama），或使用 Zep Cloud Free。`MiroFish/`、`MiroFish-local/`、`.env`、SQLite DB 與 log 都不進 git。
+完整 pipeline 已用 Zep Cloud + 遠端 Ollama 跑過：GraphRAG 建圖成功、OASIS 48 秒完成、ReportAgent 完成 2/3 段後因後端中止而失敗。`MiroFish/`、`MiroFish-local/`、`.env`、SQLite DB 與 log 都不進 git。
 
 ### Zep 平替
 
 - **Zep Cloud Free**：每月 10,000 credits、2 projects；實務上仍需能建立帳號並取得 key，且有限額。
-- **MiroFish-Local + Zep Cloud + 遠端 Ollama**：Zep、Qwen ontology、15 個 persona 已驗證；OASIS 有 27 則貼文但品質不足，需更強模型或改 prompt。
+- **MiroFish-Local + Zep Cloud + 遠端 Ollama**：Zep 建圖 36 nodes / 41 edges、14 個 persona；OASIS 完成 2 輪、9 則貼文 / 0 留言。流程可跑，但 Qwen 內容品質不足，需更強模型或改 prompt。
 - **Graphiti + Neo4j / FalkorDB**：Apache-2.0、可自架，沒有 Zep key；需要自行處理 graph DB、LLM/embedding 與運維。
 - **MiroFish-Local**：以 `ZEP_BACKEND=graphiti` 支援 Graphiti + Neo4j 的 fork；完整 pipeline 可離線，但不是上游官方支援。
 - 其他記憶框架（Mem0、Letta、Cognee）不是 Zep API 的直接 drop-in，移植成本較高。
@@ -60,6 +60,14 @@ MiroFish 原版完整 GraphRAG pipeline 使用 Zep Cloud（key 驗證：create u
 - 資源紀錄：`simulations/results/resource_usage.jsonl`
 - 完整 pipeline 指令：`MiroFish-local/backend/.venv/bin/python simulations/run_mirofish_local.py`
 - 若 OASIS 沒有 actions，報告會標示 partial，不把沉默當市場結論。
+- 2026-11 執行結果：14 profiles、36 nodes / 41 edges、OASIS 9 posts / 0 comments、ReportAgent 2/3 sections。
+
+## 報告站
+
+- 網址：<https://taijian.ycair.space>
+- 部署：`npx wrangler deploy`（`wrangler.jsonc` 指向 `./site`，custom domain 為 `taijian.ycair.space`）
+- 更新流程：修改 `site/` → `python3 build_site_data.py` → `npx wrangler deploy`
+- 靜態檔案只包含報告與 JSON，不含 API key 或 SSH 憑證。
 
 ## 安全
 
