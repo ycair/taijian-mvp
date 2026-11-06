@@ -1,0 +1,11 @@
+{
+  "data": {
+    "already_generated": false,
+    "message": "报告生成任务已启动，请通过 /api/report/generate/status 查询进度",
+    "report_id": "report_0e33c6a178d0",
+    "simulation_id": "sim_edd33019e562",
+    "status": "generating",
+    "task_id": "4f56a048-413c-407e-9bd7-0b3c54e8e217"
+  },
+  "success": true
+}

@@ -1,6 +1,6 @@
 {
   "data": {
-    "analysis_summary": "",
+    "analysis_summary": "根據需求，設計了10種實體類型，涵蓋了爬蟲與特殊寵物飼主、爬蟲店老闆、特殊寵物獸醫、內容創作者、學生、家長、工程師和繁殖者等具體角色，並提供了兩個兜底類型Person和Organization。",
     "files": [
       {
         "filename": "taijian_customer_seed.md",
@@ -8,8 +8,190 @@
       }
     ],
     "ontology": {
-      "edge_types": [],
+      "edge_types": [
+        {
+          "attributes": [],
+          "description": "飼養",
+          "name": "PETS",
+          "source_targets": [
+            {
+              "source": "PetOwner",
+              "target": "Pet"
+            }
+          ]
+        },
+        {
+          "attributes": [],
+          "description": "工作於",
+          "name": "WORKS_AT",
+          "source_targets": [
+            {
+              "source": "Person",
+              "target": "Organization"
+            }
+          ]
+        },
+        {
+          "attributes": [],
+          "description": "就診於",
+          "name": "VISITS",
+          "source_targets": [
+            {
+              "source": "PetOwner",
+              "target": "Veterinarian"
+            }
+          ]
+        },
+        {
+          "attributes": [],
+          "description": "繁殖",
+          "name": "BREEDS",
+          "source_targets": [
+            {
+              "source": "Breeder",
+              "target": "Pet"
+            }
+          ]
+        },
+        {
+          "attributes": [],
+          "description": "銷售給",
+          "name": "SELLS_TO",
+          "source_targets": [
+            {
+              "source": "PetShopOwner",
+              "target": "PetOwner"
+            }
+          ]
+        },
+        {
+          "attributes": [],
+          "description": "在平台上發佈",
+          "name": "POSTS_ON",
+          "source_targets": [
+            {
+              "source": "ContentCreator",
+              "target": "Platform"
+            }
+          ]
+        }
+      ],
       "entity_types": [
+        {
+          "attributes": [
+            {
+              "description": "飼養的寵物種類",
+              "name": "pet_species",
+              "type": "text"
+            }
+          ],
+          "description": "爬蟲與特殊寵物飼主",
+          "examples": [
+            "小安",
+            "阿凱",
+            "阿宏",
+            "阿珍"
+          ],
+          "name": "PetOwner"
+        },
+        {
+          "attributes": [
+            {
+              "description": "店鋪名稱",
+              "name": "shop_name",
+              "type": "text"
+            }
+          ],
+          "description": "爬蟲店老闆",
+          "examples": [
+            "陳老闆"
+          ],
+          "name": "PetShopOwner"
+        },
+        {
+          "attributes": [
+            {
+              "description": "診所名稱",
+              "name": "clinic_name",
+              "type": "text"
+            }
+          ],
+          "description": "特殊寵物獸醫",
+          "examples": [
+            "林醫師"
+          ],
+          "name": "Veterinarian"
+        },
+        {
+          "attributes": [
+            {
+              "description": "創作平台",
+              "name": "platform",
+              "type": "text"
+            }
+          ],
+          "description": "爬蟲內容創作者",
+          "examples": [
+            "米米"
+          ],
+          "name": "ContentCreator"
+        },
+        {
+          "attributes": [
+            {
+              "description": "學校名稱",
+              "name": "school",
+              "type": "text"
+            }
+          ],
+          "description": "學生",
+          "examples": [
+            "阿宏"
+          ],
+          "name": "Student"
+        },
+        {
+          "attributes": [
+            {
+              "description": "孩子年齡",
+              "name": "child_age",
+              "type": "text"
+            }
+          ],
+          "description": "家長",
+          "examples": [
+            "雅婷"
+          ],
+          "name": "Parent"
+        },
+        {
+          "attributes": [
+            {
+              "description": "就職公司",
+              "name": "company",
+              "type": "text"
+            }
+          ],
+          "description": "工程師",
+          "examples": [
+            "Eric"
+          ],
+          "name": "Engineer"
+        },
+        {
+          "attributes": [
+            {
+              "description": "繁殖的寵物種類",
+              "name": "breed_species",
+              "type": "text"
+            }
+          ],
+          "description": "繁殖者",
+          "examples": [
+            "老周"
+          ],
+          "name": "Breeder"
+        },
         {
           "attributes": [
             {
@@ -18,9 +200,9 @@
               "type": "text"
             }
           ],
-          "description": "學生",
+          "description": "兜底類型，任何自然人",
           "examples": [],
-          "name": "Student"
+          "name": "Person"
         },
         {
           "attributes": [
@@ -30,97 +212,13 @@
               "type": "text"
             }
           ],
-          "description": "專業人士",
-          "examples": [],
-          "name": "Professional"
-        },
-        {
-          "attributes": [
-            {
-              "description": "飼養寵物種類",
-              "name": "pet_type",
-              "type": "text"
-            }
-          ],
-          "description": "寵物飼主",
-          "examples": [],
-          "name": "PetOwner"
-        },
-        {
-          "attributes": [
-            {
-              "description": "企業名稱",
-              "name": "business_name",
-              "type": "text"
-            }
-          ],
-          "description": "創業者",
-          "examples": [],
-          "name": "Entrepreneur"
-        },
-        {
-          "attributes": [
-            {
-              "description": "平台",
-              "name": "platform",
-              "type": "text"
-            }
-          ],
-          "description": "內容創作者",
-          "examples": [],
-          "name": "ContentCreator"
-        },
-        {
-          "attributes": [
-            {
-              "description": "專長",
-              "name": "specialty",
-              "type": "text"
-            }
-          ],
-          "description": "獸醫",
-          "examples": [],
-          "name": "Veterinarian"
-        },
-        {
-          "attributes": [
-            {
-              "description": "部門",
-              "name": "department",
-              "type": "text"
-            }
-          ],
-          "description": "政府官員",
-          "examples": [],
-          "name": "GovernmentOfficial"
-        },
-        {
-          "attributes": [
-            {
-              "description": "預算",
-              "name": "budget",
-              "type": "text"
-            }
-          ],
-          "description": "消費者",
-          "examples": [],
-          "name": "Consumer"
-        },
-        {
-          "attributes": [],
-          "description": "個人兜底",
-          "examples": [],
-          "name": "Person"
-        },
-        {
-          "attributes": [],
-          "description": "組織兜底",
+          "description": "兜底類型，任何組織機構",
           "examples": [],
           "name": "Organization"
         }
       ]
     },
-    "project_id": "proj_b4e42e8f3354",
+    "project_id": "proj_8d2de20e4479",
     "project_name": "苔間 2026-11 市場模擬",
     "total_text_length": 910
   },

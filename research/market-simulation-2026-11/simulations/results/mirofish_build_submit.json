@@ -1,8 +1,8 @@
 {
   "data": {
     "message": "图谱构建任务已启动，请通过 /task/{task_id} 查询进度",
-    "project_id": "proj_b4e42e8f3354",
-    "task_id": "9f78a9a3-5587-42ae-9a99-148186250b2a"
+    "project_id": "proj_8d2de20e4479",
+    "task_id": "da7eac3e-90d4-4174-afcd-8b9408b53705"
   },
   "success": true
 }

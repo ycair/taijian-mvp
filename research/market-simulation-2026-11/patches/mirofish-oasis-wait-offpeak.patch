@@ -1,0 +1,124 @@
+diff --git a/backend/app/services/simulation_runner.py b/backend/app/services/simulation_runner.py
+index ac7f701..95ae9a4 100644
+--- a/backend/app/services/simulation_runner.py
++++ b/backend/app/services/simulation_runner.py
+@@ -448,6 +448,11 @@ class SimulationRunner:
+                 "--config", config_path,  # 使用完整配置文件路径
+             ]
+             
++            # API-driven runs have no live interviewer attached.  Without this
++            # flag the OASIS script finishes its rounds and then waits forever
++            # in its IPC command loop, leaving run_state at "running".
++            cmd.append("--no-wait")
++
+             # 如果指定了最大轮数，添加到命令行参数
+             if max_rounds is not None and max_rounds > 0:
+                 cmd.extend(["--max-rounds", str(max_rounds)])
+diff --git a/backend/app/utils/llm_client.py b/backend/app/utils/llm_client.py
+index 6db1548..10ada0c 100644
+--- a/backend/app/utils/llm_client.py
++++ b/backend/app/utils/llm_client.py
+@@ -4,6 +4,7 @@ LLM客户端封装
+ """
+ 
+ import json
++import re
+ from typing import Optional, Dict, Any, List
+ from openai import OpenAI
+ 
+@@ -80,12 +81,73 @@ class LLMClient:
+         Returns:
+             解析后的JSON对象
+         """
++        # Some OpenAI-compatible providers (including THU LLM) refuse to
++        # put structured JSON in message.content and instead emit a tool call.
++        # Use a single forced tool with a free-form JSON argument, then unwrap it.
++        json_tool = {
++            "type": "function",
++            "function": {
++                "name": "submit_json",
++                "description": "Submit exactly one JSON object.",
++                "parameters": {
++                    "type": "object",
++                    "properties": {
++                        "json": {"type": "object", "additionalProperties": True}
++                    },
++                    "required": ["json"],
++                },
++            },
++        }
++        try:
++            response = self.client.chat.completions.create(
++                model=self.model,
++                messages=[
++                    {
++                        "role": "system",
++                        "content": "Return the requested JSON by calling submit_json. Do not return prose.",
++                    },
++                    *messages,
++                ],
++                temperature=temperature,
++                max_tokens=max_tokens,
++                tools=[json_tool],
++                tool_choice={"type": "function", "function": {"name": "submit_json"}},
++            )
++            message = response.choices[0].message
++            if message.tool_calls:
++                arguments = message.tool_calls[0].function.arguments
++                parsed = json.loads(arguments)
++                return parsed.get("json", parsed) if isinstance(parsed, dict) else parsed
++            if message.content:
++                return json.loads(message.content)
++        except Exception:
++            # Fall back to the original JSON-mode request for providers that
++            # support content JSON but not tools.
++            pass
++
+         response = self.chat(
+             messages=messages,
+             temperature=temperature,
+             max_tokens=max_tokens,
+             response_format={"type": "json_object"}
+         )
+-        
+-        return json.loads(response)
++        if not response:
++            raise ValueError("LLM returned no JSON content or tool arguments")
++        return self._parse_json_text(response)
++
++    @staticmethod
++    def _parse_json_text(text: str):
++        """Accept raw JSON or a fenced JSON block from local models."""
++        cleaned = text.strip()
++        if cleaned.startswith("```"):
++            cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
++            cleaned = re.sub(r"\s*```$", "", cleaned)
++        try:
++            return json.loads(cleaned)
++        except json.JSONDecodeError:
++            start = cleaned.find("{")
++            end = cleaned.rfind("}")
++            if start >= 0 and end > start:
++                return json.loads(cleaned[start:end + 1])
++            raise
+ 
+diff --git a/backend/scripts/run_parallel_simulation.py b/backend/scripts/run_parallel_simulation.py
+index 2a627ff..9f6ea8f 100644
+--- a/backend/scripts/run_parallel_simulation.py
++++ b/backend/scripts/run_parallel_simulation.py
+@@ -1073,7 +1073,14 @@ def get_active_agents_for_round(
+         
+         if random.random() < activity_level:
+             candidates.append(agent_id)
+-    
++
++    # The generated config often starts at 00:00, which is marked off-peak.
++    # Force at least one active agent in the first round instead of producing
++    # an empty simulation that then sits in IPC wait mode.
++    if round_num == 0 and not candidates:
++        candidates = [cfg.get("agent_id", 0) for cfg in agent_configs]
++        target_count = max(1, min(len(candidates), target_count or 1))
++
+     selected_ids = random.sample(
+         candidates, 
+         min(target_count, len(candidates))

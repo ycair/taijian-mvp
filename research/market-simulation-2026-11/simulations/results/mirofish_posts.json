@@ -1,0 +1,9 @@
+{
+  "data": {
+    "count": 0,
+    "message": "数据库不存在，模拟可能尚未运行",
+    "platform": "reddit",
+    "posts": []
+  },
+  "success": true
+}

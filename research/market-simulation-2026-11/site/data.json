@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-06T04:00:16.653570+00:00",
+  "generated_at": "2026-11-06T04:20:33.501115+00:00",
   "monte_carlo": {
     "meta": {
       "generated_at": "2026-11-05T19:25:05.510914+00:00",
@@ -1491,7 +1491,7 @@
   "mirofish_local": {
     "summary": {
       "status": "partial",
-      "reason": "MiroFish API 的 simulation 預設使用 wait_for_commands：OASIS 完成後會保留環境等待 interview 指令，不會自動退出，所以 run_state 會維持 running，看起來像卡住。這次 config 在 hour 0 的 off_peak_activity_multiplier=0.05、agents_per_hour=5–7，target_count=int(uniform(5,7)*0.05)=0，因此該輪沒有任何 agent actions。GraphRAG 建圖與檢索本身成功；問題是啟動時間／活躍設定與 IPC wait 模式，不是 GraphRAG。",
+      "reason": "已修正兩個 root cause：（1）API 啟動 simulation 時加上 --no-wait，避免 OASIS 完成後永久等待 interview；（2）第一輪若 off-peak 導致 0 個 active agents，強制至少選 1 個 agent。修正後 simulation 在 48 秒完成，report 已開始生成並完成 2/3 個章節（section_01、section_02）；內容品質仍受 qwen2.5:14b 限制。",
       "completed_checks": [
         "Remote Ollama：qwen2.5:7b / qwen2.5:14b-instruct 可用",
         "Remote GPU：Titan V 12GB，14B 使用約 9.7GB VRAM，利用率 97%",
@@ -1506,6 +1506,19 @@
         "no_actions": "hour 0 是 off-peak；5–7 agents/hour × 0.05 = 0 active agents",
         "apparent_hang": "run_parallel_simulation 預設 wait_for_commands=True；OASIS 完成後等待 interview 指令，run_state 不會自動變 completed",
         "not_graphrag": "Zep graph 19 nodes / 27 edges、retrieval 27 facts / 37 nodes 已完成"
+      },
+      "fix": {
+        "files": [
+          "MiroFish-local/backend/app/services/simulation_runner.py",
+          "MiroFish-local/backend/scripts/run_parallel_simulation.py"
+        ],
+        "patch": "patches/mirofish-oasis-wait-offpeak.patch",
+        "verification": [
+          "simulation runner_status=completed",
+          "elapsed=48s",
+          "report sections 1-2 generated",
+          "9 posts, 0 comments"
+        ]
       }
     },
     "report": null

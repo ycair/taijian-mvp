@@ -2,19 +2,21 @@
   "data": {
     "already_prepared": false,
     "entity_types": [
-      "Professional",
-      "PetOwner",
+      "PetShopOwner",
+      "Engineer",
       "ContentCreator",
       "Student",
-      "Entrepreneur",
-      "Person",
-      "Organization"
+      "Breeder",
+      "Parent",
+      "PetOwner",
+      "Veterinarian",
+      "Person"
     ],
-    "expected_entities_count": 15,
+    "expected_entities_count": 14,
     "message": "准备任务已启动，请通过 /api/simulation/prepare/status 查询进度",
-    "simulation_id": "sim_a773a457b275",
+    "simulation_id": "sim_edd33019e562",
     "status": "preparing",
-    "task_id": "8aaa30c4-b679-450c-b99c-ed0f92cb0d3a"
+    "task_id": "7e30b1e4-438b-4cb7-b591-daaedc2cae7d"
   },
   "success": true
 }

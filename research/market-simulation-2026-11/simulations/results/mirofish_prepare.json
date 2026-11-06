@@ -1,12 +1,12 @@
 {
   "data": {
     "already_prepared": false,
-    "created_at": "2026-11-06T11:41:36.548946",
+    "created_at": "2026-11-06T12:04:37.807854",
     "error": null,
     "message": "任务完成",
     "metadata": {
-      "project_id": "proj_b4e42e8f3354",
-      "simulation_id": "sim_a773a457b275"
+      "project_id": "proj_8d2de20e4479",
+      "simulation_id": "sim_edd33019e562"
     },
     "progress": 100,
     "progress_detail": {
@@ -21,27 +21,29 @@
     },
     "result": {
       "config_generated": true,
-      "entities_count": 15,
+      "entities_count": 14,
       "entity_types": [
-        "Professional",
-        "PetOwner",
+        "PetShopOwner",
+        "Engineer",
         "ContentCreator",
         "Student",
-        "Entrepreneur",
-        "Person",
-        "Organization"
+        "Breeder",
+        "Parent",
+        "PetOwner",
+        "Veterinarian",
+        "Person"
       ],
       "error": null,
-      "graph_id": "mirofish_53585dd662dd4295",
-      "profiles_count": 15,
-      "project_id": "proj_b4e42e8f3354",
-      "simulation_id": "sim_a773a457b275",
+      "graph_id": "mirofish_535badd1c29c472e",
+      "profiles_count": 14,
+      "project_id": "proj_8d2de20e4479",
+      "simulation_id": "sim_edd33019e562",
       "status": "ready"
     },
     "status": "completed",
-    "task_id": "8aaa30c4-b679-450c-b99c-ed0f92cb0d3a",
+    "task_id": "7e30b1e4-438b-4cb7-b591-daaedc2cae7d",
     "task_type": "simulation_prepare",
-    "updated_at": "2026-11-06T11:43:27.552809"
+    "updated_at": "2026-11-06T12:07:42.477885"
   },
   "success": true
 }
