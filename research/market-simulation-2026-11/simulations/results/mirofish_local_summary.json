@@ -1,14 +1,13 @@
 {
   "status": "partial",
-  "reason": "已修正兩個 root cause：（1）API 啟動 simulation 時加上 --no-wait，避免 OASIS 完成後永久等待 interview；（2）第一輪若 off-peak 導致 0 個 active agents，強制至少選 1 個 agent。修正後 simulation 在 48 秒完成，report 已開始生成並完成 2/3 個章節（section_01、section_02）；內容品質仍受 qwen2.5:14b 限制。",
+  "reason": "完整 pipeline 已跑通 GraphRAG → OASIS → report 的前兩段；report 第三段因後端程序被中止而失敗（Connection error）。GraphRAG 建圖與 OASIS 都成功，但 Qwen 產出的貼文與報告內容重複、空泛，因此商轉建議以蒙地卡羅與 structured persona panel 為主。",
   "completed_checks": [
     "Remote Ollama：qwen2.5:7b / qwen2.5:14b-instruct 可用",
-    "Remote GPU：Titan V 12GB，14B 使用約 9.7GB VRAM，利用率 97%",
-    "Zep Cloud key：create user 201、delete 200",
-    "Zep graph：19 nodes / 27 edges（7B ontology 版本）",
-    "Persona prepare：15 個 profile 完成",
-    "Direct OASIS：27 posts / 0 comments；48–68 秒完成",
-    "MiroFish 平行 manager：初始貼文後 0 actions，停了約 8 分鐘；未完成"
+    "Remote GPU：Titan V 12GB，14B 使用約 9.7GB VRAM",
+    "Zep Cloud：graph 36 nodes / 41 edges、3 chunks",
+    "Persona prepare：14 profiles / 14 entities",
+    "OASIS：2 rounds、48 秒完成、9 posts / 0 comments",
+    "ReportAgent：outline 3 sections；section_01、section_02 完成，section_03 失敗"
   ],
   "recommendation": "遠端 GPU 解決了算力與本機記憶體問題，但 qwen2.5:14b 的 OASIS 內容品質仍然不足；需要更大/更強的模型、改寫 OASIS prompt，或使用可商用的雲端模型。現有 11 位 structured persona panel 仍是較可信的質性證據。",
   "root_cause": {
@@ -28,5 +27,35 @@
       "report sections 1-2 generated",
       "9 posts, 0 comments"
     ]
+  },
+  "pipeline": {
+    "graph": {
+      "backend": "Zep Cloud",
+      "graph_id": "mirofish_535badd1c29c472e",
+      "nodes": 36,
+      "edges": 41,
+      "chunks": 3,
+      "project_id": "proj_8d2de20e4479"
+    },
+    "personas": {
+      "profiles": 14,
+      "entities": 14
+    },
+    "simulation": {
+      "id": "sim_edd33019e562",
+      "platform": "twitter",
+      "rounds": 2,
+      "elapsed_seconds": 48,
+      "posts": 9,
+      "comments": 0,
+      "status": "completed"
+    },
+    "report": {
+      "id": "report_0e33c6a178d0",
+      "sections_total": 3,
+      "sections_completed": 2,
+      "status": "failed",
+      "error": "报告生成失败: Connection error."
+    }
   }
 }

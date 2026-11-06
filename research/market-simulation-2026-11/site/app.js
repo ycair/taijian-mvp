@@ -300,7 +300,20 @@
     if (!container) return;
     const summary = local.summary || {};
     if (summary.status !== 'completed') {
-      container.innerHTML = `<div class="callout"><strong>MiroFish-Local 已跑通 OASIS，但輸出品質不足以當市場證據</strong>${escape(summary.reason || '尚未完成。')}<br><br><span class="small">${escape((summary.completed_checks || []).join(' · '))}</span></div>`;
+      const pipeline = summary.pipeline || {};
+      const graph = pipeline.graph || {};
+      const personas = pipeline.personas || {};
+      const sim = pipeline.simulation || {};
+      const report = pipeline.report || {};
+      container.innerHTML = `
+        <div class="grid grid-4">
+          <div class="card kpi"><div class="label">GRAPH</div><div class="value">${graph.nodes ?? '—'} / ${graph.edges ?? '—'}</div><div class="note">nodes / edges · ${escape(graph.backend || 'Zep Cloud')}</div></div>
+          <div class="card kpi"><div class="label">PERSONAS</div><div class="value">${personas.profiles ?? '—'}</div><div class="note">profiles prepared</div></div>
+          <div class="card kpi"><div class="label">OASIS</div><div class="value">${sim.posts ?? '—'}</div><div class="note">posts · ${sim.comments ?? 0} comments · ${sim.elapsed_seconds ?? '—'}s</div></div>
+          <div class="card kpi"><div class="label">REPORT</div><div class="value">${report.sections_completed ?? '—'} / ${report.sections_total ?? '—'}</div><div class="note">${escape(report.status || 'partial')}</div></div>
+        </div>
+        <div class="callout" style="margin-top:16px"><strong>流程跑通，內容不足</strong>${escape(summary.reason || '尚未完成。')}<br><br><span class="small">${escape((summary.completed_checks || []).join(' · '))}</span></div>
+      `;
       return;
     }
     const reportEnvelope = local.report || {};
@@ -308,8 +321,8 @@
     const reportText = report.markdown_content || report.markdownContent || report.report || report.content || report.markdown || report.summary || '';
     container.innerHTML = `
       <div class="grid grid-3">
-        <div class="card kpi"><div class="label">GRAPHITI + NEO4J</div><div class="value">完整</div><div class="note">沒有 Zep Cloud key</div></div>
-        <div class="card kpi"><div class="label">GRAPH ID</div><div class="value" style="font-size:18px;font-family:var(--mono);word-break:break-all">${escape(summary.graph_id || '—')}</div><div class="note">本地圖譜</div></div>
+        <div class="card kpi"><div class="label">ZEP CLOUD</div><div class="value">完整</div><div class="note">GraphRAG 建圖</div></div>
+        <div class="card kpi"><div class="label">GRAPH ID</div><div class="value" style="font-size:18px;font-family:var(--mono);word-break:break-all">${escape(summary.graph_id || '—')}</div><div class="note">Zep graph</div></div>
         <div class="card kpi"><div class="label">SIMULATION ID</div><div class="value" style="font-size:18px;font-family:var(--mono);word-break:break-all">${escape(summary.simulation_id || '—')}</div><div class="note">OASIS 2 rounds</div></div>
       </div>
       <div class="card" style="margin-top:16px">

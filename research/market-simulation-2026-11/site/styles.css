@@ -63,10 +63,12 @@ h1 em { color: var(--clay); font-style: normal; }
 .section-head p { max-width: 480px; color: var(--ink-soft); font-size: 13px; margin: 0; }
 .kicker { color: var(--clay); font-size: 11px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; margin-bottom: 8px; }
 .grid { display: grid; gap: 16px; }
+.grid > *, .verdict > * { min-width: 0; }
 .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .card {
+  min-width: 0;
   background: rgba(255, 253, 248, .92);
   border: 1px solid rgba(221, 212, 196, .82);
   border-radius: var(--radius);
@@ -95,7 +97,7 @@ h1 em { color: var(--clay); font-style: normal; }
 .gridline { stroke: #eee7da; stroke-width: 1; stroke-dasharray: 3 5; }
 .legend { display: flex; flex-wrap: wrap; gap: 12px; color: var(--ink-soft); font-size: 10px; margin-top: 8px; }
 .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 4px; }
-.table-wrap { overflow: auto; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); }
+.table-wrap { overflow: auto; max-width: 100%; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); }
 table { width: 100%; border-collapse: collapse; min-width: 680px; font-size: 12px; }
 th, td { text-align: left; padding: 11px 13px; border-bottom: 1px solid #eee7da; vertical-align: top; }
 th { background: #f1eadc; color: var(--ink-soft); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; }
