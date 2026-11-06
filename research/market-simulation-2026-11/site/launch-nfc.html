@@ -48,6 +48,7 @@
       </a>
       <nav class="topnav" aria-label="頁面導覽">
         <a href="./">主報告</a>
+        <a href="#graph">圖譜</a>
         <a href="#findings">發現</a>
         <a href="#panel">Panel</a>
         <a href="#nfc">NFC</a>
@@ -70,6 +71,20 @@
         <div class="metric"><div class="label">199 方案</div><div class="value">10 / 15</div><div class="note">panel 選擇 199</div></div>
         <div class="metric"><div class="label">NFC 299</div><div class="value">5 / 15</div><div class="note">panel 可接受 3 張 299</div></div>
       </div>
+    </section>
+
+    <section class="wrap section" id="graph">
+      <div class="section-head">
+        <div>
+          <div class="kicker">Zep Cloud · GraphRAG</div>
+          <h2>圖譜長這樣。</h2>
+        </div>
+        <p>86 nodes / 100 edges；主連通 component 51 nodes，其餘 35 個是獨立／小型概念。</p>
+      </div>
+      <div class="card" style="padding:12px;overflow:auto">
+        <img src="graph-launch-nfc.png" alt="Zep Cloud GraphRAG 圖譜：86 nodes / 100 edges" style="width:100%;height:auto;border-radius:12px;display:block">
+      </div>
+      <p class="small" style="margin-top:10px">這是從 Zep Cloud 匯出的實際節點／邊，不是示意圖。佈局是 spring projection；41 條 self-fact 以小型迴圈表示。<a href="graph-launch-nfc.json">下載原始 graph JSON</a>。</p>
     </section>
 
     <section class="wrap section" id="findings">

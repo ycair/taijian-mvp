@@ -1,0 +1,1761 @@
+{
+  "graph_id": "mirofish_4fc677f874214ea4",
+  "node_count": 86,
+  "edge_count": 100,
+  "nodes": [
+    {
+      "uuid": "ff4e3fa3-0a71-40de-9b33-f5109fb95992",
+      "name": "林醫師",
+      "labels": [
+        "Veterinarian"
+      ],
+      "summary": "林醫師，29 歲，台北的特寵獸醫助理。她希望飼主就診時能提供用藥、食慾、排便與體重紀錄，並對資料正確性要求高。她擔心 NFC 貼紙被隨便重寫，導致病歷指向錯誤的居民。",
+      "attributes": {
+        "clinic_name": null,
+        "location": "台北",
+        "name": "林醫師"
+      }
+    },
+    {
+      "uuid": "fe0a88b5-3861-43e8-9d53-361d5ad08e85",
+      "name": "苔間 iOS App",
+      "labels": [],
+      "summary": "苔間 iOS App 負責執行 NFC 貼紙的寫入與綁定。貼紙採 NTAG215／NTAG216 之類的被動標籤，iPhone 靠近可讀取 NDEF URL。貼紙本身不是防偽晶片；若要防拷貝，需要伺服器端 token、簽章與撤銷機制，或升級到 NTAG 424 DNA 等等級。App 目前沒有 App Store 上架、真實付款、物流與大規模客服資料。免費版每月 60 張照片；支援者方案 99／199／399 元/月。功能涵蓋體重、蛻皮、醫療、家庭共享、提醒、公開旅程、公開居民頁、追蹤、封鎖、檢舉、CSV／JSON 匯出。公開居民與公開旅程使用不可猜測 token；隱私與封鎖／檢舉是產品底線。",
+      "attributes": {
+        "name": "苔間 iOS App"
+      }
+    },
+    {
+      "uuid": "f6ed9896-9593-4cb9-ac54-65eaed399c61",
+      "name": "NFC 標籤",
+      "labels": [],
+      "summary": "NFC 標籤被認為有「iPhone 限定」的限制，有人覺得可惜並問「Android 能不能感應？不行的話我買貼紙要幹嘛？」。阿德會研究 NFC 標籤、寫入 App 與自動化，並可能公開批評「封閉格式」與「不能自己寫入」。小林想用 NFC 貼紙綁定店內售出的動物，讓客人回家刷貼紙就能看照護紀錄，願意試 10 組，但要求店家後台與客訴支援。",
+      "attributes": {
+        "name": "NFC 標籤"
+      }
+    },
+    {
+      "uuid": "f25d663c-b3dd-493f-8fa5-335964790297",
+      "name": "店家後台",
+      "labels": [],
+      "summary": "店家後台為 B2B 方案的一部分，該方案包含 10 張貼紙加上店家後台，售價 1,999 元。方案對象包括高雄的爬蟲店陳老闆（38 歲），他每天回答客人餵食與脫皮問題，想要售後紀錄與客戶綁定，關心 B2B 與資料歸屬，並可能把 NFC 貼紙當成「賣蛇附贈的售後套組」。貼紙遺失可重新綁定，舊 token 可撤銷；物流與售後由小團隊處理。",
+      "attributes": {
+        "name": "店家後台"
+      }
+    },
+    {
+      "uuid": "f1bc4f5a-eb65-4fb4-94a7-bd9b48e32365",
+      "name": "貼紙平台綁定",
+      "labels": [],
+      "summary": "貼紙平台綁定指貼紙變成另一種平台綁定，與「店家送貼紙」形成對照的爭議點。",
+      "attributes": {
+        "name": "貼紙平台綁定"
+      }
+    },
+    {
+      "uuid": "e95d8d86-82b6-481f-9980-0382321b9308",
+      "name": "高雄",
+      "labels": [],
+      "summary": "高雄是一名 35 歲寵物展消費者王小姐的居住地。",
+      "attributes": {
+        "name": "高雄"
+      }
+    },
+    {
+      "uuid": "e956f288-8f09-463a-9acf-ad6a200b2e80",
+      "name": "B2B 套組",
+      "labels": [],
+      "summary": "B2B 套組是苔間 App 的延伸周邊商品之一，供應對象為爬店與繁殖者。苔間 App 的其他周邊包含繁殖／照護記錄卡、展示缸標籤、品牌 T-shirt、托特包、徽章及 NFC 客製貼紙。市場反應模擬中針對 B2B 套組的疑慮為單價高，以及小店沒有時間學後台。",
+      "attributes": {
+        "name": "B2B 套組"
+      }
+    },
+    {
+      "uuid": "e86ab34e-d8ff-44c4-a0f7-30193e0077a3",
+      "name": "LINE 快速記錄",
+      "labels": [],
+      "summary": "LINE 快速記錄是苔間 App 的快速記錄入口，與 iOS 完整版 App 搭配使用。",
+      "attributes": {
+        "name": "LINE 快速記錄"
+      }
+    },
+    {
+      "uuid": "e7ec2398-b352-4b4b-aa5b-13aaae9425f9",
+      "name": "iOS 完整版 App",
+      "labels": [],
+      "summary": "iOS 完整版 App 是苔間 App 的完整版本，與 LINE 快速記錄搭配使用。",
+      "attributes": {
+        "name": "iOS 完整版 App"
+      }
+    },
+    {
+      "uuid": "e6d85b0a-14cf-4ab7-829e-8f0d5044ba5a",
+      "name": "公開居民頁",
+      "labels": [],
+      "summary": "公開居民頁使用不可猜測 token；隱私與封鎖／檢舉是產品底線。",
+      "attributes": {
+        "name": "公開居民頁"
+      }
+    },
+    {
+      "uuid": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "name": "NFC 客製貼紙",
+      "labels": [],
+      "summary": "NFC 客製貼紙是苔間 App 的周邊商品，用於把數位紀錄變成可感應的照顧入口。空白貼紙可綁定居民；已設定貼紙靠近 iPhone 可直接開啟 App 並跳到該居民的快速記錄頁。貼紙採 NTAG215／NTAG216 之類的被動標籤，iPhone 靠近可讀取 NDEF URL，寫入與綁定由苔間 iOS App 執行；貼紙本身不是防偽晶片，若要防拷貝需伺服器端 token、簽章與撤銷機制，或升級至 NTAG 424 DNA 等等級。Android 使用者只能先用 LINE fallback。單張成本約 10–30 元，客製印刷、包裝與物流會再推高成本；定價為 3 張 299 元、5 張 399 元，Pro 年繳搭配 3 張貼紙，B2B 10 張＋店家後台 1,999 元。貼紙遺失可重新綁定，舊 token 可撤銷；物流與售後由小團隊處理。上市第一波只在台灣，透過 App Store 上架，先以爬店、繁殖者、特寵獸醫與內容創作者做種子通路。",
+      "attributes": {
+        "name": "NFC 客製貼紙"
+      }
+    },
+    {
+      "uuid": "e081ed83-a6c2-418c-807a-3216cd6d1253",
+      "name": "199 元方案",
+      "labels": [],
+      "summary": "199 元方案包含匯出、家庭權限、進階提醒與公開頁控制；免費版可完整記錄基本資料。199 元方案的定價是否仍是合理錨點，被列為待回答的問題之一。第一波上市只在台灣，透過 App Store 上架，沒有大規模廣告，先用爬店、繁殖者、特寵獸醫與內容創作者做種子通路。NFC 貼紙定價為 3 張 299 元、5 張 399 元；Pro 年繳搭配 3 張貼紙；B2B 10 張＋店家後台 1,999 元。貼紙遺失可重新綁定，舊 token 可撤銷。",
+      "attributes": {
+        "name": "199 元方案"
+      }
+    },
+    {
+      "uuid": "e06f83a8-8a8a-48a7-a9aa-e0ee1a1aa535",
+      "name": "Google Sheet",
+      "labels": [],
+      "summary": "阿凱用 Google Sheet 記錄三隻球蟒的餵食與蛻皮。",
+      "attributes": {
+        "name": "Google Sheet"
+      }
+    },
+    {
+      "uuid": "dff2c175-85c1-4b30-b008-c798cb5b3a8a",
+      "name": "封鎖功能",
+      "labels": [],
+      "summary": "米米怕陌生人騷擾，需要封鎖功能。",
+      "attributes": {
+        "name": "封鎖功能"
+      }
+    },
+    {
+      "uuid": "de332f6e-5381-42a6-9c62-1f53e734b23f",
+      "name": "小店",
+      "labels": [],
+      "summary": "小店面臨 B2B 套組單價高、但沒有時間學後台的取捨：B2B 套組單價高，小店卻沒有時間學習後台操作。",
+      "attributes": {
+        "name": "小店"
+      }
+    },
+    {
+      "uuid": "dc8a9e83-98d1-4da3-86a7-05a1b4150bff",
+      "name": "王小姐",
+      "labels": [
+        "Retailer"
+      ],
+      "summary": "王小姐，35 歲，住高雄，是寵物展消費者，養倉鼠與兔。她逛展會衝動購物，重視現場示範與可愛包裝；對 App 留存低。她可能買周邊但不會長期記錄。",
+      "attributes": {
+        "event_name": null,
+        "location": null,
+        "name": "王小姐"
+      }
+    },
+    {
+      "uuid": "dc092f5c-5275-44af-910c-b6f8cd663881",
+      "name": "資料匯出",
+      "labels": [],
+      "summary": "Eric 擔心服務停止或資料無法匯出。",
+      "attributes": {
+        "name": "資料匯出"
+      }
+    },
+    {
+      "uuid": "d9cf42cc-702d-439a-80c0-5cd4b2d32eed",
+      "name": "B2B 方案",
+      "labels": [],
+      "summary": "B2B 方案為 10 張貼紙加上店家後台，售價 1,999 元。",
+      "attributes": {
+        "name": "B2B 方案"
+      }
+    },
+    {
+      "uuid": "d47b2d84-b9bf-42bc-ad11-5e4d0589e0c6",
+      "name": "阿凱",
+      "labels": [
+        "User"
+      ],
+      "summary": "阿凱，31 歲，住在新北，養三隻球蟒。用 Google Sheet 記餵食與蛻皮；重視隱私、跨裝置同步、匯出備份，願意為可靠工具付費。他會問：「貼紙掉了怎麼辦？資料會不會綁死在貼紙上？」",
+      "attributes": {
+        "device_type": null,
+        "name": "阿凱",
+        "user_type": null
+      }
+    },
+    {
+      "uuid": "c78d330d-df5c-478e-a2e2-7948b7e3d2a0",
+      "name": "店家送貼紙",
+      "labels": [],
+      "summary": "店家送貼紙被拿來與「貼紙變成另一種平台綁定」對照，構成店家贈送貼紙與貼紙成為平台綁定手段之間的取捨爭議。",
+      "attributes": {
+        "name": "店家送貼紙"
+      }
+    },
+    {
+      "uuid": "c49c8cf8-5344-4f62-8325-69a171ae5b5d",
+      "name": "家庭共享",
+      "labels": [],
+      "summary": "雅婷（40 歲，台南，兩孩家庭，養烏龜）需要家庭共享與權限功能，讓孩子參與照顧，但不能讓孩子看到所有私人紀錄與醫療私密紀錄。她會購買 NFC 貼紙讓孩子「刷一下就能記錄」。家庭共享被列為貼紙通路與綁定方式的待驗證問題之一。",
+      "attributes": {
+        "name": "家庭共享"
+      }
+    },
+    {
+      "uuid": "c19f7c4f-3c4e-4597-9592-7cf99e6d98d3",
+      "name": "品牌托特包",
+      "labels": [],
+      "summary": "品牌托特包是苔間 App 的延伸周邊商品之一，與品牌 T-shirt、品牌徽章同列。苔間是 iOS-first 的爬蟲與特殊寵物照護紀錄工具，周邊商品以小批量方式生產，品項包含照護記錄卡、缸邊標籤、品牌托特包與徽章，不做大型服飾庫存；物流與售後由小團隊處理。",
+      "attributes": {
+        "name": "品牌托特包"
+      }
+    },
+    {
+      "uuid": "bba74db9-c8a6-45d7-be73-d5a438359f7a",
+      "name": "米米",
+      "labels": [
+        "ContentCreator"
+      ],
+      "summary": "米米，27 歲，台北的爬蟲內容創作者。她想要公開旅程並追蹤其他飼主，但怕陌生人騷擾，需要封鎖、檢舉與公開範圍控制。她可能把客製貼紙當成周邊開箱內容，並在意貼紙外觀與品牌質感。",
+      "attributes": {
+        "follower_count": null,
+        "name": "米米",
+        "social_media": null
+      }
+    },
+    {
+      "uuid": "b964cda7-c4ca-4319-acb6-db32cc8a682e",
+      "name": "NTAG 424 DNA",
+      "labels": [],
+      "summary": "NTAG 424 DNA 是可升級採用的標籤等級，用於防拷貝，需搭配伺服器端 token、簽章與撤銷機制。",
+      "attributes": {
+        "name": "NTAG 424 DNA"
+      }
+    },
+    {
+      "uuid": "b7234283-0edd-46d3-b54a-be07c1c10503",
+      "name": "守宮",
+      "labels": [],
+      "summary": "守宮由小美的男友飼養。",
+      "attributes": {
+        "name": "守宮"
+      }
+    },
+    {
+      "uuid": "b21524cf-cb70-40d4-9551-564cdc0cd1e7",
+      "name": "食慾紀錄",
+      "labels": [],
+      "summary": "林醫師希望飼主就診時能提供食慾紀錄，並對其正確性要求高。",
+      "attributes": {
+        "name": "食慾紀錄"
+      }
+    },
+    {
+      "uuid": "b01fc732-9f42-410a-b793-cba3ee365ecd",
+      "name": "舊 token 撤銷機制",
+      "labels": [],
+      "summary": "舊 token 可撤銷。",
+      "attributes": {
+        "name": "舊 token 撤銷機制"
+      }
+    },
+    {
+      "uuid": "af8d664c-cd39-4425-9dce-43571ab0bb7a",
+      "name": "徽章",
+      "labels": [],
+      "summary": "徽章屬於先以小批量製作的周邊商品之一，與照護記錄卡、缸邊標籤、品牌托特包並列。",
+      "attributes": {
+        "name": "徽章"
+      }
+    },
+    {
+      "uuid": "ae01de16-79c5-41be-bb44-b607c519f9c4",
+      "name": "iPhone 限定",
+      "labels": [],
+      "summary": "iPhone 限定搭配 Android fallback 的產品策略，其可能引發的反對程度是待評估的問題之一。",
+      "attributes": {
+        "name": "iPhone 限定"
+      }
+    },
+    {
+      "uuid": "a76c4376-d2cf-46bb-bba6-01f4c545b328",
+      "name": "LINE 記事本",
+      "labels": [],
+      "summary": "LINE 記事本是阿珍使用的工具。",
+      "attributes": {
+        "name": "LINE 記事本"
+      }
+    },
+    {
+      "uuid": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "name": "苔間 App",
+      "labels": [],
+      "summary": "苔間 App 是 iOS-first 的爬蟲與特殊寵物照護紀錄工具，在台灣正式上線；LINE LIFF 只做快速記錄、查詢與公開連結 fallback。核心功能包括餵食、換水、體重、蛻皮、醫療、家庭共享、提醒、公開旅程、公開居民頁、追蹤、封鎖、檢舉，以及 CSV／JSON 匯出。方案為 Free、99、199、399 元/月；免費版每月 60 張照片，199 元方案含匯出、家庭權限、進階提醒與公開頁控制。公開居民與公開旅程使用不可猜測 token，隱私與封鎖／檢舉為產品底線；目前沒有 App Store 上架、真實付款、物流與大規模客服資料。周邊涵蓋 NFC 客製貼紙、繁殖／照護記錄卡、展示缸標籤、品牌 T-shirt／托特包／徽章，以及爬店／繁殖者的 B2B 套組；NFC 貼紙採 NTAG215／NTAG216 之類被動標籤，由苔間 iOS App 寫入與綁定，空白貼紙可綁定居民，已設定貼紙靠近 iPhone 可讀取 NDEF URL 開啟 App 並跳到該居民快速記錄頁。貼紙定價為 3 張 299 元、5 張 399 元、B2B 10 張＋店家後台 1,999 元，Pro 年繳搭配 3 張貼紙；貼紙遺失可重新綁定，舊 token 可撤銷。貼紙本身不是防偽晶片，若要防拷貝需伺服器端 token、簽章與撤銷機制，或升級到 NTAG 424 DNA 等等級。第一波只在台灣透過 App Store 上架，以大規模廣告以外的方式，先用爬店、繁殖者、特寵獸醫與內容創作者做種子通路；周邊先做小批量，不做大型服飾庫存，物流與售後由小團隊處理。",
+      "attributes": {
+        "name": "苔間 App"
+      }
+    },
+    {
+      "uuid": "a5ad76e5-3359-41a3-9aa4-2046455b07a8",
+      "name": "台灣",
+      "labels": [],
+      "summary": "台灣是苔間 App 正式上線的市場，第一波只在台灣透過 App Store 上架，沒有大規模廣告，先以爬店、繁殖者、特寵獸醫與內容創作者作為種子通路。苔間是 iOS-first 的爬蟲與特殊寵物照護紀錄工具，LINE LIFF 僅提供快速記錄、查詢與公開連結 fallback，核心功能包含餵食、換水、體重、蛻皮、醫療、家庭共享、提醒、公開旅程、公開居民頁、追蹤、封鎖、檢舉及 CSV／JSON 匯出。訂閱方案為 Free、99、199、399 元/月，免費版可完整記錄基本資料，199 元方案包含匯出、家庭權限、進階提醒與公開頁控制；另規劃 NFC 客製貼紙（空白貼紙可綁定居民，已設定貼紙靠近 iPhone 可開啟 App 並跳至該居民快速記錄頁）、繁殖／照護記錄卡、展示缸標籤、品牌 T-shirt／托特包／徽章及爬店／繁殖者 B2B 套組。相關人物包括台中 DIY／3D 列印玩家阿德（26 歲，三隻守宮）、高雄寵物展消費者王小姐（35 歲，倉鼠與兔）、桃園爬店店長小林（30 歲，願意試 10 組 NFC 貼紙但要求店家後台與客訴支援）。",
+      "attributes": {
+        "name": "台灣"
+      }
+    },
+    {
+      "uuid": "a5ad20cc-4ed0-4184-8a4e-7edc6318f1a4",
+      "name": "品牌徽章",
+      "labels": [],
+      "summary": "品牌徽章是苔間 App 的延伸周邊商品之一，與品牌 T-shirt、品牌托特包同列。",
+      "attributes": {
+        "name": "品牌徽章"
+      }
+    },
+    {
+      "uuid": "9a38c75a-5ba4-4aec-8a5d-77ba2ba0c288",
+      "name": "豹紋守宮",
+      "labels": [],
+      "summary": "小安是豹紋守宮新手，只養一隻，每天用 LINE 傳照片但沒有固定紀錄。",
+      "attributes": {
+        "name": "豹紋守宮"
+      }
+    },
+    {
+      "uuid": "99e24b10-c36b-4306-808c-b4ea112da4ec",
+      "name": "Pro 年繳方案",
+      "labels": [],
+      "summary": "Pro 年繳方案搭配 3 張 NFC 貼紙。",
+      "attributes": {
+        "name": "Pro 年繳方案"
+      }
+    },
+    {
+      "uuid": "9730ff7d-5279-4918-a371-7266b360203c",
+      "name": "物流與售後",
+      "labels": [],
+      "summary": "物流與售後由小團隊處理。",
+      "attributes": {
+        "name": "物流與售後"
+      }
+    },
+    {
+      "uuid": "910ea3bb-7cd7-4fd7-bd77-b5dddec4bb62",
+      "name": "訂閱方案",
+      "labels": [],
+      "summary": "苔間 App 的訂閱方案分為 Free、99、199、399 元/月四種。",
+      "attributes": {
+        "name": "訂閱方案"
+      }
+    },
+    {
+      "uuid": "8b650ac8-3488-491e-8354-b9772c6aebe0",
+      "name": "桃園",
+      "labels": [],
+      "summary": "桃園是一名 30 歲爬店店長小林的居住地。",
+      "attributes": {
+        "name": "桃園"
+      }
+    },
+    {
+      "uuid": "867da9b6-b1c1-4980-b2f8-c605f2407d37",
+      "name": "爬蟲店",
+      "labels": [],
+      "summary": "陳老闆在高雄經營爬蟲店，每天回答客人餵食與脫皮問題，想要售後紀錄與客戶绑定，關心 B2B 與資料歸屬，並可能把 NFC 貼紙當成「賣蛇附贈的售後套組」。",
+      "attributes": {
+        "name": "爬蟲店"
+      }
+    },
+    {
+      "uuid": "83413159-5035-42c0-98d0-6d76952ee982",
+      "name": "Eric",
+      "labels": [
+        "User"
+      ],
+      "summary": "Eric，35 歲，新竹的工程師，飼養兩隻守宮，常出國。他需要家人代餵、提醒與交接，並擔心服務停止或資料無法匯出。他會研究 NFC 的寫入格式、備份與權限，且不接受「貼紙壞了就全部重來」。",
+      "attributes": {
+        "device_type": null,
+        "name": "Eric",
+        "user_type": null
+      }
+    },
+    {
+      "uuid": "81f5ddbc-fa3a-42c9-a406-20e27394fffe",
+      "name": "繁殖／照護記錄卡",
+      "labels": [],
+      "summary": "繁殖／照護記錄卡是苔間 App 的延伸周邊商品之一，與展示缸標籤、品牌 T-shirt／托特包／徽章及爬店／繁殖者的 B2B 套組同屬周邊商品。苔間 App 為 iOS-first 的爬蟲與特殊寵物照護紀錄工具，LINE LIFF 僅提供快速記錄、查詢與公開連結 fallback，核心功能涵蓋餵食、換水、體重、蛻皮、醫療、家庭共享、提醒、公開旅程、公開居民頁、追蹤、封鎖、檢舉及 CSV／JSON 匯出。周邊商品以小批量方式推出，包含照護記錄卡、缸邊標籤、品牌托特包與徽章，不做大型服飾庫存，物流與售後由小團隊處理。",
+      "attributes": {
+        "name": "繁殖／照護記錄卡"
+      }
+    },
+    {
+      "uuid": "80fc9017-bad5-4384-8b82-d50a62dc21c2",
+      "name": "展示缸標籤",
+      "labels": [],
+      "summary": "展示缸標籤是苔間 App 的延伸周邊商品之一。",
+      "attributes": {
+        "name": "展示缸標籤"
+      }
+    },
+    {
+      "uuid": "78259db0-a273-491c-9010-f9487bde562c",
+      "name": "LINE fallback",
+      "labels": [],
+      "summary": "LINE fallback 是 Android 使用者暫時可用的方案。",
+      "attributes": {
+        "name": "LINE fallback"
+      }
+    },
+    {
+      "uuid": "74fdacdb-494d-4124-a09d-9a21e9564134",
+      "name": "LINE LIFF",
+      "labels": [],
+      "summary": "LINE LIFF 在苔間 App 中只負責快速記錄、查詢與公開連結 fallback，並非完整版 App 的替代。",
+      "attributes": {
+        "name": "LINE LIFF"
+      }
+    },
+    {
+      "uuid": "6ea38faf-7d8d-4ceb-ab47-7d590807dfa1",
+      "name": "周邊商品",
+      "labels": [],
+      "summary": "周邊商品先做小批量，包括照護記錄卡、缸邊標籤、品牌托特包與徽章；不做大型服飾庫存。",
+      "attributes": {
+        "name": "周邊商品"
+      }
+    },
+    {
+      "uuid": "6c45f687-3576-4b58-bacf-3ebaf2b2ed57",
+      "name": "台中",
+      "labels": [],
+      "summary": "台中是一名 26 歲 DIY／3D 列印玩家阿德的居住地。",
+      "attributes": {
+        "name": "台中"
+      }
+    },
+    {
+      "uuid": "69f81278-b00a-46f6-a2f8-80edf2037df6",
+      "name": "爬店",
+      "labels": [],
+      "summary": "爬店是貼紙銷售的候選通路之一，與家庭共享、繁殖者、獸醫並列為優先販售貼紙的通路選項。爬店可能以免費贈送貼紙的方式提供給顧客，但此做法也帶來貼紙成為另一種平台綁定的疑慮。",
+      "attributes": {
+        "name": "爬店"
+      }
+    },
+    {
+      "uuid": "67bc639d-70a1-41db-b5ba-60c1429be9c3",
+      "name": "玉米蛇",
+      "labels": [],
+      "summary": "玉米蛇是阿珍飼養的爬蟲。",
+      "attributes": {
+        "name": "玉米蛇"
+      }
+    },
+    {
+      "uuid": "657eacd5-4de4-4b58-a921-dc5eae166afa",
+      "name": "小美",
+      "labels": [
+        "GiftGiver"
+      ],
+      "summary": "小美，28 歲，台北人，是禮物購買者；自己沒有養爬蟲，但會幫男友買禮物，重視包裝、價格與「看起來有沒有用心」。她可能買 299 元的三張貼紙禮盒，但不知道怎麼設定。",
+      "attributes": {
+        "gift_type": "三張貼紙禮盒",
+        "name": "小美",
+        "recipient": "男友"
+      }
+    },
+    {
+      "uuid": "655b13f3-e158-473c-8050-9ed218d08d56",
+      "name": "App Store",
+      "labels": [
+        "Organization"
+      ],
+      "summary": "苔間 iOS App 目前沒有在 App Store 上架。",
+      "attributes": {
+        "location": null,
+        "name": "App Store",
+        "org_name": "App Store"
+      }
+    },
+    {
+      "uuid": "64e92132-dd22-4d2c-90de-4d0810e29e0f",
+      "name": "90 天市場驗證實驗",
+      "labels": [],
+      "summary": "90 天市場驗證實驗是驗證市場所需的最小實驗方案，其具體內容尚待規劃。",
+      "attributes": {
+        "name": "90 天市場驗證實驗"
+      }
+    },
+    {
+      "uuid": "63a6a05f-399d-43f1-9c22-c87adc6628ce",
+      "name": "NTAG216",
+      "labels": [],
+      "summary": "NTAG216 屬於被動標籤，iPhone 靠近可讀取 NDEF URL；苔間 iOS App 負責寫入與綁定。貼紙本身不是防偽晶片，若要防拷貝需伺服器端 token、簽章與撤銷機制，或升級到 NTAG 424 DNA 等等級。",
+      "attributes": {
+        "name": "NTAG216"
+      }
+    },
+    {
+      "uuid": "5f793d75-92c5-4fbf-9def-c0dce5370f7b",
+      "name": "阿宏",
+      "labels": [
+        "User"
+      ],
+      "summary": "阿宏，21 歲，桃園的學生，飼養肥尾守宮。他預算低，以免費優先，最多接受 99 元，且要求照片額度高。NFC 貼紙對他而言是「酷但非必要」的加購。",
+      "attributes": {
+        "device_type": null,
+        "name": "阿宏",
+        "user_type": null
+      }
+    },
+    {
+      "uuid": "5b594502-e66d-4009-b0a9-7b16668f1c97",
+      "name": "雅婷",
+      "labels": [
+        "User"
+      ],
+      "summary": "雅婷，40 歲，台南的兩孩家庭，飼養烏龜。她希望孩子參與照顧，但不想讓孩子看到所有私人紀錄，因此需要家庭共享與權限。她會買貼紙讓孩子「刷一下就能記錄」，但要求孩子不能看到醫療私密紀錄。",
+      "attributes": {
+        "device_type": null,
+        "name": "雅婷",
+        "user_type": "家庭"
+      }
+    },
+    {
+      "uuid": "5a649939-e90e-4515-b1c2-2b60747af2da",
+      "name": "體重紀錄",
+      "labels": [],
+      "summary": "林醫師希望飼主就診時能提供體重紀錄，並對其正確性要求高。",
+      "attributes": {
+        "name": "體重紀錄"
+      }
+    },
+    {
+      "uuid": "59b8f600-ae71-4f5b-ab78-b142623c9e22",
+      "name": "CSV／JSON 匯出",
+      "labels": [],
+      "summary": "苔間 iOS App 提供 CSV／JSON 匯出功能。",
+      "attributes": {
+        "name": "CSV／JSON 匯出"
+      }
+    },
+    {
+      "uuid": "586c9326-9f4a-403b-a632-bf94408a4704",
+      "name": "缸邊標籤",
+      "labels": [],
+      "summary": "缸邊標籤屬於先以小批量製作的周邊商品之一。",
+      "attributes": {
+        "name": "缸邊標籤"
+      }
+    },
+    {
+      "uuid": "55103ba7-cc71-43e9-8552-c0beb2bdc16b",
+      "name": "Android 使用者",
+      "labels": [
+        "User"
+      ],
+      "summary": "Android 使用者被排除在 iPhone 限定的服務之外，構成「iPhone 限定」與「Android 使用者被排除」之間的取捨爭議。",
+      "attributes": {
+        "device_type": "Android",
+        "name": "Android 使用者",
+        "user_type": null
+      }
+    },
+    {
+      "uuid": "5073a9f5-e84d-4443-a209-ebb64350116f",
+      "name": "iPhone",
+      "labels": [],
+      "summary": "iPhone 靠近 NTAG215／NTAG216 之類的被動標籤可讀取 NDEF URL；寫入與綁定由苔間 iOS App 執行。目標族群中 iPhone 佔比約 50–60%，其餘 Android 使用者（例如使用兩隻鬆獅蜥、位於新竹的 Android 工程師 Kevin）只能先用 LINE fallback。貼紙本身不是防偽晶片，若要防拷貝需伺服器端 token、簽章與撤銷機制，或升級到 NTAG 424 DNA 等等級。",
+      "attributes": {
+        "name": "iPhone"
+      }
+    },
+    {
+      "uuid": "4e7224ce-345b-46ff-baf6-7fb6ac113b20",
+      "name": "排便紀錄",
+      "labels": [],
+      "summary": "林醫師希望飼主就診時能提供排便紀錄，並對其正確性要求高。",
+      "attributes": {
+        "name": "排便紀錄"
+      }
+    },
+    {
+      "uuid": "4d92410d-00fb-484a-bfe7-d49fcb25eaac",
+      "name": "陳老闆",
+      "labels": [
+        "PetShopOwner"
+      ],
+      "summary": "陳老闆，38 歲，在高雄經營爬蟲店。每天回答客人餵食與脫皮問題；想要售後紀錄與客戶绑定，關心 B2B 與資料歸屬。他可能把 NFC 貼紙當成「賣蛇附贈的售後套組」。",
+      "attributes": {
+        "location": "高雄",
+        "name": "陳老闆",
+        "store_name": null
+      }
+    },
+    {
+      "uuid": "4c655ac7-63ab-4daa-a436-39301d3e01ea",
+      "name": "品牌 T-shirt",
+      "labels": [],
+      "summary": "品牌 T-shirt 是苔間 App 的延伸周邊商品之一，與品牌托特包、品牌徽章同列。",
+      "attributes": {
+        "name": "品牌 T-shirt"
+      }
+    },
+    {
+      "uuid": "46f32099-dd2a-4d58-a0a9-58f45f59431f",
+      "name": "台灣爬蟲與特殊寵物飼主",
+      "labels": [
+        "User"
+      ],
+      "summary": "台灣爬蟲與特殊寵物飼主約 15–30 萬家戶。目標族群中 iPhone 佔比約 50–60%；其餘 Android 使用者只能先用 LINE fallback。約 10–20% 的飼主願意為「節省照顧記憶、避免漏記」付費。",
+      "attributes": {
+        "device_type": null,
+        "name": "台灣爬蟲與特殊寵物飼主",
+        "user_type": null
+      }
+    },
+    {
+      "uuid": "44a767bd-62d5-4f63-a7e3-bb4caf1b5630",
+      "name": "鬆獅蜥",
+      "labels": [],
+      "summary": "Kevin 養兩隻鬆獅蜥。",
+      "attributes": {
+        "name": "鬆獅蜥"
+      }
+    },
+    {
+      "uuid": "415d0728-e26e-47c6-b1fb-049a71a511d3",
+      "name": "公開範圍控制",
+      "labels": [],
+      "summary": "米米怕陌生人騷擾，需要公開範圍控制。",
+      "attributes": {
+        "name": "公開範圍控制"
+      }
+    },
+    {
+      "uuid": "3e237821-9cf1-45bd-b08d-adaaac565564",
+      "name": "免費版",
+      "labels": [],
+      "summary": "免費版可完整記錄基本資料，作為苔間 App 的種子通路。",
+      "attributes": {
+        "name": "免費版"
+      }
+    },
+    {
+      "uuid": "3bc96420-8894-4f6c-8ae7-f0f7f2f8f1a4",
+      "name": "299 元三張貼紙禮盒",
+      "labels": [],
+      "summary": "299 元三張貼紙禮盒是小美可能購買的禮物選項。小美 28 歲，住台北，是禮物購買者，男友養守宮；她本身沒有養爬蟲，會幫男友買禮物，重視包裝、價格與「看起來有沒有用心」，但不知道怎麼設定。評估面向包括：貼紙應綁定居民、缸還是照護行程；三張 299 元是否合理；貼紙遺失可重新綁定、舊 token 可撤銷；以及貼紙遺失、損壞、被重寫或被陌生人感應等風險對購買的影響。",
+      "attributes": {
+        "name": "299 元三張貼紙禮盒"
+      }
+    },
+    {
+      "uuid": "39b27234-effd-463a-9fe0-f98db5e80bd9",
+      "name": "小美的男友",
+      "labels": [
+        "Person"
+      ],
+      "summary": "小美的男友養守宮。",
+      "attributes": {
+        "full_name": null,
+        "location": null,
+        "name": "小美的男友"
+      }
+    },
+    {
+      "uuid": "2fc719e5-bc9d-4205-bfbf-8115d4cb5e1a",
+      "name": "小安",
+      "labels": [
+        "User"
+      ],
+      "summary": "小安，24 歲，住在台中，是豹紋守宮新手，只養一隻。每天用 LINE 傳照片，沒有固定紀錄；價格敏感，最怕複雜與照片額度不足。對 NFC 貼紙的第一反應是「貼在缸上很酷，但我只有一隻，值得嗎？」",
+      "attributes": {
+        "device_type": null,
+        "name": "小安",
+        "user_type": "新手"
+      }
+    },
+    {
+      "uuid": "2c858934-2586-4362-b7db-87c7ffe361d6",
+      "name": "老周",
+      "labels": [
+        "ReptileBreeder"
+      ],
+      "summary": "老周，45 歲，屏東的小型繁殖者。他需要血統、繁殖、轉移紀錄，願意付較高費用，但要求 CSV 匯出、備份與不被平台綁死；他最可能買 B2B 套組，但會要求一次管理幾十缸。",
+      "attributes": {
+        "breeding_location": "屏東",
+        "name": "老周",
+        "species": null
+      }
+    },
+    {
+      "uuid": "261b5046-bd2c-4a05-a692-95cd23d721f8",
+      "name": "球蟒",
+      "labels": [],
+      "summary": "阿凱養三隻球蟒，並用 Google Sheet 記錄牠們的餵食與蛻皮。",
+      "attributes": {
+        "name": "球蟒"
+      }
+    },
+    {
+      "uuid": "2547ad3d-c5fd-446d-b6c4-dae4fda99933",
+      "name": "LINE",
+      "labels": [],
+      "summary": "Android 使用者只能先用 LINE fallback。",
+      "attributes": {
+        "name": "LINE"
+      }
+    },
+    {
+      "uuid": "1ef04692-7588-482e-8dbc-6ef6b164a49f",
+      "name": "阿德",
+      "labels": [
+        "DIYer"
+      ],
+      "summary": "阿德，26 歲，住台中，是 DIY／3D 列印玩家，養三隻守宮。他喜歡自己改造展示缸，會研究 NFC 標籤、寫入 App 與自動化。他可能成為進階推廣者，但也會公開批評「封閉格式」與「不能自己寫入」。",
+      "attributes": {
+        "location": "台中",
+        "name": "阿德",
+        "project_type": "改造展示缸、3D 列印"
+      }
+    },
+    {
+      "uuid": "1ded647d-0f41-4a24-bec0-1b43eaecfaf3",
+      "name": "阿珍",
+      "labels": [
+        "User"
+      ],
+      "summary": "阿珍，33 歲，彰化人，上班族，養玉米蛇。她使用 LINE 記事本，對新 app 有耐性但不想付太多費用，重視取消訂閱與免費版限制，會問「貼紙能不能只買一張？一定要訂閱才能用嗎？」",
+      "attributes": {
+        "device_type": null,
+        "name": "阿珍",
+        "user_type": "上班族"
+      }
+    },
+    {
+      "uuid": "1bee7e24-d7aa-44dd-8056-b1942eccdd1e",
+      "name": "檢舉功能",
+      "labels": [],
+      "summary": "米米怕陌生人騷擾，需要檢舉功能。",
+      "attributes": {
+        "name": "檢舉功能"
+      }
+    },
+    {
+      "uuid": "1a1b1bbc-5e26-4833-8bf9-52c3daccabe3",
+      "name": "Kevin",
+      "labels": [
+        "Person"
+      ],
+      "summary": "Kevin，33 歲，新竹的 Android 工程師，養兩隻鬆獅蜥。他使用 Android，暫時只能用 LINE fallback，覺得 NFC 貼紙「iPhone 限定」很可惜。",
+      "attributes": {
+        "full_name": "Kevin",
+        "location": "新竹",
+        "name": "Kevin"
+      }
+    },
+    {
+      "uuid": "141d1be3-297b-44b2-bc81-e35e4f1421de",
+      "name": "權限控制",
+      "labels": [],
+      "summary": "雅婷需要權限控制，讓孩子參與照顧但看不到醫療私密紀錄；Eric 也會研究 NFC 的權限。",
+      "attributes": {
+        "name": "權限控制"
+      }
+    },
+    {
+      "uuid": "127531e1-a225-4768-81c5-52ae85fbde3e",
+      "name": "客製貼紙",
+      "labels": [],
+      "summary": "米米可能把客製貼紙當成周邊開箱內容，並在意貼紙外觀與品牌質感。",
+      "attributes": {
+        "name": "客製貼紙"
+      }
+    },
+    {
+      "uuid": "11629c3c-062c-4c7b-b44b-ccea0a7f38a7",
+      "name": "NTAG215",
+      "labels": [],
+      "summary": "NTAG215 屬於被動標籤，iPhone 靠近可讀取 NDEF URL；苔間 iOS App 負責寫入與綁定。貼紙本身不是防偽晶片，若要防拷貝需伺服器端 token、簽章與撤銷機制，或升級到 NTAG 424 DNA 等等級。",
+      "attributes": {
+        "name": "NTAG215"
+      }
+    },
+    {
+      "uuid": "0e8547dc-0bce-4c37-8ab0-5a764c027616",
+      "name": "公開旅程",
+      "labels": [],
+      "summary": "公開旅程使用不可猜測 token；隱私與封鎖／檢舉是產品底線。公開旅程與公開居民頁並列為功能項目，同組功能還包括體重、蛻皮、醫療、家庭共享、提醒、追蹤、封鎖、檢舉與 CSV／JSON 匯出。免費版每月提供 60 張照片；支援者方案為 99／199／399 元/月。NFC 貼紙採 NTAG215／NTAG216 之類的被動標籤，iPhone 靠近可讀取 NDEF URL，寫入與綁定由苔間 iOS App 執行；貼紙本身不是防偽晶片，若要防拷貝需要伺服器端 token、簽章與撤銷機制，或升級到 NTAG 424 DNA 等等級。米米（27，台北，爬蟲內容創作者）想要公開旅程並追蹤其他飼主，但怕陌生人騷擾，需要封鎖、檢舉與公開範圍控制。",
+      "attributes": {
+        "name": "公開旅程"
+      }
+    },
+    {
+      "uuid": "0caeb3bf-2d07-485f-a425-a60d7c16d969",
+      "name": "用藥紀錄",
+      "labels": [],
+      "summary": "林醫師希望飼主就診時能提供用藥紀錄，並對其正確性要求高。",
+      "attributes": {
+        "name": "用藥紀錄"
+      }
+    },
+    {
+      "uuid": "0a0e9a06-be94-4e6a-a57d-52b9d3322577",
+      "name": "小林",
+      "labels": [
+        "PetShopOwner"
+      ],
+      "summary": "小林，30 歲，住桃園，是爬店店長，想增加售後服務。他想用 NFC 貼紙綁定店內售出的動物，讓客人回家刷貼紙就能看照護紀錄；願意試 10 組，但要求店家後台與客訴支援。",
+      "attributes": {
+        "location": "桃園",
+        "name": "小林",
+        "store_name": null
+      }
+    },
+    {
+      "uuid": "091625a1-6403-47fd-b946-eddda9a81d65",
+      "name": "貼紙綁定居民",
+      "labels": [
+        "User"
+      ],
+      "summary": "貼紙綁定居民被視為一種便利的用法，但也存在顧客不願讓他人知道自己養什麼的隱私顧慮；貼紙應綁定居民、缸或照護行程，以及哪種說法最容易理解，仍是待釐清的問題。",
+      "attributes": {
+        "name": "貼紙綁定居民"
+      }
+    },
+    {
+      "uuid": "064f64f3-113f-424e-b888-bca7101f1cc8",
+      "name": "貼紙重新綁定機制",
+      "labels": [],
+      "summary": "貼紙遺失可重新綁定。",
+      "attributes": {
+        "name": "貼紙重新綁定機制"
+      }
+    },
+    {
+      "uuid": "02fd6f28-2094-49a0-88b7-909b34eab798",
+      "name": "備份",
+      "labels": [],
+      "summary": "Eric 會研究 NFC 的備份，且不接受「貼紙壞了就全部重來」。",
+      "attributes": {
+        "name": "備份"
+      }
+    },
+    {
+      "uuid": "001c30c2-e57b-4841-bdab-fb4a695f1094",
+      "name": "Android",
+      "labels": [],
+      "summary": "Kevin 使用 Android，暫時只能用 LINE fallback。",
+      "attributes": {
+        "name": "Android"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "uuid": "ff4ae3dd-f13d-47a9-bd9e-ca09b73adec7",
+      "name": "LIKELY_TO_BUY",
+      "fact": "老周最可能買 B2B 套組，但會要求一次管理幾十缸。",
+      "source": "2c858934-2586-4362-b7db-87c7ffe361d6",
+      "target": "2c858934-2586-4362-b7db-87c7ffe361d6",
+      "source_name": "老周",
+      "target_name": "老周"
+    },
+    {
+      "uuid": "fcf64ecd-49db-411b-8563-53c1f258536c",
+      "name": "ESTIMATED_DEVICE_SHARE",
+      "fact": "市場假設目標族群中 iPhone 佔比約 50–60%，其餘 Android 使用者只能先用 LINE fallback。",
+      "source": "46f32099-dd2a-4d58-a0a9-58f45f59431f",
+      "target": "5073a9f5-e84d-4443-a209-ebb64350116f",
+      "source_name": "台灣爬蟲與特殊寵物飼主",
+      "target_name": "iPhone"
+    },
+    {
+      "uuid": "f8da65ef-b020-44f9-9501-1a793c37c863",
+      "name": "EXCLUDES",
+      "fact": "周邊商品不做大型服飾庫存。",
+      "source": "6ea38faf-7d8d-4ceb-ab47-7d590807dfa1",
+      "target": "6ea38faf-7d8d-4ceb-ab47-7d590807dfa1",
+      "source_name": "周邊商品",
+      "target_name": "周邊商品"
+    },
+    {
+      "uuid": "f8a0136c-630d-46ad-8c5f-7ce51ef6d8c9",
+      "name": "HAS_UNIT_COST",
+      "fact": "NFC 貼紙單張成本約 10–30 元，客製印刷、包裝與物流會再把成本推高。",
+      "source": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "target": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "source_name": "NFC 客製貼紙",
+      "target_name": "NFC 客製貼紙"
+    },
+    {
+      "uuid": "f6aa806b-0234-48fa-86c7-797a8bf1daad",
+      "name": "LIVES_IN",
+      "fact": "王小姐 35 歲，住在高雄，養倉鼠與兔。",
+      "source": "dc8a9e83-98d1-4da3-86a7-05a1b4150bff",
+      "target": "e95d8d86-82b6-481f-9980-0382321b9308",
+      "source_name": "王小姐",
+      "target_name": "高雄"
+    },
+    {
+      "uuid": "f63658d7-2e75-456c-80f8-5f277918f84e",
+      "name": "USES",
+      "fact": "Kevin 暫時只能用 LINE fallback。",
+      "source": "1a1b1bbc-5e26-4833-8bf9-52c3daccabe3",
+      "target": "78259db0-a273-491c-9010-f9487bde562c",
+      "source_name": "Kevin",
+      "target_name": "LINE fallback"
+    },
+    {
+      "uuid": "f515096f-ea16-4f70-9fee-119682fc62df",
+      "name": "PLANS_TO_BUY",
+      "fact": "雅婷會買 NFC 貼紙讓孩子「刷一下就能記錄」，但要求不能看到醫療私密紀錄。",
+      "source": "5b594502-e66d-4009-b0a9-7b16668f1c97",
+      "target": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "source_name": "雅婷",
+      "target_name": "NFC 客製貼紙"
+    },
+    {
+      "uuid": "f2fab5af-8825-4865-9846-d3692759412f",
+      "name": "WANTS_RECORD_OF",
+      "fact": "林醫師希望飼主就診時能提供用藥、食慾、排便與體重紀錄。",
+      "source": "ff4e3fa3-0a71-40de-9b33-f5109fb95992",
+      "target": "0caeb3bf-2d07-485f-a425-a60d7c16d969",
+      "source_name": "林醫師",
+      "target_name": "用藥紀錄"
+    },
+    {
+      "uuid": "f24b7a3c-3b82-45fa-bf00-9794769a7be9",
+      "name": "QUESTIONED_AS_BACKLASH_RISK",
+      "fact": "要回答的問題之一是 iPhone 限定與 Android fallback 會造成多大的反對。",
+      "source": "ae01de16-79c5-41be-bb44-b607c519f9c4",
+      "target": "ae01de16-79c5-41be-bb44-b607c519f9c4",
+      "source_name": "iPhone 限定",
+      "target_name": "iPhone 限定"
+    },
+    {
+      "uuid": "f1235407-64ee-40ed-8d0d-736149673268",
+      "name": "HAS_PATIENCE_FOR",
+      "fact": "阿珍對新 app 有耐性，但不想付太多。",
+      "source": "1ded647d-0f41-4a24-bec0-1b43eaecfaf3",
+      "target": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "source_name": "阿珍",
+      "target_name": "苔間 App"
+    },
+    {
+      "uuid": "ef88b5ee-9333-46ac-897a-786c07fac98e",
+      "name": "READABLE_BY",
+      "fact": "NFC 貼紙採用 NTAG215／NTAG216 之類的被動標籤，iPhone 靠近可讀取 NDEF URL。",
+      "source": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "target": "5073a9f5-e84d-4443-a209-ebb64350116f",
+      "source_name": "NFC 客製貼紙",
+      "target_name": "iPhone"
+    },
+    {
+      "uuid": "ecdc2ac9-5d25-44e5-a56b-36a2d5cd0ee1",
+      "name": "USES_TAG_TYPE",
+      "fact": "NFC 貼紙採用 NTAG215／NTAG216 之類的被動標籤，iPhone 靠近可讀取 NDEF URL。",
+      "source": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "target": "63a6a05f-399d-43f1-9c22-c87adc6628ce",
+      "source_name": "NFC 客製貼紙",
+      "target_name": "NTAG216"
+    },
+    {
+      "uuid": "ec64209a-f972-4c65-8b04-0cba1d75edf0",
+      "name": "ASKS_ABOUT",
+      "fact": "阿珍會問貼紙能不能只買一張，以及是否一定要訂閱才能用。",
+      "source": "1ded647d-0f41-4a24-bec0-1b43eaecfaf3",
+      "target": "127531e1-a225-4768-81c5-52ae85fbde3e",
+      "source_name": "阿珍",
+      "target_name": "客製貼紙"
+    },
+    {
+      "uuid": "eae61070-3d09-48e9-8249-a171a3c58119",
+      "name": "WILLING_TO_TRIAL",
+      "fact": "小林願意試 10 組苔間 App，但要求店家後台與客訴支援。",
+      "source": "0a0e9a06-be94-4e6a-a57d-52b9d3322577",
+      "target": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "source_name": "小林",
+      "target_name": "苔間 App"
+    },
+    {
+      "uuid": "e92ab65c-1e90-4363-9cf1-078050f6cefc",
+      "name": "CONSIDERS_AS_AFTERSALES_KIT",
+      "fact": "陳老闆每天回答客人餵食與脫皮問題，想要售後紀錄與客戶绑定，關心 B2B 與資料歸屬，可能把 NFC 貼紙當成「賣蛇附贈的售後套組」。",
+      "source": "4d92410d-00fb-484a-bfe7-d49fcb25eaac",
+      "target": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "source_name": "陳老闆",
+      "target_name": "NFC 客製貼紙"
+    },
+    {
+      "uuid": "e759159b-e54c-4a9f-9840-42f418cbaa54",
+      "name": "USES_UNGUESSABLE_TOKEN",
+      "fact": "公開旅程與公開居民頁使用不可猜測的 token，隱私與封鎖／檢舉是產品底線。",
+      "source": "0e8547dc-0bce-4c37-8ab0-5a764c027616",
+      "target": "0e8547dc-0bce-4c37-8ab0-5a764c027616",
+      "source_name": "公開旅程",
+      "target_name": "公開旅程"
+    },
+    {
+      "uuid": "e448e0b4-358f-42e5-bc80-ec666eff57f0",
+      "name": "VALUES_CONVENIENCE",
+      "fact": "有人認為定居民很方便。",
+      "source": "091625a1-6403-47fd-b946-eddda9a81d65",
+      "target": "091625a1-6403-47fd-b946-eddda9a81d65",
+      "source_name": "貼紙綁定居民",
+      "target_name": "貼紙綁定居民"
+    },
+    {
+      "uuid": "e337b127-4dce-42c2-84f6-c830d3ca67d7",
+      "name": "IS_NOT_PRIMARY_REVENUE",
+      "fact": "周邊商品不是主要營收來源，而是把數位紀錄變成看得見、摸得到的照顧入口。",
+      "source": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "target": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "source_name": "NFC 客製貼紙",
+      "target_name": "NFC 客製貼紙"
+    },
+    {
+      "uuid": "e157c376-d72d-49d5-8c7e-f18979ac909f",
+      "name": "SUPPORTS_FEATURE",
+      "fact": "苔間 App 支援體重、蛻皮、醫療、家庭共享、提醒、公開旅程、公開居民頁、追蹤、封鎖、檢舉與 CSV／JSON 匯出等功能。",
+      "source": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "target": "59b8f600-ae71-4f5b-ab78-b142623c9e22",
+      "source_name": "苔間 App",
+      "target_name": "CSV／JSON 匯出"
+    },
+    {
+      "uuid": "dfabfbdf-330b-475e-92d7-e5da6f036061",
+      "name": "WANTS_RECORD_OF",
+      "fact": "林醫師希望飼主就診時能提供用藥、食慾、排便與體重紀錄。",
+      "source": "ff4e3fa3-0a71-40de-9b33-f5109fb95992",
+      "target": "b21524cf-cb70-40d4-9551-564cdc0cd1e7",
+      "source_name": "林醫師",
+      "target_name": "食慾紀錄"
+    },
+    {
+      "uuid": "dca65d56-794e-441c-aa66-d47d3fbed792",
+      "name": "NEEDS",
+      "fact": "米米怕陌生人騷擾，需要封鎖、檢舉與公開範圍控制。",
+      "source": "bba74db9-c8a6-45d7-be73-d5a438359f7a",
+      "target": "415d0728-e26e-47c6-b1fb-049a71a511d3",
+      "source_name": "米米",
+      "target_name": "公開範圍控制"
+    },
+    {
+      "uuid": "dbd7a7aa-3c88-45b4-ab9a-33f200f84ee4",
+      "name": "VALUES",
+      "fact": "小美重視包裝、價格與「看起來有沒有用心」。",
+      "source": "657eacd5-4de4-4b58-a921-dc5eae166afa",
+      "target": "657eacd5-4de4-4b58-a921-dc5eae166afa",
+      "source_name": "小美",
+      "target_name": "小美"
+    },
+    {
+      "uuid": "dbb36475-61bf-4312-9f7c-18b921b73ec9",
+      "name": "FALLBACK_FOR",
+      "fact": "市場假設目標族群中 iPhone 佔比約 50–60%，其餘 Android 使用者只能先用 LINE fallback。",
+      "source": "46f32099-dd2a-4d58-a0a9-58f45f59431f",
+      "target": "2547ad3d-c5fd-446d-b6c4-dae4fda99933",
+      "source_name": "台灣爬蟲與特殊寵物飼主",
+      "target_name": "LINE"
+    },
+    {
+      "uuid": "db00a44e-20d3-4a76-990d-c4ed55f2b521",
+      "name": "VIEWED_NEGATIVELY",
+      "fact": "有人質疑本業都還沒穩定，為什麼要做衣服等周邊商品。",
+      "source": "6ea38faf-7d8d-4ceb-ab47-7d590807dfa1",
+      "target": "6ea38faf-7d8d-4ceb-ab47-7d590807dfa1",
+      "source_name": "周邊商品",
+      "target_name": "周邊商品"
+    },
+    {
+      "uuid": "d9e48b0e-7cfc-4292-8904-b0d45aeb4b7d",
+      "name": "IS_PRICE_SENSITIVE_ABOUT",
+      "fact": "小安價格敏感，最怕複雜與照片額度不足，對 NFC 貼紙的第一反應是「貼在缸上很酷，但我只有一隻，值得嗎？」",
+      "source": "2fc719e5-bc9d-4205-bfbf-8115d4cb5e1a",
+      "target": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "source_name": "小安",
+      "target_name": "NFC 客製貼紙"
+    },
+    {
+      "uuid": "d81ff98a-c0e1-4203-852c-80e4d1050dc3",
+      "name": "OFFERS_PRODUCT",
+      "fact": "苔間 App 的產品組合包含 iOS 完整版 App 與 LINE 快速記錄。",
+      "source": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "target": "e86ab34e-d8ff-44c4-a0f7-30193e0077a3",
+      "source_name": "苔間 App",
+      "target_name": "LINE 快速記錄"
+    },
+    {
+      "uuid": "cfe8e027-5c02-4bb6-b38d-b9f76eadfe87",
+      "name": "LACKS_TIME_TO_LEARN",
+      "fact": "有人指出小店沒有時間學後台。",
+      "source": "de332f6e-5381-42a6-9c62-1f53e734b23f",
+      "target": "de332f6e-5381-42a6-9c62-1f53e734b23f",
+      "source_name": "小店",
+      "target_name": "小店"
+    },
+    {
+      "uuid": "cd93ec7d-4424-4c89-9d66-31cba355cc30",
+      "name": "OWNS",
+      "fact": "陳老闆是 38 歲、住在高雄的爬蟲店老闆。",
+      "source": "4d92410d-00fb-484a-bfe7-d49fcb25eaac",
+      "target": "867da9b6-b1c1-4980-b2f8-c605f2407d37",
+      "source_name": "陳老闆",
+      "target_name": "爬蟲店"
+    },
+    {
+      "uuid": "cd7c4c40-4c75-4106-9c7f-8b7c16d26753",
+      "name": "QUESTIONED_AS_FIRST_YEAR_FOCUS",
+      "fact": "要回答的問題之一是第一年應該主推 App、貼紙還是 B2B 套組。",
+      "source": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "target": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "source_name": "苔間 App",
+      "target_name": "苔間 App"
+    },
+    {
+      "uuid": "c8492990-597a-4959-bd57-40ae3acf3e0c",
+      "name": "QUESTIONS_DURABILITY",
+      "fact": "阿凱重視隱私、跨裝置同步、匯出備份，願意為可靠工具付費，並會問「貼紙掉了怎麼辦？資料會不會綁死在貼紙上？」",
+      "source": "d47b2d84-b9bf-42bc-ad11-5e4d0589e0c6",
+      "target": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "source_name": "阿凱",
+      "target_name": "NFC 客製貼紙"
+    },
+    {
+      "uuid": "c77ee2de-8c17-49be-86ac-227e225d81f1",
+      "name": "OFFERS_SUBSCRIPTION",
+      "fact": "苔間 App 提供訂閱方案，包含 Free、99、199、399 元/月四種價位。",
+      "source": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "target": "910ea3bb-7cd7-4fd7-bd77-b5dddec4bb62",
+      "source_name": "苔間 App",
+      "target_name": "訂閱方案"
+    },
+    {
+      "uuid": "c554148f-4b76-46bd-ab44-83be05d97414",
+      "name": "MAY_BUY",
+      "fact": "小美可能買 299 元的三張貼紙禮盒，但不知道怎麼設定。",
+      "source": "657eacd5-4de4-4b58-a921-dc5eae166afa",
+      "target": "3bc96420-8894-4f6c-8ae7-f0f7f2f8f1a4",
+      "source_name": "小美",
+      "target_name": "299 元三張貼紙禮盒"
+    },
+    {
+      "uuid": "c1361f51-944b-4cec-aaa9-f961030d8b1a",
+      "name": "CONSIDERS_ADD_ON",
+      "fact": "阿宏認為 NFC 貼紙是「酷但非必要」的加購。",
+      "source": "5f793d75-92c5-4fbf-9def-c0dce5370f7b",
+      "target": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "source_name": "阿宏",
+      "target_name": "NFC 客製貼紙"
+    },
+    {
+      "uuid": "c0f194f7-6952-471a-b28a-cb7efb53adbc",
+      "name": "LIVES_IN",
+      "fact": "阿德 26 歲，住在台中。",
+      "source": "1ef04692-7588-482e-8dbc-6ef6b164a49f",
+      "target": "6c45f687-3576-4b58-bacf-3ebaf2b2ed57",
+      "source_name": "阿德",
+      "target_name": "台中"
+    },
+    {
+      "uuid": "bd909396-382e-40ff-9e19-41949bfec371",
+      "name": "EXCLUDED_BY",
+      "fact": "有人指出 iPhone 限定會把 Android 使用者排除在外。",
+      "source": "55103ba7-cc71-43e9-8552-c0beb2bdc16b",
+      "target": "55103ba7-cc71-43e9-8552-c0beb2bdc16b",
+      "source_name": "Android 使用者",
+      "target_name": "Android 使用者"
+    },
+    {
+      "uuid": "bc09bfcd-a449-4e69-ae03-c9a5303abc24",
+      "name": "WANTS",
+      "fact": "米米想要公開旅程與追蹤其他飼主。",
+      "source": "bba74db9-c8a6-45d7-be73-d5a438359f7a",
+      "target": "0e8547dc-0bce-4c37-8ab0-5a764c027616",
+      "source_name": "米米",
+      "target_name": "公開旅程"
+    },
+    {
+      "uuid": "bb193c6e-9b8c-4725-8851-6c42e029608a",
+      "name": "WORRIES_ABOUT",
+      "fact": "Eric 怕服務停止或資料無法匯出。",
+      "source": "83413159-5035-42c0-98d0-6d76952ee982",
+      "target": "dc092f5c-5275-44af-910c-b6f8cd663881",
+      "source_name": "Eric",
+      "target_name": "資料匯出"
+    },
+    {
+      "uuid": "b6d8aba5-0fbe-41bc-9e2f-6dc1471beda9",
+      "name": "USES",
+      "fact": "阿德表示 Android 目前只能用 LINE fallback。",
+      "source": "1ef04692-7588-482e-8dbc-6ef6b164a49f",
+      "target": "78259db0-a273-491c-9010-f9487bde562c",
+      "source_name": "阿德",
+      "target_name": "LINE fallback"
+    },
+    {
+      "uuid": "b6cfd361-3a86-4dcb-a784-0581d5b2a7a1",
+      "name": "LIMITED_TO",
+      "fact": "NFC 貼紙是 iPhone 限定。",
+      "source": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "target": "5073a9f5-e84d-4443-a209-ebb64350116f",
+      "source_name": "NFC 客製貼紙",
+      "target_name": "iPhone"
+    },
+    {
+      "uuid": "b694c8c9-6018-4cbb-a742-024205e82ef0",
+      "name": "HANDLED_BY",
+      "fact": "物流與售後由小團隊處理。",
+      "source": "9730ff7d-5279-4918-a371-7266b360203c",
+      "target": "9730ff7d-5279-4918-a371-7266b360203c",
+      "source_name": "物流與售後",
+      "target_name": "物流與售後"
+    },
+    {
+      "uuid": "b43df92a-680a-47d2-9bc9-cfca2343d92f",
+      "name": "IS_NOT_ANTI_COUNTERFEIT",
+      "fact": "NFC 貼紙本身不是防偽晶片；若要防拷貝，需要伺服器端 token、簽章與撤銷機制，或升級到 NTAG 424 DNA 等等級。",
+      "source": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "target": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "source_name": "NFC 客製貼紙",
+      "target_name": "NFC 客製貼紙"
+    },
+    {
+      "uuid": "b40ec4d3-2ab1-4404-b28f-0cf202c15cf5",
+      "name": "NEEDS",
+      "fact": "Eric 需要家人代餵、提醒與交接。",
+      "source": "83413159-5035-42c0-98d0-6d76952ee982",
+      "target": "83413159-5035-42c0-98d0-6d76952ee982",
+      "source_name": "Eric",
+      "target_name": "Eric"
+    },
+    {
+      "uuid": "b084e1f0-ea3b-4d95-89b8-4397e4fae4aa",
+      "name": "HAS_BUDGET",
+      "fact": "阿宏預算低，免費優先，最多接受 99 元，且要求照片額度要高。",
+      "source": "5f793d75-92c5-4fbf-9def-c0dce5370f7b",
+      "target": "5f793d75-92c5-4fbf-9def-c0dce5370f7b",
+      "source_name": "阿宏",
+      "target_name": "阿宏"
+    },
+    {
+      "uuid": "b0619ad3-9261-42fd-b3a1-80bafe47ceb9",
+      "name": "RESEARCHES",
+      "fact": "阿德喜歡自己改造展示缸，會研究 NFC 標籤、寫入 App 與自動化。",
+      "source": "1ef04692-7588-482e-8dbc-6ef6b164a49f",
+      "target": "f6ed9896-9593-4cb9-ac54-65eaed399c61",
+      "source_name": "阿德",
+      "target_name": "NFC 標籤"
+    },
+    {
+      "uuid": "af9ea3fc-c4f6-46ba-813c-f51b6e34a3e1",
+      "name": "QUESTIONED_AS_PURCHASE_RISK",
+      "fact": "要回答的問題之一是貼紙遺失、損壞、被重寫、被陌生人感應等風險是否會阻止購買。",
+      "source": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "target": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "source_name": "NFC 客製貼紙",
+      "target_name": "NFC 客製貼紙"
+    },
+    {
+      "uuid": "abf22c67-b213-4a5a-85de-7bfac3001baa",
+      "name": "IS_IOS_FIRST",
+      "fact": "苔間是 iOS-first 的爬蟲與特殊寵物照護紀錄工具。",
+      "source": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "target": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "source_name": "苔間 App",
+      "target_name": "苔間 App"
+    },
+    {
+      "uuid": "aa4280a1-484f-4313-a804-d5d12dabfefe",
+      "name": "USES_FOR_RECORDS",
+      "fact": "阿凱用 Google Sheet 記餵食與蛻皮。",
+      "source": "d47b2d84-b9bf-42bc-ad11-5e4d0589e0c6",
+      "target": "e06f83a8-8a8a-48a7-a9aa-e0ee1a1aa535",
+      "source_name": "阿凱",
+      "target_name": "Google Sheet"
+    },
+    {
+      "uuid": "a9e459e8-899f-4f49-bbab-1adc9d9c3cb5",
+      "name": "QUESTIONED_AS_EASIEST_TO_UNDERSTAND",
+      "fact": "要回答的問題之一是貼紙應該綁定居民、缸還是照護行程，哪一種說法最容易理解。",
+      "source": "091625a1-6403-47fd-b946-eddda9a81d65",
+      "target": "091625a1-6403-47fd-b946-eddda9a81d65",
+      "source_name": "貼紙綁定居民",
+      "target_name": "貼紙綁定居民"
+    },
+    {
+      "uuid": "a9ad0d90-2247-40f8-9dcf-a3ea8343389d",
+      "name": "OFFERS_PRODUCT",
+      "fact": "苔間 App 提供 NFC 客製貼紙，空白貼紙可綁定居民，已設定貼紙靠近 iPhone 可直接開 App 並跳到該居民的快速記錄頁。",
+      "source": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "target": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "source_name": "苔間 App",
+      "target_name": "NFC 客製貼紙"
+    },
+    {
+      "uuid": "a9a8d280-b766-4bc2-86e8-486986bfe6f8",
+      "name": "BUNDLES",
+      "fact": "B2B 方案為 10 張 NFC 貼紙加店家後台，售價 1,999 元。",
+      "source": "d9cf42cc-702d-439a-80c0-5cd4b2d32eed",
+      "target": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "source_name": "B2B 方案",
+      "target_name": "NFC 客製貼紙"
+    },
+    {
+      "uuid": "a7435f67-464a-4b37-b55c-d79a9a2b9f55",
+      "name": "HAS_PLAN",
+      "fact": "苔間 App 的免費版可完整記錄基本資料，199 元方案包含匯出、家庭權限、進階提醒與公開頁控制。",
+      "source": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "target": "3e237821-9cf1-45bd-b08d-adaaac565564",
+      "source_name": "苔間 App",
+      "target_name": "免費版"
+    },
+    {
+      "uuid": "a6a5e0fb-d33f-4ff3-a1f2-ef9bcb05b4c1",
+      "name": "VIEWED_NEGATIVELY",
+      "fact": "有人擔心貼紙會變成另一種平台綁定。",
+      "source": "f1bc4f5a-eb65-4fb4-94a7-bd9b48e32365",
+      "target": "f1bc4f5a-eb65-4fb4-94a7-bd9b48e32365",
+      "source_name": "貼紙平台綁定",
+      "target_name": "貼紙平台綁定"
+    },
+    {
+      "uuid": "97a6d2f9-0ba0-48c6-a676-099e024eee4b",
+      "name": "USES_TAG_TYPE",
+      "fact": "NFC 貼紙採用 NTAG215／NTAG216 之類的被動標籤，iPhone 靠近可讀取 NDEF URL。",
+      "source": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "target": "11629c3c-062c-4c7b-b44b-ccea0a7f38a7",
+      "source_name": "NFC 客製貼紙",
+      "target_name": "NTAG215"
+    },
+    {
+      "uuid": "97a2b22c-8808-4dcf-b80a-0e152a6527e4",
+      "name": "REQUIRES",
+      "fact": "林醫師對資料正確性要求高。",
+      "source": "ff4e3fa3-0a71-40de-9b33-f5109fb95992",
+      "target": "ff4e3fa3-0a71-40de-9b33-f5109fb95992",
+      "source_name": "林醫師",
+      "target_name": "林醫師"
+    },
+    {
+      "uuid": "94981b00-8eeb-44cb-abb6-4817d909d79e",
+      "name": "HANDLES",
+      "fact": "物流與售後由小團隊處理，貼紙遺失可重新綁定，舊 token 可撤銷。",
+      "source": "9730ff7d-5279-4918-a371-7266b360203c",
+      "target": "064f64f3-113f-424e-b888-bca7101f1cc8",
+      "source_name": "物流與售後",
+      "target_name": "貼紙重新綁定機制"
+    },
+    {
+      "uuid": "93d02537-879e-4ea3-b30b-2c02914c83c5",
+      "name": "REQUIRES",
+      "fact": "老周願意付較高費用，但要求 CSV 匯出、備份與不被平台綁死。",
+      "source": "2c858934-2586-4362-b7db-87c7ffe361d6",
+      "target": "2c858934-2586-4362-b7db-87c7ffe361d6",
+      "source_name": "老周",
+      "target_name": "老周"
+    },
+    {
+      "uuid": "9306c346-63e0-4c67-8e54-5232bc160bb2",
+      "name": "OWNS",
+      "fact": "阿凱是 31 歲、住在新北的飼主，養了三隻球蟒。",
+      "source": "d47b2d84-b9bf-42bc-ad11-5e4d0589e0c6",
+      "target": "261b5046-bd2c-4a05-a692-95cd23d721f8",
+      "source_name": "阿凱",
+      "target_name": "球蟒"
+    },
+    {
+      "uuid": "9158b40b-e017-4802-bd4d-fcf04e8f45b6",
+      "name": "LAUNCHES_IN",
+      "fact": "苔間 App 第一波只在台灣上市，透過 App Store 上架，沒有大規模廣告，先用爬店、繁殖者、特寵獸醫與內容創作者做種子通路。",
+      "source": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "target": "a5ad76e5-3359-41a3-9aa4-2046455b07a8",
+      "source_name": "苔間 App",
+      "target_name": "台灣"
+    },
+    {
+      "uuid": "8c2acff4-cd98-415d-8154-06e64d6b1eaa",
+      "name": "HAS_STRATEGY",
+      "fact": "苔間 App 上線時同時保留「延伸周邊商品」策略。",
+      "source": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "target": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "source_name": "苔間 App",
+      "target_name": "苔間 App"
+    },
+    {
+      "uuid": "8b6fac34-6b15-4415-9b81-760ba35952ff",
+      "name": "QUESTIONED_AS_REAL_DEMAND",
+      "fact": "要回答的問題之一是 NFC 貼紙是真需求還是新奇但不用，以及顧客願意付多少。",
+      "source": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "target": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "source_name": "NFC 客製貼紙",
+      "target_name": "NFC 客製貼紙"
+    },
+    {
+      "uuid": "895751dd-d965-4a7e-9a95-74f2e7b64d84",
+      "name": "OFFERS_PRODUCT",
+      "fact": "苔間 App 的其他周邊包含繁殖／照護記錄卡、展示缸標籤、品牌 T-shirt、托特包、徽章，以及爬店／繁殖者的 B2B 套組。",
+      "source": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "target": "80fc9017-bad5-4384-8b82-d50a62dc21c2",
+      "source_name": "苔間 App",
+      "target_name": "展示缸標籤"
+    },
+    {
+      "uuid": "86dd1796-2cee-452d-9d56-1859fe7b2006",
+      "name": "VIEWED_POSITIVELY",
+      "fact": "有人認為 B2B 套組單價高。",
+      "source": "e956f288-8f09-463a-9acf-ad6a200b2e80",
+      "target": "e956f288-8f09-463a-9acf-ad6a200b2e80",
+      "source_name": "B2B 套組",
+      "target_name": "B2B 套組"
+    },
+    {
+      "uuid": "840b7381-33ea-4136-a5d4-b56f5ed20158",
+      "name": "EXPECTED_CONFLICT",
+      "fact": "預期會出現的衝突是「綁定居民很方便」對上「我不想讓別人知道我養什麼」。",
+      "source": "091625a1-6403-47fd-b946-eddda9a81d65",
+      "target": "091625a1-6403-47fd-b946-eddda9a81d65",
+      "source_name": "貼紙綁定居民",
+      "target_name": "貼紙綁定居民"
+    },
+    {
+      "uuid": "83ac2722-88cc-4853-ab73-51b9e6ce460f",
+      "name": "OFFERS_PRODUCT",
+      "fact": "苔間 App 的其他周邊包含繁殖／照護記錄卡、展示缸標籤、品牌 T-shirt、托特包、徽章，以及爬店／繁殖者的 B2B 套組。",
+      "source": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "target": "c19f7c4f-3c4e-4597-9592-7cf99e6d98d3",
+      "source_name": "苔間 App",
+      "target_name": "品牌托特包"
+    },
+    {
+      "uuid": "81cbfc30-41ca-4e99-a222-d612f07220ec",
+      "name": "CAN_UPGRADE_TO",
+      "fact": "NFC 貼紙若要防拷貝，需要伺服器端 token、簽章與撤銷機制，或升級到 NTAG 424 DNA 等等級。",
+      "source": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "target": "b964cda7-c4ca-4319-acb6-db32cc8a682e",
+      "source_name": "NFC 客製貼紙",
+      "target_name": "NTAG 424 DNA"
+    },
+    {
+      "uuid": "76a5c55e-bfc4-4630-9625-7a80877c1723",
+      "name": "QUESTIONED_AS_FIRST_SALES_CHANNEL",
+      "fact": "要回答的問題之一是家庭共享、繁殖者、爬店、獸醫哪個通路最適合先賣貼紙。",
+      "source": "c49c8cf8-5344-4f62-8325-69a171ae5b5d",
+      "target": "c49c8cf8-5344-4f62-8325-69a171ae5b5d",
+      "source_name": "家庭共享",
+      "target_name": "家庭共享"
+    },
+    {
+      "uuid": "7699e28d-131f-4d3a-b97f-dd7cd75bd720",
+      "name": "WANTS_RECORD_OF",
+      "fact": "林醫師希望飼主就診時能提供用藥、食慾、排便與體重紀錄。",
+      "source": "ff4e3fa3-0a71-40de-9b33-f5109fb95992",
+      "target": "4e7224ce-345b-46ff-baf6-7fb6ac113b20",
+      "source_name": "林醫師",
+      "target_name": "排便紀錄"
+    },
+    {
+      "uuid": "755b5bc8-6eab-4306-a817-cf4a0383d59c",
+      "name": "VIEWED_POSITIVELY",
+      "fact": "有人支持 iPhone 限定的做法。",
+      "source": "ae01de16-79c5-41be-bb44-b607c519f9c4",
+      "target": "ae01de16-79c5-41be-bb44-b607c519f9c4",
+      "source_name": "iPhone 限定",
+      "target_name": "iPhone 限定"
+    },
+    {
+      "uuid": "740b3203-da04-458e-8f64-97bbec988c54",
+      "name": "HAS_TEST_PRICE",
+      "fact": "本次測試假設 3 張貼紙售價 299 元、5 張 399 元。",
+      "source": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "target": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "source_name": "NFC 客製貼紙",
+      "target_name": "NFC 客製貼紙"
+    },
+    {
+      "uuid": "6f190bd8-43f8-4731-a470-fe109f86b202",
+      "name": "NEEDS",
+      "fact": "米米怕陌生人騷擾，需要封鎖、檢舉與公開範圍控制。",
+      "source": "bba74db9-c8a6-45d7-be73-d5a438359f7a",
+      "target": "1bee7e24-d7aa-44dd-8056-b1942eccdd1e",
+      "source_name": "米米",
+      "target_name": "檢舉功能"
+    },
+    {
+      "uuid": "6c416421-505a-44bd-9a58-fdbc3ca8cdcd",
+      "name": "OFFERS_PRODUCT",
+      "fact": "苔間 App 的產品組合包含 iOS 完整版 App 與 LINE 快速記錄。",
+      "source": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "target": "e7ec2398-b352-4b4b-aa5b-13aaae9425f9",
+      "source_name": "苔間 App",
+      "target_name": "iOS 完整版 App"
+    },
+    {
+      "uuid": "6bb17f98-ffdd-4e89-8703-8dc86761ccf1",
+      "name": "HAS_B2B_PRICING",
+      "fact": "第二個假設是 B2B 10 張貼紙加店家後台售價 1,999 元。",
+      "source": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "target": "f25d663c-b3dd-493f-8fa5-335964790297",
+      "source_name": "NFC 客製貼紙",
+      "target_name": "店家後台"
+    },
+    {
+      "uuid": "6a948fd6-55a1-41ef-90c2-b4f76d6604ac",
+      "name": "QUESTIONED_AS_REASONABLE",
+      "fact": "要回答的問題之一是三張 299 元的貼紙方案是否合理。",
+      "source": "3bc96420-8894-4f6c-8ae7-f0f7f2f8f1a4",
+      "target": "3bc96420-8894-4f6c-8ae7-f0f7f2f8f1a4",
+      "source_name": "299 元三張貼紙禮盒",
+      "target_name": "299 元三張貼紙禮盒"
+    },
+    {
+      "uuid": "685fe0c6-a9b0-4946-8748-f7e3810138e6",
+      "name": "CONSIDERS_CONTENT",
+      "fact": "米米可能把客製貼紙當成周邊開箱內容，但會在意貼紙外觀與品牌質感。",
+      "source": "bba74db9-c8a6-45d7-be73-d5a438359f7a",
+      "target": "127531e1-a225-4768-81c5-52ae85fbde3e",
+      "source_name": "米米",
+      "target_name": "客製貼紙"
+    },
+    {
+      "uuid": "684a16d4-7f07-43a5-ab26-5885299073a0",
+      "name": "HAS_FREE_TIER_LIMIT",
+      "fact": "苔間 App 免費版每月可上傳 60 張照片。",
+      "source": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "target": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "source_name": "苔間 App",
+      "target_name": "苔間 App"
+    },
+    {
+      "uuid": "67110f5a-b966-491c-a51a-f34d93e4450d",
+      "name": "RESEARCHES",
+      "fact": "Eric 會研究 NFC 貼紙的寫入格式、備份與權限，並且不接受「貼紙壞了就全部重來」。",
+      "source": "83413159-5035-42c0-98d0-6d76952ee982",
+      "target": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "source_name": "Eric",
+      "target_name": "NFC 客製貼紙"
+    },
+    {
+      "uuid": "66b67bbb-cb86-4c21-b952-c6dc8a36d87f",
+      "name": "COULD_BECOME_ADVANCED_PROMOTER",
+      "fact": "阿德可能成為苔間 App 的進階推廣者，但也會公開批評封閉格式與不能自己寫入。",
+      "source": "1ef04692-7588-482e-8dbc-6ef6b164a49f",
+      "target": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "source_name": "阿德",
+      "target_name": "苔間 App"
+    },
+    {
+      "uuid": "63318d45-b04b-43c5-9f98-e70e552e6683",
+      "name": "ESTIMATED_HOUSEHOLDS",
+      "fact": "市場假設台灣爬蟲與特殊寵物飼主約有 15–30 萬家戶。",
+      "source": "46f32099-dd2a-4d58-a0a9-58f45f59431f",
+      "target": "46f32099-dd2a-4d58-a0a9-58f45f59431f",
+      "source_name": "台灣爬蟲與特殊寵物飼主",
+      "target_name": "台灣爬蟲與特殊寵物飼主"
+    },
+    {
+      "uuid": "61aaa8aa-fade-480c-a6a7-a29ad80b396c",
+      "name": "OFFERS_PRODUCT",
+      "fact": "苔間 App 的其他周邊包含繁殖／照護記錄卡、展示缸標籤、品牌 T-shirt、托特包、徽章，以及爬店／繁殖者的 B2B 套組。",
+      "source": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "target": "4c655ac7-63ab-4daa-a436-39301d3e01ea",
+      "source_name": "苔間 App",
+      "target_name": "品牌 T-shirt"
+    },
+    {
+      "uuid": "5f0de780-8743-4adf-a4ff-b8e008e969f6",
+      "name": "WORRIES_ABOUT",
+      "fact": "林醫師擔心 NFC 貼紙被隨便重寫，導致病歷指向錯誤居民。",
+      "source": "ff4e3fa3-0a71-40de-9b33-f5109fb95992",
+      "target": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "source_name": "林醫師",
+      "target_name": "NFC 客製貼紙"
+    },
+    {
+      "uuid": "5e975c09-93c1-420a-b630-5d7f98ec6c4d",
+      "name": "LIMITED_TO",
+      "fact": "LINE LIFF 只做快速記錄、查詢與公開連結 fallback。",
+      "source": "74fdacdb-494d-4124-a09d-9a21e9564134",
+      "target": "74fdacdb-494d-4124-a09d-9a21e9564134",
+      "source_name": "LINE LIFF",
+      "target_name": "LINE LIFF"
+    },
+    {
+      "uuid": "5dda7ded-8309-4f05-aee6-0c9c2909fd36",
+      "name": "APPLIES_TO",
+      "fact": "舊 token 可撤銷。",
+      "source": "b01fc732-9f42-410a-b793-cba3ee365ecd",
+      "target": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "source_name": "舊 token 撤銷機制",
+      "target_name": "NFC 客製貼紙"
+    },
+    {
+      "uuid": "5bef7037-fe64-4918-ab3b-3eafcf22fd57",
+      "name": "RESEARCHES",
+      "fact": "Eric 會研究 NFC 貼紙的寫入格式、備份與權限，並且不接受「貼紙壞了就全部重來」。",
+      "source": "83413159-5035-42c0-98d0-6d76952ee982",
+      "target": "02fd6f28-2094-49a0-88b7-909b34eab798",
+      "source_name": "Eric",
+      "target_name": "備份"
+    },
+    {
+      "uuid": "568c54f8-2ab4-4de9-929d-24d1e921ba83",
+      "name": "NEEDS",
+      "fact": "米米怕陌生人騷擾，需要封鎖、檢舉與公開範圍控制。",
+      "source": "bba74db9-c8a6-45d7-be73-d5a438359f7a",
+      "target": "dff2c175-85c1-4b30-b008-c798cb5b3a8a",
+      "source_name": "米米",
+      "target_name": "封鎖功能"
+    },
+    {
+      "uuid": "54e0649f-63d8-4f33-a4e3-1b8f226140e8",
+      "name": "USES_DAILY",
+      "fact": "小安每天用 LINE 傳照片，沒有固定紀錄。",
+      "source": "2fc719e5-bc9d-4205-bfbf-8115d4cb5e1a",
+      "target": "2547ad3d-c5fd-446d-b6c4-dae4fda99933",
+      "source_name": "小安",
+      "target_name": "LINE"
+    },
+    {
+      "uuid": "522b6eaa-ac4a-479a-a72c-a4944625e628",
+      "name": "NEEDS",
+      "fact": "雅婷需要家庭共享與權限，希望孩子參與照顧但不想讓孩子看到所有私人紀錄。",
+      "source": "5b594502-e66d-4009-b0a9-7b16668f1c97",
+      "target": "141d1be3-297b-44b2-bc81-e35e4f1421de",
+      "source_name": "雅婷",
+      "target_name": "權限控制"
+    },
+    {
+      "uuid": "4fed691e-c63d-42ac-962b-798862221df7",
+      "name": "QUESTIONED_AS_ANCHOR",
+      "fact": "要回答的問題之一是 199 元是否仍是合理的 App 付費錨點。",
+      "source": "e081ed83-a6c2-418c-807a-3216cd6d1253",
+      "target": "e081ed83-a6c2-418c-807a-3216cd6d1253",
+      "source_name": "199 元方案",
+      "target_name": "199 元方案"
+    },
+    {
+      "uuid": "4e95dc3b-0b12-4806-bd82-a9b4996f9fa1",
+      "name": "THINKS_UNFORTUNATE",
+      "fact": "Kevin 覺得 NFC 貼紙「iPhone 限定」很可惜。",
+      "source": "1a1b1bbc-5e26-4833-8bf9-52c3daccabe3",
+      "target": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "source_name": "Kevin",
+      "target_name": "NFC 客製貼紙"
+    },
+    {
+      "uuid": "4c6f99f7-53a5-4dc0-aec6-c02ab676b8d8",
+      "name": "INCLUDES",
+      "fact": "周邊商品先做小批量，包含照護記錄卡、缸邊標籤、品牌托特包與徽章。",
+      "source": "6ea38faf-7d8d-4ceb-ab47-7d590807dfa1",
+      "target": "af8d664c-cd39-4425-9dce-43571ab0bb7a",
+      "source_name": "周邊商品",
+      "target_name": "徽章"
+    },
+    {
+      "uuid": "45ebf6a7-2f8a-4189-b833-98558ff4007f",
+      "name": "WRITES_AND_BINDS",
+      "fact": "NFC 貼紙的寫入與綁定由苔間 iOS App 執行。",
+      "source": "fe0a88b5-3861-43e8-9d53-361d5ad08e85",
+      "target": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "source_name": "苔間 iOS App",
+      "target_name": "NFC 客製貼紙"
+    },
+    {
+      "uuid": "43ef43a6-189f-4b71-a75e-4cd22d0f9648",
+      "name": "QUESTIONED_AS_MINIMAL_EXPERIMENT",
+      "fact": "要回答的問題之一是如果要驗證市場，最小的 90 天實驗是什麼。",
+      "source": "64e92132-dd22-4d2c-90de-4d0810e29e0f",
+      "target": "64e92132-dd22-4d2c-90de-4d0810e29e0f",
+      "source_name": "90 天市場驗證實驗",
+      "target_name": "90 天市場驗證實驗"
+    },
+    {
+      "uuid": "4284a145-6630-45a3-955b-77d4ddbe8434",
+      "name": "EXPECTED_CONFLICT",
+      "fact": "預期會出現的衝突是「店家送貼紙」對上「貼紙變成另一種平台綁定」。",
+      "source": "69f81278-b00a-46f6-a2f8-80edf2037df6",
+      "target": "69f81278-b00a-46f6-a2f8-80edf2037df6",
+      "source_name": "爬店",
+      "target_name": "爬店"
+    },
+    {
+      "uuid": "41330a4f-256a-40a0-950f-acb97f6d6154",
+      "name": "USES_UNGUESSABLE_TOKEN",
+      "fact": "公開居民頁與公開旅程使用不可猜測的 token，隱私與封鎖／檢舉是產品底線。",
+      "source": "e6d85b0a-14cf-4ab7-829e-8f0d5044ba5a",
+      "target": "e6d85b0a-14cf-4ab7-829e-8f0d5044ba5a",
+      "source_name": "公開居民頁",
+      "target_name": "公開居民頁"
+    },
+    {
+      "uuid": "405bf5fd-761e-48f6-8658-bcde4ca744d0",
+      "name": "OFFERS_PRODUCT",
+      "fact": "苔間 App 的其他周邊包含繁殖／照護記錄卡、展示缸標籤、品牌 T-shirt、托特包、徽章，以及爬店／繁殖者的 B2B 套組。",
+      "source": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "target": "81f5ddbc-fa3a-42c9-a406-20e27394fffe",
+      "source_name": "苔間 App",
+      "target_name": "繁殖／照護記錄卡"
+    },
+    {
+      "uuid": "3feae41d-92df-4c1a-8ba2-a59b7cbc7462",
+      "name": "VALUES_PRIVACY",
+      "fact": "有人表示不想讓別人知道自己養什麼。",
+      "source": "091625a1-6403-47fd-b946-eddda9a81d65",
+      "target": "091625a1-6403-47fd-b946-eddda9a81d65",
+      "source_name": "貼紙綁定居民",
+      "target_name": "貼紙綁定居民"
+    },
+    {
+      "uuid": "3f0e3736-ed78-40f0-8f58-d308e34052e8",
+      "name": "CRITICIZES",
+      "fact": "阿德認為 NFC 貼紙「iPhone 限定」很可惜。",
+      "source": "1ef04692-7588-482e-8dbc-6ef6b164a49f",
+      "target": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "source_name": "阿德",
+      "target_name": "NFC 客製貼紙"
+    },
+    {
+      "uuid": "3c5c5aa2-c71d-4423-8c23-c723278e651d",
+      "name": "HAS_CORE_FEATURES",
+      "fact": "苔間 App 的核心功能包含餵食、換水、體重、蛻皮、醫療、家庭共享、提醒、公開旅程、公開居民頁、追蹤、封鎖、檢舉與 CSV／JSON 匯出。",
+      "source": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "target": "a685d0ce-6d97-44dd-b4bd-6687a80f1ae2",
+      "source_name": "苔間 App",
+      "target_name": "苔間 App"
+    },
+    {
+      "uuid": "35201980-cb28-4fb2-86a9-d37330ef8dba",
+      "name": "VIEWED_POSITIVELY",
+      "fact": "有人認為店家送貼紙是好事。",
+      "source": "c78d330d-df5c-478e-a2e2-7948b7e3d2a0",
+      "target": "c78d330d-df5c-478e-a2e2-7948b7e3d2a0",
+      "source_name": "店家送貼紙",
+      "target_name": "店家送貼紙"
+    },
+    {
+      "uuid": "350ca9ce-94c3-44de-9ace-e736134f3a72",
+      "name": "EXPECTED_CONFLICT",
+      "fact": "預期會出現的衝突是「貼紙很酷」對上「我只有一隻，為什麼要買三張」。",
+      "source": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "target": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "source_name": "NFC 客製貼紙",
+      "target_name": "NFC 客製貼紙"
+    },
+    {
+      "uuid": "34b5716d-a58d-4341-ada1-299a7fe80732",
+      "name": "PLANS_TO_USE",
+      "fact": "小林想用 NFC 貼紙綁定店內售出的動物，讓客人回家刷貼紙就能看照護紀錄。",
+      "source": "0a0e9a06-be94-4e6a-a57d-52b9d3322577",
+      "target": "e4c22171-cb7d-41d3-9df0-e0a41c6954bf",
+      "source_name": "小林",
+      "target_name": "NFC 客製貼紙"
+    }
+  ]
+}
