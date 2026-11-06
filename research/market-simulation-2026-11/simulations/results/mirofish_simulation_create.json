@@ -2,21 +2,21 @@
   "data": {
     "config_generated": false,
     "config_reasoning": "",
-    "created_at": "2026-11-06T10:56:21.503736",
+    "created_at": "2026-11-06T11:41:36.357205",
     "current_round": 0,
     "enable_reddit": false,
     "enable_twitter": true,
     "entities_count": 0,
     "entity_types": [],
     "error": null,
-    "graph_id": "mirofish_df02edb49eca4c25",
+    "graph_id": "mirofish_53585dd662dd4295",
     "profiles_count": 0,
-    "project_id": "proj_7519c42187c8",
+    "project_id": "proj_b4e42e8f3354",
     "reddit_status": "not_started",
-    "simulation_id": "sim_b88a8e73ea1e",
+    "simulation_id": "sim_a773a457b275",
     "status": "created",
     "twitter_status": "not_started",
-    "updated_at": "2026-11-06T10:56:21.504360"
+    "updated_at": "2026-11-06T11:41:36.357815"
   },
   "success": true
 }

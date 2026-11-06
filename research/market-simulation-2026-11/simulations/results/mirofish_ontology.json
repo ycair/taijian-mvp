@@ -1,6 +1,6 @@
 {
   "data": {
-    "analysis_summary": "根据文本内容，设计了10个实体类型，包括用户、新手、繁殖者、兽医、内容创作者等，并定义了使用应用、家庭共享、付费、供应、治疗、创作内容等关系类型。",
+    "analysis_summary": "",
     "files": [
       {
         "filename": "taijian_customer_seed.md",
@@ -8,175 +8,119 @@
       }
     ],
     "ontology": {
-      "edge_types": [
-        {
-          "attributes": [],
-          "description": "使用苔間应用",
-          "name": "USES_APP",
-          "source_targets": [
-            {
-              "source": "User",
-              "target": "Organization"
-            }
-          ]
-        },
-        {
-          "attributes": [],
-          "description": "家庭共享",
-          "name": "SHARED_WITH",
-          "source_targets": [
-            {
-              "source": "Family",
-              "target": "User"
-            }
-          ]
-        },
-        {
-          "attributes": [],
-          "description": "为应用付费",
-          "name": "PAY_FOR",
-          "source_targets": [
-            {
-              "source": "User",
-              "target": "Organization"
-            }
-          ]
-        },
-        {
-          "attributes": [],
-          "description": "供应爬虫或特殊宠物",
-          "name": "SUPPLIES",
-          "source_targets": [
-            {
-              "source": "Breeder",
-              "target": "Organization"
-            }
-          ]
-        },
-        {
-          "attributes": [],
-          "description": "治疗爬虫或特殊宠物",
-          "name": "TREATS",
-          "source_targets": [
-            {
-              "source": "SpecialPetDoctor",
-              "target": "User"
-            }
-          ]
-        },
-        {
-          "attributes": [],
-          "description": "创作关于爬虫或特殊宠物的内容",
-          "name": "CREATES_CONTENT",
-          "source_targets": [
-            {
-              "source": "ContentCreator",
-              "target": "Organization"
-            }
-          ]
-        }
-      ],
+      "edge_types": [],
       "entity_types": [
         {
           "attributes": [
             {
-              "description": "用户全名",
+              "description": "全名",
               "name": "full_name",
-              "type": "text"
-            },
-            {
-              "description": "用户所在地",
-              "name": "location",
               "type": "text"
             }
           ],
-          "description": "App 的使用者，包括新手、爬虫爱好者等",
-          "examples": [
-            "小安",
-            "阿凱"
-          ],
-          "name": "User"
+          "description": "學生",
+          "examples": [],
+          "name": "Student"
         },
         {
-          "attributes": [],
-          "description": "初次接触爬虫或特殊宠物的用户",
-          "examples": [
-            "小安"
+          "attributes": [
+            {
+              "description": "組織名稱",
+              "name": "org_name",
+              "type": "text"
+            }
           ],
-          "name": "Newbie"
+          "description": "專業人士",
+          "examples": [],
+          "name": "Professional"
         },
         {
-          "attributes": [],
-          "description": "从事爬虫或特殊宠物繁殖的商家或个人",
-          "examples": [
-            "陳老闆",
-            "老周"
+          "attributes": [
+            {
+              "description": "飼養寵物種類",
+              "name": "pet_type",
+              "type": "text"
+            }
           ],
-          "name": "Breeder"
+          "description": "寵物飼主",
+          "examples": [],
+          "name": "PetOwner"
         },
         {
-          "attributes": [],
-          "description": "专门治疗爬虫或特殊宠物的兽医",
-          "examples": [
-            "林醫師"
+          "attributes": [
+            {
+              "description": "企業名稱",
+              "name": "business_name",
+              "type": "text"
+            }
           ],
-          "name": "SpecialPetDoctor"
+          "description": "創業者",
+          "examples": [],
+          "name": "Entrepreneur"
         },
         {
-          "attributes": [],
-          "description": "创作关于爬虫或特殊宠物内容的创作者",
-          "examples": [
-            "米米"
+          "attributes": [
+            {
+              "description": "平台",
+              "name": "platform",
+              "type": "text"
+            }
           ],
+          "description": "內容創作者",
+          "examples": [],
           "name": "ContentCreator"
         },
         {
-          "attributes": [],
-          "description": "对价格敏感的用户",
-          "examples": [
-            "阿宏",
-            "阿珍"
+          "attributes": [
+            {
+              "description": "專長",
+              "name": "specialty",
+              "type": "text"
+            }
           ],
-          "name": "PriceSensitiveUser"
+          "description": "獸醫",
+          "examples": [],
+          "name": "Veterinarian"
+        },
+        {
+          "attributes": [
+            {
+              "description": "部門",
+              "name": "department",
+              "type": "text"
+            }
+          ],
+          "description": "政府官員",
+          "examples": [],
+          "name": "GovernmentOfficial"
+        },
+        {
+          "attributes": [
+            {
+              "description": "預算",
+              "name": "budget",
+              "type": "text"
+            }
+          ],
+          "description": "消費者",
+          "examples": [],
+          "name": "Consumer"
         },
         {
           "attributes": [],
-          "description": "包含家庭成员的群体",
-          "examples": [
-            "雅婷"
-          ],
-          "name": "Family"
-        },
-        {
-          "attributes": [],
-          "description": "专门销售爬虫或特殊宠物的店铺",
-          "examples": [
-            "陳老闆"
-          ],
-          "name": "CrawlerShop"
-        },
-        {
-          "attributes": [],
-          "description": "任何自然人个体的兜底类型",
-          "examples": [
-            "小安",
-            "阿凱",
-            "林醫師"
-          ],
+          "description": "個人兜底",
+          "examples": [],
           "name": "Person"
         },
         {
           "attributes": [],
-          "description": "任何组织机构的兜底类型",
-          "examples": [
-            "苔間",
-            "陳老闆的爬虫店"
-          ],
+          "description": "組織兜底",
+          "examples": [],
           "name": "Organization"
         }
       ]
     },
-    "project_id": "proj_7519c42187c8",
+    "project_id": "proj_b4e42e8f3354",
     "project_name": "苔間 2026-11 市場模擬",
     "total_text_length": 910
   },

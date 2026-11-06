@@ -300,7 +300,7 @@
     if (!container) return;
     const summary = local.summary || {};
     if (summary.status !== 'completed') {
-      container.innerHTML = `<div class="callout"><strong>MiroFish-Local 部分打通，但 simulation 尚未成為市場證據</strong>${escape(summary.reason || '尚未完成。')}<br><br><span class="small">${escape((summary.completed_checks || []).join(' · '))}</span></div>`;
+      container.innerHTML = `<div class="callout"><strong>MiroFish-Local 已跑通 OASIS，但輸出品質不足以當市場證據</strong>${escape(summary.reason || '尚未完成。')}<br><br><span class="small">${escape((summary.completed_checks || []).join(' · '))}</span></div>`;
       return;
     }
     const reportEnvelope = local.report || {};

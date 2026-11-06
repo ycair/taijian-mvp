@@ -1,14 +1,14 @@
 {
   "status": "partial",
-  "reason": "Ollama qwen2.5:7b-instruct 權重已下載到外接硬碟，Zep Cloud key 可用；ontology + 14 個 persona 已生成，Zep graph 建出 19 nodes / 27 edges。OASIS 2 回合等了約 8 分鐘，只有 7 則初始貼文、0 個 agent actions，因此停止；沒有把它當成市場結果。",
+  "reason": "遠端主機（i7-8700K / 30GB RAM / Titan V 12GB）上的 Ollama 可用：qwen2.5:7b 與 qwen2.5:14b-instruct 都能跑，14B 使用約 9.7GB VRAM。Zep ontology 與 15 個 persona 完成；MiroFish 的平行 simulation manager 在初始貼文後停住，因此改用同一個 MiroFish OASIS 引擎直接跑：15 agents、2 回合、27 則貼文、0 留言。貼文重複與空內容很多，不能當作可信市場證據。",
   "completed_checks": [
-    "Zep Cloud：create user 201、delete 200",
-    "Ollama qwen2.5:7b-instruct：4.7 GB，快取在 /Volumes/YCAIR/ollama/models",
-    "THU/Qwen ontology：10 類實體、6 種關係（Qwen 版本）",
-    "Zep graph：19 nodes / 27 edges",
-    "Persona prepare：14 個 profile 生成完成",
-    "OASIS：7 則初始貼文、0 actions；2 回合未完成",
-    "資源監測：最低 free 約 64 MB、最高 load 35.9；已停止，避免機器進入不可操作狀態"
+    "Remote Ollama：qwen2.5:7b / qwen2.5:14b-instruct 可用",
+    "Remote GPU：Titan V 12GB，14B 使用約 9.7GB VRAM，利用率 97%",
+    "Zep Cloud key：create user 201、delete 200",
+    "Zep graph：19 nodes / 27 edges（7B ontology 版本）",
+    "Persona prepare：15 個 profile 完成",
+    "Direct OASIS：27 posts / 0 comments；48–68 秒完成",
+    "MiroFish 平行 manager：初始貼文後 0 actions，停了約 8 分鐘；未完成"
   ],
-  "recommendation": "Qwen 7B 在 16 GB Mac mini 上可跑 ontology/persona，但 OASIS + 14 agents 沒有在合理時間內產生 actions。若要完整跑，改用 qwen2.5:3b、減少 agents 到 4–6、提高 off-peak 活躍率，或改用雲端模型。"
+  "recommendation": "遠端 GPU 解決了算力與本機記憶體問題，但 qwen2.5:14b 的 OASIS 內容品質仍然不足；需要更大/更強的模型、改寫 OASIS prompt，或使用可商用的雲端模型。現有 11 位 structured persona panel 仍是較可信的質性證據。"
 }
