@@ -36,17 +36,30 @@ MiroFish/backend/.venv-arm/bin/python simulations/structured_panel.py
 python3 build_site_data.py
 ```
 
-MiroFish 原版完整 GraphRAG pipeline 需要 Zep Cloud API key。這次先用 Zep Cloud（key 驗證：create user 201、delete 200），並在 MiroFish-Local 的 `chat_json` 加上 `submit_json` tool adapter：THU gpt-oss-120b 的 tool-call arguments 可以轉回 JSON，ontology 成功產生 10 類實體／9 種關係，Zep 圖譜建出 21 nodes／26 edges。但 persona 生成只得到台經院與農業部兩個機構帳號，OASIS 2 回合等待約 7 分鐘仍為 0 actions，因此停止；沒有把 partial run 當市場結果。
+MiroFish 原版完整 GraphRAG pipeline 需要 Zep Cloud API key。這次用 Zep Cloud（key 驗證：create user 201、delete 200）＋ Ollama `qwen2.5:7b-instruct`（權重在外接硬碟）：Qwen ontology 成功產生 10 類實體／6 種關係，Zep graph 建出 19 nodes／27 edges，14 個 persona 也生成完成。但 OASIS 2 回合等了約 8 分鐘仍只有 7 則初始貼文、0 actions，因此停止；沒有把 partial run 當市場結果。資源監測最低 free 約 64 MB、最高 load 35.9，停止是為了避免機器進入不可操作狀態。
 
 若要做完整 pipeline，換一個在 JSON schema 提示下會回傳文字的模型／provider（或自架 Ollama），或使用 Zep Cloud Free。`MiroFish/`、`MiroFish-local/`、`.env`、SQLite DB 與 log 都不進 git。
 
 ### Zep 平替
 
 - **Zep Cloud Free**：每月 10,000 credits、2 projects；實務上仍需能建立帳號並取得 key，且有限額。
-- **MiroFish-Local + Zep Cloud**：Zep key 與 ontology tool adapter 已驗證；完整 simulation 仍需要能穩定產生顧客 persona 的 seed/model。Graphiti + Neo4j 模式仍未完成。
+- **MiroFish-Local + Zep Cloud + Ollama**：Zep、Qwen ontology、14 個 persona 已驗證；OASIS 未產生 actions，需改用 3B、減少 agents 或雲端模型。
 - **Graphiti + Neo4j / FalkorDB**：Apache-2.0、可自架，沒有 Zep key；需要自行處理 graph DB、LLM/embedding 與運維。
 - **MiroFish-Local**：以 `ZEP_BACKEND=graphiti` 支援 Graphiti + Neo4j 的 fork；完整 pipeline 可離線，但不是上游官方支援。
 - 其他記憶框架（Mem0、Letta、Cognee）不是 Zep API 的直接 drop-in，移植成本較高。
+
+## Ollama 本機模型
+
+- 模型快取：`/Volumes/YCAIR/ollama/models`
+- 模型：`qwen2.5:7b-instruct`（權重實際位於外接硬碟）
+- 實際用量：約 4.7 GB 下載；模型載入後以單一併發執行
+- 啟動參數：`OLLAMA_NUM_PARALLEL=1`、`OLLAMA_MAX_LOADED_MODELS=1`、
+  `OLLAMA_CONTEXT_LENGTH=8192`、`OLLAMA_KEEP_ALIVE=5m`、
+  `OLLAMA_FLASH_ATTENTION=1`、`nice -n 5`
+- 目的：單一模型、單一併發，避免 16GB Mac mini 的 unified memory 被吃滿。
+- 資源紀錄：`simulations/results/resource_usage.jsonl`
+- 完整 pipeline 指令：`MiroFish-local/backend/.venv/bin/python simulations/run_mirofish_local.py`
+- 若 OASIS 沒有 actions，報告會標示 partial，不把沉默當市場結論。
 
 ## 安全
 

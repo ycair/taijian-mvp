@@ -16,11 +16,11 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SEED = ROOT / "seeds" / "taijian_seed.md"
+SEED = ROOT / "seeds" / "taijian_customer_seed.md"
 OUT = ROOT / "simulations" / "results"
 OUT.mkdir(parents=True, exist_ok=True)
 BASE = "http://localhost:5001/api"
-TIMEOUT = 120
+TIMEOUT = 600
 
 
 def request(method: str, path: str, payload=None, upload: Path | None = None, timeout: int = TIMEOUT):
@@ -140,7 +140,7 @@ def main() -> None:
     status, data = request("POST", "/simulation/prepare", {
         "simulation_id": simulation_id,
         "use_llm_for_profiles": True,
-        "parallel_profile_count": 3,
+        "parallel_profile_count": 1,
     })
     (OUT / "mirofish_prepare_submit.json").write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     prep_task = unwrap(data).get("task_id")
@@ -168,8 +168,8 @@ def main() -> None:
             break
         if state in {"failed", "error"}:
             raise RuntimeError(json.dumps(data, ensure_ascii=False)[:2000])
-        if time.time() - started > 1800:
-            raise TimeoutError("simulation timed out")
+        if time.time() - started > 900:
+            raise TimeoutError("simulation timed out after 15 minutes")
         time.sleep(8)
 
     for endpoint, filename in [
