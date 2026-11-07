@@ -73,6 +73,13 @@ MiroFish 原版完整 GraphRAG pipeline 使用 Zep Cloud（key 驗證：create u
 - OASIS：Twitter 18 posts；Reddit 8 posts＋8 comments（第一次）＋6 posts＋13 comments（第二次，部分離題已排除）
 - Panel：15 位；199 × 10、99 × 3、free × 2、399 × 0；NFC 3 張 299 可接受 5/15
 
+## Pitch
+
+- 互動簡報：<https://taijian.ycair.space/pitch>
+- 檔案：`site/pitch.html`、`site/pitch.css`、`site/pitch.js`
+- 操作：→／Space 下一頁、← 上一頁、F 全螢幕、P 自動播放、? 說明；支援滑鼠點擊與手機滑動。
+- 內容：問題、產品、NFC demo、市場、蒙地卡羅、persona panel、NFC verdict、商業模式、90 天 GTM、Ask。
+
 ## 報告站
 
 - 網址：<https://taijian.ycair.space>

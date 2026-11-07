@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>苔間 · Pitch 2026</title>
+  <meta name="description" content="苔間：把缸變成入口。爬蟲與特殊寵物照護的 App＋NFC 貼紙 pitch。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="pitch.css">
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="deck" id="deck">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="回到苔間報告首頁">
+        <span class="brand-mark">苔</span>
+        <span class="brand-text">苔間 <small>PITCH / 2026</small></span>
+      </a>
+      <div class="topmeta" aria-live="polite">
+        <span id="section-label">COVER</span>
+        <span class="topmeta-divider">/</span>
+        <span id="slide-counter">01 / 11</span>
+      </div>
+    </header>
+
+    <main class="slides" id="slides">
+      <!-- 00 COVER -->
+      <section class="slide slide-cover is-active" data-section="COVER" data-label="Cover">
+        <svg class="contour contour-cover" viewBox="0 0 1200 800" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M-80 620 C 160 500, 240 690, 420 560 S 720 430, 880 520 S 1120 640, 1320 500"/>
+          <path d="M-80 680 C 180 560, 260 740, 460 610 S 760 480, 920 570 S 1160 690, 1360 550"/>
+          <path d="M-80 740 C 200 620, 300 790, 500 660 S 800 530, 960 620 S 1200 740, 1400 600"/>
+          <path d="M-80 560 C 140 440, 220 630, 400 500 S 700 370, 860 460 S 1100 580, 1300 440"/>
+        </svg>
+        <div class="spores" aria-hidden="true">
+          <i style="--x:8%;--y:28%;--s:5px;--t:11s;--d:-2s"></i>
+          <i style="--x:18%;--y:64%;--s:3px;--t:14s;--d:-6s"></i>
+          <i style="--x:31%;--y:18%;--s:4px;--t:12s;--d:-3s"></i>
+          <i style="--x:46%;--y:72%;--s:3px;--t:16s;--d:-8s"></i>
+          <i style="--x:57%;--y:33%;--s:5px;--t:13s;--d:-1s"></i>
+          <i style="--x:68%;--y:78%;--s:3px;--t:15s;--d:-5s"></i>
+          <i style="--x:79%;--y:22%;--s:4px;--t:12s;--d:-4s"></i>
+          <i style="--x:91%;--y:58%;--s:3px;--t:14s;--d:-7s"></i>
+        </div>
+
+        <div class="slide-inner cover-grid">
+          <div class="cover-copy">
+            <div class="kicker reveal">苔間 / TAIWAN REPTILE &amp; EXOTIC PET CARE</div>
+            <h1 class="display reveal" style="--d:.08s">把缸，<br><em>變成入口。</em></h1>
+            <p class="lead reveal" style="--d:.16s">
+              苔間把爬蟲與特殊寵物的照護紀錄，從 LINE、紙本與記憶裡，
+              變成一條可以被觸發的路徑：App、NFC 貼紙、家庭與店家。
+            </p>
+            <div class="cover-actions reveal" style="--d:.24s">
+              <span class="hint"><span class="key">→</span> 或點右側開始</span>
+              <span class="mono-note">SIMULATED MARKET STUDY / NOT A FORECAST</span>
+            </div>
+          </div>
+          <aside class="cover-side reveal" style="--d:.3s">
+            <div class="cover-note">
+              <div class="note-index">FIELD NOTE 001</div>
+              <p>爬蟲飼主的照顧知識，多數存在手機相簿、LINE 記事本與一個人的記憶裡。</p>
+              <div class="cover-stats">
+                <div><strong>100k</strong><span>Monte Carlo paths</span></div>
+                <div><strong>15</strong><span>synthetic personas</span></div>
+                <div><strong>86</strong><span>graph nodes</span></div>
+              </div>
+            </div>
+          </aside>
+        </div>
+        <div class="mobile-stats" aria-hidden="true">
+          <div><strong>100k</strong><span>Monte Carlo paths</span></div>
+          <div><strong>15</strong><span>synthetic personas</span></div>
+          <div><strong>86</strong><span>graph nodes</span></div>
+        </div>
+        <div class="slide-foot">
+          <span>苔間 · 2026-11</span>
+          <span class="foot-line"></span>
+          <span>APP / NFC / FAMILY / SHOP</span>
+        </div>
+      </section>
+
+      <!-- 01 PROBLEM -->
+      <section class="slide slide-paper" data-section="PROBLEM" data-label="Problem">
+        <div class="slide-inner">
+          <div class="kicker reveal">01 / PROBLEM</div>
+          <h2 class="display reveal" style="--d:.06s">照顧不缺愛，<br><em>缺的是一條路。</em></h2>
+          <div class="pain-grid">
+            <article class="pain-card reveal" style="--d:.14s">
+              <div class="pain-num">01</div>
+              <h3>紀錄在三個地方</h3>
+              <p>LINE 相簿、Google Sheet、腦袋。換手機、換家人代餵，紀錄就斷了。</p>
+              <div class="mini-tags"><span>LINE</span><span>SHEET</span><span>記憶</span></div>
+            </article>
+            <article class="pain-card reveal" style="--d:.2s">
+              <div class="pain-num">02</div>
+              <h3>交接靠一句話</h3>
+              <p>出國、加班、小孩代餵，靠截圖與口頭交代；漏記一次，就可能漏掉一次異常。</p>
+              <div class="mini-tags"><span>家庭</span><span>出差</span><span>代餵</span></div>
+            </article>
+            <article class="pain-card reveal" style="--d:.26s">
+              <div class="pain-num">03</div>
+              <h3>資料帶不走</h3>
+              <p>匯出、備份、權限，是付費前的信任門檻。不是「功能越多越好」。</p>
+              <div class="mini-tags"><span>匯出</span><span>備份</span><span>隱私</span></div>
+            </article>
+          </div>
+          <div class="pullquote reveal" style="--d:.34s">
+            <span class="tag">PANEL</span>
+            <p>「苔間App看起來不錯，但NFC貼紙的使用限制讓我有點猶豫。」</p>
+            <cite>阿凱 · structured panel</cite>
+          </div>
+        </div>
+      </section>
+
+      <!-- 02 PRODUCT -->
+      <section class="slide slide-dark" data-section="PRODUCT" data-label="Product">
+        <div class="slide-inner">
+          <div class="kicker reveal">02 / PRODUCT</div>
+          <h2 class="display reveal" style="--d:.06s">一個 App，<br><em>三個入口。</em></h2>
+          <div class="product-grid">
+            <article class="product-card reveal" style="--d:.14s">
+              <div class="product-icon">A</div>
+              <div class="product-kicker">THE APP</div>
+              <h3>把照顧留下來</h3>
+              <p>餵食、換水、體重、蛻皮、醫療、家庭共享、提醒、公開旅程。</p>
+              <div class="product-foot">Free 60 張照片 · Pro 199 元/月</div>
+            </article>
+            <article class="product-card featured reveal" style="--d:.2s">
+              <div class="product-icon">N</div>
+              <div class="product-kicker">THE STICKER</div>
+              <h3>把缸變成入口</h3>
+              <p>貼在缸上；iPhone 靠近，直接跳到該居民的快速記錄頁。Android 用 QR fallback。</p>
+              <div class="product-foot">3 張 299 · 5 張 399</div>
+            </article>
+            <article class="product-card reveal" style="--d:.26s">
+              <div class="product-icon">S</div>
+              <div class="product-kicker">THE NETWORK</div>
+              <h3>把售後接起來</h3>
+              <p>家庭權限、出差交接、爬店售後；B2B 10 張＋店家後台。</p>
+              <div class="product-foot">B2B 1,999 元</div>
+            </article>
+          </div>
+          <div class="product-note reveal" style="--d:.34s">
+            <span class="dot"></span>
+            不是更多功能，是讓「記錄」在對的時間發生。
+          </div>
+        </div>
+      </section>
+
+      <!-- 03 DEMO -->
+      <section class="slide slide-paper" data-section="DEMO" data-label="Demo">
+        <div class="slide-inner demo-grid">
+          <div class="demo-copy">
+            <div class="kicker reveal">03 / DEMO</div>
+            <h2 class="display reveal" style="--d:.06s">碰一下，<br><em>就回到那隻居民。</em></h2>
+            <div class="segmented reveal" style="--d:.12s" role="group" aria-label="NFC 貼紙狀態">
+              <button class="seg-btn is-on" data-nfc-mode="blank" type="button">空白貼紙</button>
+              <button class="seg-btn" data-nfc-mode="bound" type="button">已設定貼紙</button>
+            </div>
+            <ol class="demo-steps">
+              <li class="reveal" style="--d:.18s"><span>01</span>靠近貼紙；iPhone 顯示通知。</li>
+              <li class="reveal" style="--d:.24s"><span>02</span>App 用 token 找到居民與權限。</li>
+              <li class="reveal" style="--d:.3s"><span>03</span>直接進快速記錄頁；不用搜尋。</li>
+            </ol>
+            <div class="demo-privacy reveal" style="--d:.36s">
+              <strong>Privacy by design</strong>
+              URL 只放隨機 token；登入才授權；遺失可撤銷；別人的貼紙看不到你的紀錄。
+            </div>
+          </div>
+
+          <div class="demo-stage reveal" style="--d:.18s">
+            <div class="tap-ring" id="tap-ring" aria-hidden="true"></div>
+            <div class="phone" id="nfc-phone">
+              <div class="phone-notch"></div>
+              <div class="phone-screen">
+                <div class="screen-top"><span>09:41</span><span>5G ▮</span></div>
+                <div class="screen-body" data-screen="lock">
+                  <div class="lock-time">09:41</div>
+                  <div class="lock-note">苔間 · 快速記錄</div>
+                  <div class="lock-card">
+                    <span class="pulse-dot"></span>
+                    <div><strong>已感應貼紙</strong><br><small>點一下，開啟居民的今天</small></div>
+                  </div>
+                </div>
+                <div class="screen-body" data-screen="record" hidden>
+                  <div class="record-head"><span class="record-kicker">居民</span><strong>球蟒 A</strong><span class="record-status">今天尚未記錄</span></div>
+                  <div class="record-actions">
+                    <button type="button">餵食</button>
+                    <button type="button">換水</button>
+                    <button type="button">體重</button>
+                    <button type="button">蛻皮</button>
+                  </div>
+                  <div class="record-last"><span>上次記錄</span><strong>3 天前 · 餵食 1 隻</strong></div>
+                  <div class="record-note">碰一下，就回到這隻居民的今天。</div>
+                </div>
+                <div class="phone-home"></div>
+              </div>
+            </div>
+            <button class="nfc-sticker" id="nfc-sticker" type="button" aria-label="感應 NFC 貼紙">
+              <span class="nfc-wave"></span>
+              <span class="nfc-label">NFC</span>
+              <small>點我感應</small>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 04 MARKET -->
+      <section class="slide slide-paper" data-section="MARKET" data-label="Market">
+        <div class="slide-inner">
+          <div class="kicker reveal">04 / MARKET</div>
+          <h2 class="display reveal" style="--d:.06s">不是更大的市場，<br><em>是更碎的工作流。</em></h2>
+          <div class="market-grid">
+            <div class="rings reveal" style="--d:.14s" aria-label="市場假設">
+              <div class="ring ring-1"><span>15–30 萬</span><small>爬蟲／特寵家戶</small></div>
+              <div class="ring ring-2"><span>50–60%</span><small>iPhone 佔比</small></div>
+              <div class="ring ring-3"><span>10–20%</span><small>願意為紀錄付費</small></div>
+              <div class="ring-core">苔間</div>
+            </div>
+            <div class="market-copy">
+              <div class="market-point reveal" style="--d:.2s">
+                <span class="tag assumption">ASSUMPTION</span>
+                <h3>先從「已經在記」的人開始</h3>
+                <p>用 LINE 記事本、Google Sheet、紙本的人，已經有紀錄習慣；苔間不是教育市場，是換一個更好的工具。</p>
+              </div>
+              <div class="market-point reveal" style="--d:.26s">
+                <span class="tag fact">BEACHHEAD</span>
+                <h3>爬店與繁殖者，是最短的那條路</h3>
+                <p>他們有售後、有血統、有客戶關係；一張貼紙就能把「賣出的動物」變成「持續的照護紀錄」。</p>
+              </div>
+              <div class="market-point reveal" style="--d:.32s">
+                <span class="tag goal">NEXT</span>
+                <h3>家庭與多缸飼主，是第二波</h3>
+                <p>小孩刷貼紙記錄、家人代餵交接；NFC 的價值在「不用找」，不是「很酷」。</p>
+              </div>
+            </div>
+          </div>
+          <p class="footnote reveal" style="--d:.38s">以上為模擬假設，待真人訪談、fake-door 與真實付款驗證。</p>
+        </div>
+      </section>
+
+      <!-- 05 STRESS TEST -->
+      <section class="slide slide-dark" data-section="EVIDENCE" data-label="Evidence">
+        <div class="slide-inner">
+          <div class="kicker reveal">05 / STRESS TEST</div>
+          <h2 class="display reveal" style="--d:.06s">100,000 條路徑，<br><em>先看哪個假設會殺死我們。</em></h2>
+          <div class="scenario-tabs reveal" style="--d:.12s" role="tablist" aria-label="蒙地卡羅情境">
+            <button class="scenario-tab is-on" data-scenario="base" type="button" role="tab" aria-selected="true">BASE</button>
+            <button class="scenario-tab" data-scenario="commercial" type="button" role="tab" aria-selected="false">商轉</button>
+            <button class="scenario-tab" data-scenario="appstore" type="button" role="tab" aria-selected="false">APP STORE</button>
+          </div>
+          <div class="scenario-body">
+            <div class="scenario-main reveal" style="--d:.18s">
+              <div class="scenario-label">12 個月 MRR 中位數</div>
+              <div class="scenario-value" id="scenario-mrr">NT$124k</div>
+              <div class="scenario-note" id="scenario-note">付費會員 P50 683 人；12 個月轉正 2.8%。</div>
+              <div class="scenario-foot">5 情境 × 20,000 路徑 · 模型假設，不是預測</div>
+            </div>
+            <div class="bars reveal" style="--d:.24s">
+              <div class="bar-row" data-bar="base">
+                <span class="bar-label">BASE</span>
+                <div class="bar-track"><i style="--w:18%"></i></div>
+                <span class="bar-value">124k</span>
+              </div>
+              <div class="bar-row" data-bar="commercial">
+                <span class="bar-label">商轉</span>
+                <div class="bar-track"><i style="--w:45%"></i></div>
+                <span class="bar-value">556k</span>
+              </div>
+              <div class="bar-row" data-bar="appstore">
+                <span class="bar-label">APP STORE</span>
+                <div class="bar-track"><i style="--w:100%"></i></div>
+                <span class="bar-value">1.39M</span>
+              </div>
+            </div>
+          </div>
+          <div class="scenario-callout reveal" style="--d:.3s">
+            <strong>差距不是多一個功能。</strong>
+            是觸及、通路與留存：base 轉正 2.8%，商轉 39.4%，App Store 98.4%。
+          </div>
+        </div>
+      </section>
+
+      <!-- 06 PANEL -->
+      <section class="slide slide-paper" data-section="PANEL" data-label="Panel">
+        <div class="slide-inner">
+          <div class="kicker reveal">06 / PERSONA PANEL</div>
+          <h2 class="display reveal" style="--d:.06s">15 位 persona：<br><em>199 是錨點，399 還太早。</em></h2>
+          <div class="panel-grid">
+            <div class="panel-bars reveal" style="--d:.14s">
+              <div class="stack-labels"><span>FREE 2</span><span>99 3</span><span>199 10</span><span>399 0</span></div>
+              <div class="stack">
+                <i class="stack-free" style="--w:13.3%"></i>
+                <i class="stack-99" style="--w:20%"></i>
+                <i class="stack-199" style="--w:66.7%"></i>
+              </div>
+              <div class="stack-note">偏好方案 · n=15 · synthetic panel</div>
+            </div>
+            <div class="panel-stats">
+              <div class="stat-card reveal" style="--d:.2s"><span>試用機率</span><strong>75.3%</strong><small>平均 trial likelihood</small></div>
+              <div class="stat-card reveal" style="--d:.24s"><span>付費機率</span><strong>31.3%</strong><small>平均 pay likelihood</small></div>
+              <div class="stat-card reveal" style="--d:.28s"><span>NFC 299</span><strong>5 / 15</strong><small>可接受 3 張 299 元</small></div>
+            </div>
+          </div>
+          <div class="quote-grid panel-quotes">
+            <div class="quote reveal" style="--d:.32s"><p>「數據的準確性和透明度是我們的首要考量，苔間App在這方面有潛力。」</p><cite>老周 · panel</cite></div>
+            <div class="quote reveal" style="--d:.36s"><p>「禮盒好漂亮，但希望有更多使用說明。」</p><cite>小美 · panel · 禮物購買者</cite></div>
+            <div class="quote reveal" style="--d:.4s"><p>「詳細的健康記錄是治療成功的重要關鍵，但技術手段需小心使用。」</p><cite>林醫師 · panel</cite></div>
+          </div>
+          <p class="footnote reveal" style="--d:.44s">合成質性研究，不是代表性調查、也不是營收預測。</p>
+        </div>
+      </section>
+
+      <!-- 07 NFC VERDICT -->
+      <section class="slide slide-dark" data-section="NFC" data-label="NFC">
+        <div class="slide-inner">
+          <div class="kicker reveal">07 / NFC VERDICT</div>
+          <h2 class="display reveal" style="--d:.06s">貼紙不是周邊，<br><em>是 Pro 的實體入口。</em></h2>
+          <div class="nfc-verdict-grid">
+            <div class="verdict-card reveal" style="--d:.14s">
+              <div class="verdict-label">會買</div>
+              <ul>
+                <li>多缸／多居民</li>
+                <li>家庭共享、小孩代餵</li>
+                <li>爬店售後、繁殖者管理</li>
+                <li>DIY／展示缸玩家</li>
+              </ul>
+              <div class="verdict-signal"><strong>5 / 15</strong><span>接受 3 張 299 元</span></div>
+            </div>
+            <div class="verdict-card muted reveal" style="--d:.2s">
+              <div class="verdict-label">會猶豫</div>
+              <ul>
+                <li>只有一隻寵物</li>
+                <li>價格敏感、免費優先</li>
+                <li>Android／舊 iPhone</li>
+                <li>怕貼紙遺失、被重寫</li>
+              </ul>
+              <div class="verdict-signal"><strong>27.3%</strong><span>平均 NFC 購買機率</span></div>
+            </div>
+          </div>
+          <div class="quote-grid nfc-quotes">
+            <div class="quote reveal" style="--d:.26s"><p>「我只有一只宠物，还需要另外支付费用，所以现在还不确定是否要购买。」</p><cite>小安 · OASIS R1-C3</cite></div>
+            <div class="quote reveal" style="--d:.3s"><p>「NFC功能支持有限是个遗憾……希望开发者能够尽快为Android用户带来完整体验。」</p><cite>Kevin · OASIS R1-C6</cite></div>
+            <div class="quote reveal" style="--d:.34s"><p>「NFC标签确实可以绑定多户主，但是安全性如何保障呢？」</p><cite>林醫師 · OASIS R1-C7</cite></div>
+          </div>
+          <div class="nfc-rule reveal" style="--d:.38s">
+            <span class="tag fact">RULE</span>
+            先賣給「已經有多個照顧入口」的人；不要先賣給只有一隻寵物的人。
+          </div>
+        </div>
+      </section>
+
+      <!-- 08 MODEL -->
+      <section class="slide slide-paper" data-section="MODEL" data-label="Model">
+        <div class="slide-inner">
+          <div class="kicker reveal">08 / BUSINESS MODEL</div>
+          <h2 class="display reveal" style="--d:.06s">先賣 199，<br><em>再賣 1,999。</em></h2>
+          <div class="billing-toggle reveal" style="--d:.12s">
+            <span>Pro 計費</span>
+            <button class="toggle is-on" id="billing-toggle" type="button" aria-pressed="false">
+              <span class="toggle-knob"></span>
+              <span class="toggle-label">月繳</span>
+            </button>
+          </div>
+          <div class="pricing-grid">
+            <article class="price-card reveal" style="--d:.18s">
+              <div class="price-kicker">FREE</div>
+              <div class="price"><span>NT$0</span></div>
+              <p>基本記錄、60 張照片/月、1 張貼紙綁定。</p>
+              <div class="price-foot">降低嘗試門檻</div>
+            </article>
+            <article class="price-card featured reveal" style="--d:.24s">
+              <div class="price-kicker">PRO</div>
+              <div class="price"><span id="pro-price">NT$199</span><small id="pro-period">/ 月</small></div>
+              <p>匯出、家庭權限、進階提醒、公開頁控制；年繳含 3 張貼紙。</p>
+              <div class="price-foot" id="pro-foot">年繳 NT$1,990，等於每月 NT$166</div>
+            </article>
+            <article class="price-card reveal" style="--d:.3s">
+              <div class="price-kicker">NFC PACK</div>
+              <div class="price"><span>NT$299</span><small>/ 3 張</small></div>
+              <p>多缸、家庭、禮物；5 張 399 元。QR code 通用。</p>
+              <div class="price-foot">不要先主推 399 訂閱</div>
+            </article>
+            <article class="price-card reveal" style="--d:.36s">
+              <div class="price-kicker">B2B KIT</div>
+              <div class="price"><span>NT$1,999</span></div>
+              <p>10 張貼紙＋店家後台＋售後紀錄；爬店、繁殖者、特寵獸醫。</p>
+              <div class="price-foot">最高的單價，最短的通路</div>
+            </article>
+          </div>
+          <p class="footnote reveal" style="--d:.42s">Panel：199 × 10、99 × 3、免費 × 2、399 × 0。價格是測試假設，不是已驗證營收。</p>
+        </div>
+      </section>
+
+      <!-- 09 GO TO MARKET -->
+      <section class="slide slide-paper" data-section="GTM" data-label="Go to market">
+        <div class="slide-inner">
+          <div class="kicker reveal">09 / GO-TO-MARKET</div>
+          <h2 class="display reveal" style="--d:.06s">90 天，10 戶，<br><em>30 張貼紙，3 家爬店。</em></h2>
+          <div class="timeline">
+            <div class="timeline-item reveal" style="--d:.14s">
+              <span class="timeline-day">DAY 0–30</span>
+              <h3>recruit</h3>
+              <p>3 家爬店、3 位繁殖者、2 位特寵獸醫、10 個家庭；先賣 B2B 套組與 Pro 綁定。</p>
+            </div>
+            <div class="timeline-item reveal" style="--d:.2s">
+              <span class="timeline-day">DAY 31–60</span>
+              <h3>pilot</h3>
+              <p>30 張貼紙進家庭；追蹤綁定、感應、記錄完成率與客服問題。</p>
+            </div>
+            <div class="timeline-item reveal" style="--d:.26s">
+              <span class="timeline-day">DAY 61–90</span>
+              <h3>decide</h3>
+              <p>過 gate 就放大；沒過就改客群、改價格、改 onboarding，不加大廣告。</p>
+            </div>
+          </div>
+          <div class="gate-row">
+            <div class="gate reveal" style="--d:.32s"><strong>≥ 80%</strong><span>綁定完成率</span></div>
+            <div class="gate reveal" style="--d:.35s"><strong>≥ 50%</strong><span>7 天內感應 ≥ 3 次</span></div>
+            <div class="gate reveal" style="--d:.38s"><strong>≥ 40%</strong><span>感應後完成記錄</span></div>
+            <div class="gate reveal" style="--d:.41s"><strong>≥ 30%</strong><span>299 續購或 Pro 加購</span></div>
+            <div class="gate reveal" style="--d:.44s"><strong>1 / 3</strong><span>店家願意付 1,999</span></div>
+          </div>
+          <div class="kill-callout reveal" style="--d:.48s">
+            <strong>Kill criteria</strong>
+            10 戶中少於 3 戶在 4 週後仍每週感應，或 3 店中沒有 1 店願意付 1,999 元——先停貼紙，不要加大周邊庫存。
+          </div>
+        </div>
+      </section>
+
+      <!-- 10 CLOSING -->
+      <section class="slide slide-cover slide-closing" data-section="ASK" data-label="Ask">
+        <svg class="contour contour-closing" viewBox="0 0 1200 800" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M-80 620 C 160 500, 240 690, 420 560 S 720 430, 880 520 S 1120 640, 1320 500"/>
+          <path d="M-80 680 C 180 560, 260 740, 460 610 S 760 480, 920 570 S 1160 690, 1360 550"/>
+          <path d="M-80 740 C 200 620, 300 790, 500 660 S 800 530, 960 620 S 1200 740, 1400 600"/>
+        </svg>
+        <div class="slide-inner closing-grid">
+          <div>
+            <div class="kicker reveal">10 / ASK</div>
+            <h2 class="display reveal" style="--d:.06s">我們在找第一批<br><em>把缸變成入口的人</em>。</h2>
+            <p class="lead reveal" style="--d:.14s">不是先買廣告，而是先找到 3 家爬店、3 位繁殖者、10 個家庭，一起把「碰一下就能記錄」變成真的習慣。</p>
+            <div class="ask-grid">
+              <div class="ask-card reveal" style="--d:.2s"><strong>3</strong><span>爬店</span><small>各 10 張＋後台</small></div>
+              <div class="ask-card reveal" style="--d:.24s"><strong>3</strong><span>繁殖者</span><small>各 10 張＋匯出</small></div>
+              <div class="ask-card reveal" style="--d:.28s"><strong>10</strong><span>家庭</span><small>各 3 張＋4 週追蹤</small></div>
+            </div>
+            <div class="closing-links reveal" style="--d:.34s">
+              <a href="./">主報告</a>
+              <a href="launch-nfc">上線＋NFC 報告</a>
+              <a href="graph-launch-nfc.png">Zep 圖譜</a>
+            </div>
+          </div>
+          <aside class="closing-side reveal" style="--d:.3s">
+            <div class="closing-note">
+              <span class="note-index">THE ONE LINE</span>
+              <p>先賣出一個<br><em>可重複的照顧理由。</em></p>
+              <small>苔間 · 2026-11 · taijian.ycair.space</small>
+            </div>
+          </aside>
+        </div>
+        <div class="slide-foot">
+          <span>苔間 · PITCH 2026</span>
+          <span class="foot-line"></span>
+          <span>THANK YOU / 按 ← 回顧</span>
+        </div>
+      </section>
+    </main>
+
+    <footer class="deck-footer">
+      <div class="progress-track" aria-hidden="true"><span id="progress-bar"></span></div>
+      <div class="controls">
+        <button class="ctrl" id="prev" type="button" aria-label="上一頁">←</button>
+        <div class="dots" id="dots" role="tablist" aria-label="投影片導覽"></div>
+        <button class="ctrl" id="next" type="button" aria-label="下一頁">→</button>
+        <span class="ctrl-sep"></span>
+        <button class="ctrl tiny" id="auto" type="button" aria-label="自動播放">AUTO</button>
+        <button class="ctrl tiny" id="full" type="button" aria-label="全螢幕">⛶</button>
+        <button class="ctrl tiny" id="help-btn" type="button" aria-label="操作說明">?</button>
+      </div>
+    </footer>
+  </div>
+
+  <div class="help-overlay" id="help" hidden>
+    <div class="help-card">
+      <div class="kicker">操作</div>
+      <h2>Pitch 模式</h2>
+      <div class="help-grid">
+        <div><span class="key">→</span><span class="key">Space</span> 下一頁</div>
+        <div><span class="key">←</span> 上一頁</div>
+        <div><span class="key">F</span> 全螢幕</div>
+        <div><span class="key">P</span> 自動播放</div>
+        <div><span class="key">?</span> 這份說明</div>
+        <div><span class="key">Esc</span> 關閉</div>
+      </div>
+      <button class="ctrl" id="help-close" type="button">關閉</button>
+    </div>
+  </div>
+
+  <script src="pitch.js"></script>
+</body>
+</html>
